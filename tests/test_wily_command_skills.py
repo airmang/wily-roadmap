@@ -129,8 +129,8 @@ class WilyCommandSkillsTest(unittest.TestCase):
 
     def test_wily_status_response_shows_phase_flow_verbatim(self) -> None:
         text = self.skill_text("wily-status")
-        self.assertIn("Include the `Roadmap:` section verbatim in the user response.", text)
-        self.assertIn("Do not replace the visual roadmap with a prose-only summary.", text)
+        self.assertIn("Include the `Wily Roadmap` pane output verbatim in the user response.", text)
+        self.assertIn("Do not replace the visual roadmap pane with a prose-only summary.", text)
 
     def test_wily_watch_opens_tmux_pane_by_default(self) -> None:
         text = self.skill_text("wily-watch")

@@ -113,13 +113,7 @@ def command_init(root: Path, args: list[str]) -> int:
 
 
 def command_status(root: Path) -> int:
-    state = state_dir(root)
-    if state.exists():
-        print(wily_state_summary.summarize_state(root, state))
-        return 0
-    print(f"저장소: {root}")
-    print("상태 디렉터리: 없음")
-    print(f"Git: {wily_state_summary.git_status(root)}")
+    print(wily_watch_ui.render_watch(root, interval=2.0, rich=False))
     return 0
 
 

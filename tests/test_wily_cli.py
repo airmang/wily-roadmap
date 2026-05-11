@@ -184,7 +184,7 @@ class WilyCliTest(unittest.TestCase):
             self.assertTrue((state / "revisions").is_dir())
             self.assertEqual((state / "project.md").read_text(encoding="utf-8"), "# Existing Project\n")
 
-    def test_status_uses_roadmap_summary(self) -> None:
+    def test_status_uses_polished_roadmap_pane(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp)
             self.create_state(project)
@@ -208,14 +208,12 @@ class WilyCliTest(unittest.TestCase):
             result = self.run_wily(project, "status")
 
             self.assertEqual(result.returncode, 0, result.stderr)
-            expected_root = wily_state_summary.repo_root(project)
-            self.assertEqual(
-                result.stdout.rstrip(),
-                wily_state_summary.summarize_state(expected_root, expected_root / ".wily"),
-            )
-            self.assertIn("로드맵 버전: 1", result.stdout)
-            self.assertIn("다음 단계: 01 - First phase", result.stdout)
-            self.assertEqual(result.stdout.count("Roadmap:"), 1)
+            self.assertIn("Wily Roadmap", result.stdout)
+            self.assertIn("v1", result.stdout)
+            self.assertIn("0/1", result.stdout)
+            self.assertIn("First phase", result.stdout)
+            self.assertNotIn("로드맵 버전:", result.stdout)
+            self.assertNotIn("Roadmap:", result.stdout)
             self.assertNotIn("Phase 흐름:", result.stdout)
 
     def test_watch_prints_polished_pane_preview_once_with_once_flag(self) -> None:
