@@ -169,6 +169,17 @@ def _id_width(phases: list[Phase]) -> int:
     return max((len(str(phase.get("id", "?"))) for phase in phases), default=2)
 
 
+def _stage_header(num: int, count: int, width: int, ascii_: bool) -> Line:
+    label = f" Stage {num}"
+    if count > 1:
+        label += " - parallel" if ascii_ else " · parallel"
+    fill = "-" if ascii_ else "─"
+    text = f"{label} "
+    if len(text) < width:
+        text += fill * (width - len(text))
+    return _crop_line([(text, "dim")], width)
+
+
 def _phase_status(phase: Phase, ready_ids: set[str]) -> str:
     pid = str(phase.get("id", "?"))
     if pid in ready_ids:
@@ -238,6 +249,29 @@ def _node_line(
     if dep_text:
         line.append((dep_text, "dim"))
     return _crop_line(line, width)
+
+
+def _flat_lines(phases: list[Phase], ready_ids: set[str], *, width: int, ascii_: bool) -> list[Line]:
+    by_id = _phase_index(phases)
+    id_width = _id_width(phases)
+    lines: list[Line] = []
+
+    for num, stage in enumerate(_ordered_stages(phases), start=1):
+        lines.append(_stage_header(num, len(stage), width, ascii_))
+        for phase in stage:
+            lines.append(
+                _node_line(
+                    phase,
+                    ready_ids,
+                    by_id,
+                    prefix=" ",
+                    id_width=id_width,
+                    width=width,
+                    ascii_=ascii_,
+                )
+            )
+
+    return lines
 
 
 def _graph_lines(phases: list[Phase], ready_ids: set[str], *, width: int, ascii_: bool) -> list[Line]:

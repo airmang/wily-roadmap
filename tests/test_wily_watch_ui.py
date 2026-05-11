@@ -253,3 +253,14 @@ class GraphTest(unittest.TestCase):
         self.assertTrue(any(line.startswith(" +--* a2") for line in rendered))
         self.assertIn(" v", rendered)
         self.assertTrue(any(line.lstrip().startswith("o b") and "deps a1 a2" in line for line in rendered))
+
+
+class FlatTest(unittest.TestCase):
+    def test_flat_lines_have_stage_headers_and_parallel_suffix(self) -> None:
+        lines = wily_watch_ui._flat_lines(GraphTest.fan, set(), width=70, ascii_=True)
+        rendered = ["".join(span for span, _style in line).rstrip() for line in lines]
+        self.assertTrue(rendered[0].startswith(" Stage 1 "))
+        self.assertTrue(any(line.startswith(" Stage 4 ") and "parallel" in line for line in rendered))
+        self.assertTrue(any(line.startswith(" * 01") and line.endswith("A") for line in rendered))
+        self.assertTrue(any(line.lstrip().startswith("o 05") and "needs 04-1 04-2" in line for line in rendered))
+        self.assertFalse(any(line.lstrip().startswith("+--") for line in rendered))
