@@ -182,3 +182,74 @@ class NodeLineTest(unittest.TestCase):
         text = "".join(span for span, _style in line)
 
         self.assertLessEqual(len(text), 10)
+
+
+class GraphTest(unittest.TestCase):
+    linear = [
+        {"id": "01", "title": "A", "status": "done", "depends_on": []},
+        {"id": "02", "title": "B", "status": "done", "depends_on": ["01"]},
+        {"id": "03", "title": "C", "status": "ready", "depends_on": ["02"]},
+    ]
+    fan = [
+        {"id": "01", "title": "A", "status": "done", "depends_on": []},
+        {"id": "02", "title": "B", "status": "done", "depends_on": ["01"]},
+        {"id": "03", "title": "C", "status": "done", "depends_on": ["02"]},
+        {"id": "04-1", "title": "D1", "status": "pending", "depends_on": ["03"]},
+        {"id": "04-2", "title": "D2", "status": "pending", "depends_on": ["03"]},
+        {"id": "05", "title": "E", "status": "pending", "depends_on": ["04-1", "04-2"]},
+    ]
+    skip = [
+        {"id": "01", "title": "A", "status": "done", "depends_on": []},
+        {"id": "02", "title": "B", "status": "done", "depends_on": ["01"]},
+        {"id": "03", "title": "C", "status": "done", "depends_on": ["02"]},
+        {"id": "05", "title": "E", "status": "pending", "depends_on": ["03", "01"]},
+    ]
+    two_wide = [
+        {"id": "a1", "title": "A1", "status": "done", "depends_on": []},
+        {"id": "a2", "title": "A2", "status": "done", "depends_on": []},
+        {"id": "b1", "title": "B1", "status": "pending", "depends_on": ["a1", "a2"]},
+        {"id": "b2", "title": "B2", "status": "pending", "depends_on": ["a1", "a2"]},
+    ]
+    initial_fan_in = [
+        {"id": "a1", "title": "A1", "status": "done", "depends_on": []},
+        {"id": "a2", "title": "A2", "status": "done", "depends_on": []},
+        {"id": "b", "title": "B", "status": "pending", "depends_on": ["a1", "a2"]},
+    ]
+
+    def test_renderable_true_for_linear_and_fan(self) -> None:
+        self.assertTrue(wily_watch_ui._pipeline_renderable(self.linear))
+        self.assertTrue(wily_watch_ui._pipeline_renderable(self.fan))
+
+    def test_not_renderable_for_skip_level_or_consecutive_wide(self) -> None:
+        self.assertFalse(wily_watch_ui._pipeline_renderable(self.skip))
+        self.assertFalse(wily_watch_ui._pipeline_renderable(self.two_wide))
+
+    def test_graph_lines_linear_uses_link_rail(self) -> None:
+        lines = wily_watch_ui._graph_lines(self.linear, set(), width=60, ascii_=True)
+        rendered = ["".join(span for span, _style in line).rstrip() for line in lines]
+
+        self.assertEqual(rendered[0], " * 01  A")
+        self.assertEqual(rendered[1], " |")
+        self.assertEqual(rendered[2], " * 02  B")
+        self.assertEqual(rendered[3], " |")
+        self.assertTrue(rendered[4].startswith(" > 03  C"))
+
+    def test_graph_lines_fan_uses_branch_and_merge(self) -> None:
+        lines = wily_watch_ui._graph_lines(self.fan, set(), width=70, ascii_=True)
+        rendered = ["".join(span for span, _style in line).rstrip() for line in lines]
+
+        self.assertTrue(any(line.startswith(" +--o 04-1") and line.endswith("D1") for line in rendered))
+        self.assertTrue(any(line.startswith(" +--o 04-2") and line.endswith("D2") for line in rendered))
+        self.assertIn(" v", rendered)
+        self.assertTrue(any(line.lstrip().startswith("o 05") and "deps 04-1 04-2" in line for line in rendered))
+
+    def test_graph_lines_initial_fan_in_uses_branch_and_merge(self) -> None:
+        self.assertTrue(wily_watch_ui._pipeline_renderable(self.initial_fan_in))
+
+        lines = wily_watch_ui._graph_lines(self.initial_fan_in, set(), width=60, ascii_=True)
+        rendered = ["".join(span for span, _style in line).rstrip() for line in lines]
+
+        self.assertTrue(any(line.startswith(" +--* a1") for line in rendered))
+        self.assertTrue(any(line.startswith(" +--* a2") for line in rendered))
+        self.assertIn(" v", rendered)
+        self.assertTrue(any(line.lstrip().startswith("o b") and "deps a1 a2" in line for line in rendered))

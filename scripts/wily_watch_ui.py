@@ -132,6 +132,43 @@ def _phase_index(phases: list[Phase]) -> dict[str, Phase]:
     return {str(phase.get("id", "?")): phase for phase in phases}
 
 
+def _ordered_stages(phases: list[Phase]) -> list[list[Phase]]:
+    grouped = wily_state_summary.stage_groups(phases)
+    return [grouped[stage] for stage in sorted(grouped)]
+
+
+def _pipeline_renderable(phases: list[Phase]) -> bool:
+    if not phases:
+        return False
+
+    stages = _ordered_stages(phases)
+    previous_ids: set[str] = set()
+    previous_wide = False
+
+    for index, stage in enumerate(stages):
+        stage_wide = len(stage) > 1
+        if previous_wide and stage_wide:
+            return False
+
+        if index == 0:
+            if any(phase.get("depends_on") or [] for phase in stage):
+                return False
+        else:
+            for phase in stage:
+                dependencies = {str(dep) for dep in phase.get("depends_on") or []}
+                if dependencies != previous_ids:
+                    return False
+
+        previous_ids = {str(phase.get("id", "?")) for phase in stage}
+        previous_wide = stage_wide
+
+    return True
+
+
+def _id_width(phases: list[Phase]) -> int:
+    return max((len(str(phase.get("id", "?"))) for phase in phases), default=2)
+
+
 def _phase_status(phase: Phase, ready_ids: set[str]) -> str:
     pid = str(phase.get("id", "?"))
     if pid in ready_ids:
@@ -170,6 +207,8 @@ def _node_line(
     id_width: int,
     width: int,
     ascii_: bool,
+    dependency_ids: list[str] | None = None,
+    dependency_marker: str | None = None,
 ) -> Line:
     status = _phase_status(phase, ready_ids)
     glyphs = GLYPHS_ASCII if ascii_ else GLYPHS
@@ -179,10 +218,11 @@ def _node_line(
     pid = str(phase.get("id", "?"))
     title = str(phase.get("title", "Untitled phase"))
     id_text = f" {pid.ljust(id_width)}  "
-    unmet = _unmet_deps(phase, by_id)
+    unmet = dependency_ids if dependency_ids is not None else _unmet_deps(phase, by_id)
     dep_text = ""
     if unmet:
-        dep_text = f"   {rails['dep']} " + " ".join(unmet)
+        marker = dependency_marker or rails["dep"]
+        dep_text = f"   {marker} " + " ".join(unmet)
 
     title_width = max(0, width - len(prefix) - len(glyph) - len(id_text) - len(dep_text))
     title = _truncate(title, title_width)
@@ -198,6 +238,47 @@ def _node_line(
     if dep_text:
         line.append((dep_text, "dim"))
     return _crop_line(line, width)
+
+
+def _graph_lines(phases: list[Phase], ready_ids: set[str], *, width: int, ascii_: bool) -> list[Line]:
+    rails = RAIL_ASCII if ascii_ else RAIL
+    by_id = _phase_index(phases)
+    id_width = _id_width(phases)
+    stages = _ordered_stages(phases)
+    lines: list[Line] = []
+    previous_wide = False
+
+    for index, stage in enumerate(stages):
+        stage_wide = len(stage) > 1
+        if index > 0:
+            if previous_wide and not stage_wide:
+                lines.append([(f" {rails['merge']}", "dim")])
+            elif not previous_wide and not stage_wide:
+                lines.append([(f" {rails['link']}", "dim")])
+
+        prefix = f" {rails['branch']}" if stage_wide else " "
+        for phase in stage:
+            dependency_ids = None
+            dependency_marker = None
+            if previous_wide and not stage_wide:
+                dependency_ids = [str(dep) for dep in phase.get("depends_on") or []]
+                dependency_marker = "deps" if ascii_ else RAIL["dep"]
+            lines.append(
+                _node_line(
+                    phase,
+                    ready_ids,
+                    by_id,
+                    prefix=prefix,
+                    id_width=id_width,
+                    width=width,
+                    ascii_=ascii_,
+                    dependency_ids=dependency_ids,
+                    dependency_marker=dependency_marker,
+                )
+            )
+        previous_wide = stage_wide
+
+    return lines
 
 
 def _emit(lines: list[Line], *, rich: bool, width: int) -> str:
