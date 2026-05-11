@@ -33,20 +33,17 @@ Wily owns the Roadmap Plan. External planners may own detailed Phase Implementat
 
 ## Core Commands
 
-Treat these as natural-language commands even when no standalone CLI exists yet:
+Use `$wily-workflow` as the general router when the right command is unclear. Prefer precise command skills when the user knows the intended action:
 
 ```text
-wily init
-wily status
-wily next
-wily phase <id>
-wily start <id>
-wily complete <id>
-wily block <id>
-wily retry <id>
-wily replan
-wily watch
-wily tmux
+$wily-init
+$wily-status
+$wily-next
+$wily-start <phase-id>
+$wily-complete <phase-id>
+$wily-block <phase-id> "<reason>"
+$wily-retry <phase-id>
+$wily-replan
 ```
 
 For deterministic local state operations, use the helper script:
@@ -57,19 +54,19 @@ python3 <plugin-root>/scripts/wily.py <command>
 
 The script handles repeatable filesystem work such as `init`, `status`, `next`, `start`, `complete`, `block`, `retry`, `replan`, and one-shot `watch` rendering. Codex still owns interpretation, user approval, phase design, planner selection, implementation, and verification.
 
-`wily init` scans the repository. If the user already provided a final goal, combine that goal with the scan. If not, summarize the current implementation first, then ask for the intended final outcome before creating a roadmap.
+`$wily-init` scans the repository. If the user already provided a final goal, combine that goal with the scan. If not, summarize the current implementation first, then ask for the intended final outcome before creating a roadmap.
 
-`wily next` shows the recommended ready phase, its dependencies, expected files, planner adapter, prompt, and verification. Ask before implementation.
+`$wily-next` shows the recommended ready phase, its dependencies, expected files, planner adapter, prompt, and verification. Ask before implementation.
 
-`wily start <id>` records an approved phase execution session and marks the phase `in_progress`. Do not run it until the user approved starting that phase.
+`$wily-start <id>` records an approved phase execution session and marks the phase `in_progress`. Do not run it until the user approved starting that phase.
 
-`wily complete <id>` marks a phase `done` after verification evidence and review requirements are satisfied.
+`$wily-complete <id>` marks a phase `done` after verification evidence and review requirements are satisfied.
 
-`wily block <id>` records a blocker in roadmap state and the current session.
+`$wily-block <id>` records a blocker in roadmap state and the current session.
 
-`wily retry <id>` creates a new execution session without deleting prior attempts.
+`$wily-retry <id>` creates a new execution session without deleting prior attempts.
 
-`wily replan` keeps completed phases as history and revises only future or in-progress work unless the user explicitly requests a deeper reset.
+`$wily-replan` keeps completed phases as history and revises only future or in-progress work unless the user explicitly requests a deeper reset.
 
 ## State Model
 

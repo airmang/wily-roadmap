@@ -28,9 +28,9 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Use Wily Workflow for this repo task.",
-      "Plan this as Wily roadmap phases.",
-      "Summarize current workflow state."
+      "$wily-init: create a roadmap for this repo",
+      "$wily-status: show current roadmap state",
+      "$wily-next: show the next ready phase"
     ],
     "brandColor": "#2563EB"
   }
