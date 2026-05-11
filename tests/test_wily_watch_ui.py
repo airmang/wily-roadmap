@@ -307,3 +307,32 @@ class FlatTest(unittest.TestCase):
         self.assertTrue(any(line.startswith(" * 01") and line.endswith("A") for line in rendered))
         self.assertTrue(any(line.lstrip().startswith("o 05") and "needs 04-1 04-2" in line for line in rendered))
         self.assertFalse(any(line.lstrip().startswith("+--") for line in rendered))
+
+
+class CollapseTest(unittest.TestCase):
+    def test_collapse_leading_done_in_graph(self) -> None:
+        lines, kinds = wily_watch_ui._graph_lines2(GraphTest.fan, set(), width=70, ascii_=True)
+        c_lines, c_kinds = wily_watch_ui._collapse_leading_done(lines, kinds, ascii_=True)
+        rendered = ["".join(span for span, _style in line).rstrip() for line in c_lines]
+        self.assertTrue(rendered[0].lstrip().startswith("* 3 phases done"))
+        self.assertTrue(any("04-1" in line for line in rendered))
+        self.assertTrue(any("04-2" in line for line in rendered))
+        self.assertTrue(any(line.startswith(" o 05") for line in rendered))
+        self.assertNotIn("done", c_kinds[1:])
+
+    def test_collapse_noop_when_nothing_done(self) -> None:
+        phases = [
+            {"id": "01", "title": "A", "status": "pending", "depends_on": []},
+            {"id": "02", "title": "B", "status": "pending", "depends_on": ["01"]},
+        ]
+        lines, kinds = wily_watch_ui._graph_lines2(phases, set(), width=40, ascii_=True)
+        c_lines, c_kinds = wily_watch_ui._collapse_leading_done(lines, kinds, ascii_=True)
+        self.assertEqual(c_lines, lines)
+        self.assertEqual(c_kinds, kinds)
+
+    def test_collapse_leading_done_in_flat(self) -> None:
+        lines, kinds = wily_watch_ui._flat_lines2(GraphTest.fan, set(), width=70, ascii_=True)
+        c_lines, _ = wily_watch_ui._collapse_leading_done(lines, kinds, ascii_=True)
+        rendered = ["".join(span for span, _style in line).rstrip() for line in c_lines]
+        self.assertTrue(rendered[0].lstrip().startswith("* 3 phases done"))
+        self.assertTrue(any(line.startswith(" Stage 4 ") for line in rendered))

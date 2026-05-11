@@ -311,13 +311,21 @@ def _node_line(
     return _crop_line(line, width)
 
 
-def _flat_lines(phases: list[Phase], ready_ids: set[str], *, width: int, ascii_: bool) -> list[Line]:
+def _flat_lines2(
+    phases: list[Phase],
+    ready_ids: set[str],
+    *,
+    width: int,
+    ascii_: bool,
+) -> tuple[list[Line], list[str]]:
     by_id = _phase_index(phases)
     id_width = _id_width(phases)
     lines: list[Line] = []
+    kinds: list[str] = []
 
     for num, stage in enumerate(_ordered_stages(phases), start=1):
         lines.append(_stage_header(num, len(stage), width, ascii_))
+        kinds.append("header")
         for phase in stage:
             lines.append(
                 _node_line(
@@ -330,16 +338,29 @@ def _flat_lines(phases: list[Phase], ready_ids: set[str], *, width: int, ascii_:
                     ascii_=ascii_,
                 )
             )
+            kinds.append("done" if phase.get("status") == "done" else "node")
 
+    return lines, kinds
+
+
+def _flat_lines(phases: list[Phase], ready_ids: set[str], *, width: int, ascii_: bool) -> list[Line]:
+    lines, _kinds = _flat_lines2(phases, ready_ids, width=width, ascii_=ascii_)
     return lines
 
 
-def _graph_lines(phases: list[Phase], ready_ids: set[str], *, width: int, ascii_: bool) -> list[Line]:
+def _graph_lines2(
+    phases: list[Phase],
+    ready_ids: set[str],
+    *,
+    width: int,
+    ascii_: bool,
+) -> tuple[list[Line], list[str]]:
     rails = RAIL_ASCII if ascii_ else RAIL
     by_id = _phase_index(phases)
     id_width = _id_width(phases)
     stages = _ordered_stages(phases)
     lines: list[Line] = []
+    kinds: list[str] = []
     previous_wide = False
 
     for index, stage in enumerate(stages):
@@ -347,8 +368,10 @@ def _graph_lines(phases: list[Phase], ready_ids: set[str], *, width: int, ascii_
         if index > 0:
             if previous_wide and not stage_wide:
                 lines.append([(f" {rails['merge']}", "dim")])
+                kinds.append("merge")
             elif not previous_wide and not stage_wide:
                 lines.append([(f" {rails['link']}", "dim")])
+                kinds.append("link")
 
         prefix = f" {rails['branch']}" if stage_wide else " "
         for phase in stage:
@@ -370,9 +393,61 @@ def _graph_lines(phases: list[Phase], ready_ids: set[str], *, width: int, ascii_
                     dependency_marker=dependency_marker,
                 )
             )
+            kinds.append("done" if phase.get("status") == "done" else "node")
         previous_wide = stage_wide
 
+    return lines, kinds
+
+
+def _graph_lines(phases: list[Phase], ready_ids: set[str], *, width: int, ascii_: bool) -> list[Line]:
+    lines, _kinds = _graph_lines2(phases, ready_ids, width=width, ascii_=ascii_)
     return lines
+
+
+def _summary_line(done_count: int, ascii_: bool) -> Line:
+    glyphs = GLYPHS_ASCII if ascii_ else GLYPHS
+    rails = RAIL_ASCII if ascii_ else RAIL
+    return [(f" {glyphs['done']} {done_count} phases done {rails['fold']}", "green dim")]
+
+
+def _collapse_leading_done(lines: list[Line], kinds: list[str], *, ascii_: bool) -> tuple[list[Line], list[str]]:
+    if not lines or not kinds or len(lines) != len(kinds):
+        return lines, kinds
+
+    if kinds[0] == "header":
+        index = 0
+        done_count = 0
+        while index < len(kinds) and kinds[index] == "header":
+            next_header = index + 1
+            while next_header < len(kinds) and kinds[next_header] != "header":
+                next_header += 1
+
+            stage_kinds = kinds[index + 1 : next_header]
+            if not stage_kinds or any(kind != "done" for kind in stage_kinds):
+                break
+
+            done_count += len(stage_kinds)
+            index = next_header
+
+        if done_count < 2:
+            return lines, kinds
+        return [_summary_line(done_count, ascii_)] + lines[index:], ["done"] + kinds[index:]
+
+    index = 0
+    done_count = 0
+    while index < len(kinds):
+        kind = kinds[index]
+        if kind == "done":
+            done_count += 1
+            index += 1
+        elif kind in {"link", "merge"} and done_count > 0:
+            index += 1
+        else:
+            break
+
+    if done_count < 2:
+        return lines, kinds
+    return [_summary_line(done_count, ascii_)] + lines[index:], ["done"] + kinds[index:]
 
 
 def _emit(lines: list[Line], *, rich: bool, width: int) -> str:
