@@ -3,12 +3,17 @@
 
 from __future__ import annotations
 
+import os
+import shlex
+import subprocess
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import wily_state_summary
+import wily_watch_ui
 
 
 Phase = dict[str, Any]
@@ -102,8 +107,8 @@ def command_status(root: Path) -> int:
     if state.exists():
         print(wily_state_summary.summarize_state(root, state))
         return 0
-    print(f"Repo: {root}")
-    print("State: none")
+    print(f"저장소: {root}")
+    print("상태 디렉터리: 없음")
     print(f"Git: {wily_state_summary.git_status(root)}")
     return 0
 
@@ -128,10 +133,9 @@ def find_phase(roadmap: dict[str, Any], phase_id: str) -> Phase | None:
 
 
 def ready_phase(roadmap: dict[str, Any]) -> Phase | None:
-    for phase in roadmap.get("phases") or []:
-        if phase.get("status") == "ready":
-            return phase
-    return None
+    phases = roadmap.get("phases") or []
+    ready = wily_state_summary.executable_phases(phases)
+    return ready[0] if ready else None
 
 
 def command_next(root: Path) -> int:
@@ -453,8 +457,164 @@ def command_replan(root: Path, args: list[str]) -> int:
     return 0
 
 
-def command_watch(root: Path) -> int:
-    return command_status(root)
+def watch_interval(args: list[str]) -> float:
+    if "--interval" not in args:
+        return 2.0
+    index = args.index("--interval")
+    try:
+        return max(0.2, float(args[index + 1]))
+    except (IndexError, ValueError):
+        return 2.0
+
+
+def watch_ui(args: list[str]) -> str:
+    if "--ui" not in args:
+        return "auto"
+    index = args.index("--ui")
+    try:
+        value = args[index + 1].strip().lower()
+    except IndexError:
+        return "auto"
+    return value if value in {"auto", "ascii", "rich"} else "auto"
+
+
+def rich_available() -> bool:
+    if os.environ.get("WILY_FORCE_NO_RICH"):
+        return False
+    add_watch_dependency_path()
+    try:
+        import rich  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
+def plugin_root() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
+def watch_venv_dir() -> Path:
+    return plugin_root() / ".venv-watch"
+
+
+def watch_venv_python() -> Path:
+    if sys.platform == "win32":
+        return watch_venv_dir() / "Scripts" / "python.exe"
+    return watch_venv_dir() / "bin" / "python"
+
+
+def watch_dependency_paths() -> list[Path]:
+    venv = watch_venv_dir()
+    if sys.platform == "win32":
+        return list((venv / "Lib").glob("site-packages"))
+    return list((venv / "lib").glob("python*/site-packages"))
+
+
+def add_watch_dependency_path() -> None:
+    for path in watch_dependency_paths():
+        value = str(path)
+        if value not in sys.path:
+            sys.path.insert(0, value)
+
+
+def rich_install_commands() -> list[list[str]]:
+    requirements = plugin_root() / "requirements-watch.txt"
+    return [
+        [sys.executable, "-m", "venv", str(watch_venv_dir())],
+        [str(watch_venv_python()), "-m", "pip", "install", "-r", str(requirements)],
+    ]
+
+
+def command_install_watch_ui(args: list[str]) -> int:
+    commands = rich_install_commands()
+    if "--dry-run-install" in args:
+        print("\n".join(format_shell_command(command) for command in commands))
+        return 0
+    for command in commands:
+        result = subprocess.run(command, text=True, check=False)
+        if result.returncode != 0:
+            return result.returncode
+    return 0
+
+
+def watch_output(root: Path, interval: float = 2.0, ui: str = "auto") -> str:
+    use_rich = ui != "ascii" and rich_available()
+    body = wily_watch_ui.render_watch(root, interval=interval, rich=use_rich)
+    if not use_rich and ui in {"auto", "rich"} and not rich_available():
+        return "\n".join(
+            [
+                "Rich UI is not installed.",
+                "Run: $wily-watch --install-ui",
+                "Fallback: using ASCII watch UI.",
+                "",
+                body,
+            ]
+        )
+    return body
+
+
+def tmux_watch_command(root: Path, args: list[str]) -> list[str]:
+    script = Path(__file__).resolve()
+    interval = watch_interval(args)
+    inner = " ".join(
+        [
+            "cd",
+            shlex.quote(str(root)),
+            "&&",
+            shlex.quote(sys.executable),
+            shlex.quote(str(script)),
+            "watch",
+            "--here",
+            "--ui",
+            shlex.quote(watch_ui(args)),
+            "--interval",
+            shlex.quote(f"{interval:.1f}"),
+        ]
+    )
+    return ["tmux", "split-window", "-h", inner]
+
+
+def format_shell_command(command: list[str]) -> str:
+    return " ".join(shlex.quote(part) for part in command)
+
+
+def command_watch_pane(root: Path, args: list[str]) -> int:
+    command = tmux_watch_command(root, args)
+    if "--dry-run-pane" in args:
+        print(format_shell_command(command))
+        return 0
+
+    if not os.environ.get("TMUX"):
+        print("tmux 세션이 아니라서 pane을 열 수 없습니다.", file=sys.stderr)
+        print(
+            "현재 pane에서 보려면 다음을 실행하세요: "
+            f"{shlex.quote(sys.executable)} {shlex.quote(str(Path(__file__).resolve()))} watch --here",
+            file=sys.stderr,
+        )
+        return 1
+
+    result = subprocess.run(command, text=True, check=False)
+    return result.returncode
+
+
+def command_watch(root: Path, args: list[str]) -> int:
+    if "--install-ui" in args:
+        return command_install_watch_ui(args)
+    interval = watch_interval(args)
+    ui = watch_ui(args)
+    if "--once" in args:
+        print(watch_output(root, interval, ui))
+        return 0
+    if "--here" not in args:
+        return command_watch_pane(root, args)
+
+    try:
+        while True:
+            print("\033[2J\033[H", end="")
+            print(watch_output(root, interval, ui), flush=True)
+            time.sleep(interval)
+    except KeyboardInterrupt:
+        return 0
 
 
 def usage() -> str:
@@ -501,7 +661,7 @@ def main(argv: list[str] | None = None) -> int:
     if command == "replan":
         return command_replan(root, args)
     if command == "watch":
-        return command_watch(root)
+        return command_watch(root, args)
 
     print(f"Unknown command: {command}", file=sys.stderr)
     print(usage(), file=sys.stderr)

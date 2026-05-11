@@ -477,3 +477,24 @@ class RenderWatchTest(unittest.TestCase):
             plain = ANSI_RE.sub("", out) if "ANSI_RE" in globals() else out
             for pid in ("01", "02", "03", "04-1", "04-2", "05"):
                 self.assertIn(pid, plain)
+
+
+class CliWiringTest(unittest.TestCase):
+    def test_watch_once_ascii_uses_new_renderer(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            _write_roadmap(Path(tmp), RenderWatchTest.FAN_YAML)
+            result = subprocess.run(
+                [sys.executable, str(ROOT / "scripts" / "wily.py"), "watch", "--once", "--ui", "ascii"],
+                cwd=tmp,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+                env={**os.environ, "COLUMNS": "80", "LINES": "30"},
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Wily Roadmap", result.stdout)
+            self.assertIn("3/6", result.stdout)
+            self.assertIn("deps 04-1 04-2", result.stdout)
+            self.assertNotIn("Phase 흐름:", result.stdout)
+            self.assertNotIn("Repo: ", result.stdout)
