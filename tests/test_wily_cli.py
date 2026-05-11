@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -9,6 +11,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "wily.py"
+ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+
+
+def strip_ansi(value: str) -> str:
+    return ANSI_RE.sub("", value)
 
 
 class WilyCliTest(unittest.TestCase):
@@ -20,6 +27,22 @@ class WilyCliTest(unittest.TestCase):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=False,
+        )
+
+    def run_wily_with_env(
+        self,
+        project: Path,
+        *args: str,
+        env: dict[str, str],
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, str(SCRIPT), *args],
+            cwd=project,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            env={**os.environ, **env},
         )
 
     def create_state(self, project: Path) -> Path:
@@ -109,8 +132,156 @@ class WilyCliTest(unittest.TestCase):
             result = self.run_wily(project, "status")
 
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertIn("Roadmap version: 1", result.stdout)
-            self.assertIn("Next: 01 - First phase", result.stdout)
+            self.assertIn("로드맵 버전: 1", result.stdout)
+            self.assertIn("다음 단계: 01 - First phase", result.stdout)
+
+    def test_watch_prints_polished_pane_preview_once_with_once_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.create_state(project)
+            (project / ".wily" / "roadmap.yaml").write_text(
+                "\n".join(
+                    [
+                        'roadmap_version: 1',
+                        'phases:',
+                        '  - id: "01"',
+                        '    title: "First phase"',
+                        '    path: "phases/01-first-phase"',
+                        '    status: "ready"',
+                        '    depends_on: []',
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = self.run_wily_with_env(
+                project,
+                "watch",
+                "--once",
+                "--ui",
+                "ascii",
+                env={"COLUMNS": "80", "LINES": "30"},
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Wily Roadmap", result.stdout)
+            self.assertIn("v1", result.stdout)
+            self.assertIn("0/1", result.stdout)
+            self.assertIn("0%", result.stdout)
+            self.assertIn("> 01  First phase", result.stdout)
+            self.assertIn("git:", result.stdout)
+            self.assertNotIn("Phase 흐름:", result.stdout)
+            self.assertNotIn("Repo: ", result.stdout)
+
+    def test_watch_ascii_ui_does_not_print_rich_install_hint(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.create_state(project)
+            (project / ".wily" / "roadmap.yaml").write_text("roadmap_version: 1\nphases: []\n", encoding="utf-8")
+
+            result = self.run_wily_with_env(
+                project,
+                "watch",
+                "--once",
+                "--ui",
+                "ascii",
+                env={"COLUMNS": "80", "LINES": "30"},
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Wily Roadmap", result.stdout)
+            self.assertIn("no phases yet", result.stdout)
+            self.assertNotIn("Rich UI is not installed", result.stdout)
+
+    def test_watch_rich_ui_uses_thin_dashboard_not_panels(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.create_state(project)
+            (project / ".wily" / "roadmap.yaml").write_text(
+                "\n".join(
+                    [
+                        'roadmap_version: 1',
+                        'phases:',
+                        '  - id: "01"',
+                        '    title: "First phase"',
+                        '    path: "phases/01-first-phase"',
+                        '    status: "ready"',
+                        '    depends_on: []',
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = self.run_wily_with_env(
+                project,
+                "watch",
+                "--once",
+                "--ui",
+                "rich",
+                env={"COLUMNS": "80", "LINES": "30", "WILY_FORCE_NO_RICH": ""},
+            )
+
+            if "Rich UI is not installed." in result.stdout:
+                self.skipTest("Rich is not installed")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            plain = strip_ansi(result.stdout)
+            self.assertIn("Wily Roadmap", plain)
+            self.assertIn("v1", plain)
+            self.assertIn("0/1", plain)
+            self.assertIn("First phase", plain)
+            self.assertNotIn("╭", plain)
+            self.assertNotIn("┏", plain)
+
+    def test_watch_auto_ui_prints_rich_install_hint_when_rich_is_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.create_state(project)
+            (project / ".wily" / "roadmap.yaml").write_text("roadmap_version: 1\nphases: []\n", encoding="utf-8")
+
+            result = self.run_wily_with_env(
+                project,
+                "watch",
+                "--once",
+                env={"WILY_FORCE_NO_RICH": "1"},
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Rich UI is not installed.", result.stdout)
+            self.assertIn("$wily-watch --install-ui", result.stdout)
+            self.assertIn("Fallback: using ASCII watch UI.", result.stdout)
+
+    def test_watch_install_ui_dry_run_prints_pip_command(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+
+            result = self.run_wily(project, "watch", "--install-ui", "--dry-run-install")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("-m venv", result.stdout)
+            self.assertIn(".venv-watch", result.stdout)
+            self.assertIn("-m pip install -r", result.stdout)
+            self.assertIn("requirements-watch.txt", result.stdout)
+
+    def test_watch_defaults_to_tmux_pane_mode_outside_tmux(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+
+            result = self.run_wily_with_env(project, "watch", env={"TMUX": ""})
+
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("tmux 세션이 아니라서 pane을 열 수 없습니다.", result.stderr)
+            self.assertIn("python3", result.stderr)
+            self.assertIn("watch --here", result.stderr)
+
+    def test_watch_pane_mode_builds_tmux_split_command_when_inside_tmux(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+
+            result = self.run_wily_with_env(project, "watch", "--dry-run-pane", env={"TMUX": "/tmp/tmux"})
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("tmux split-window -h", result.stdout)
+            self.assertIn("watch --here", result.stdout)
 
     def test_next_prints_ready_phase_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -164,6 +335,43 @@ class WilyCliTest(unittest.TestCase):
             self.assertIn("Resume from here", result.stdout)
             self.assertIn("## Existing Implementation Plan", result.stdout)
             self.assertIn("No implementation plan exists yet.", result.stdout)
+
+    def test_next_prints_pending_phase_when_dependencies_are_done(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.create_state(project)
+            phase_dir = project / ".wily" / "phases" / "02-next-layer"
+            phase_dir.mkdir(parents=True)
+            (phase_dir / "phase.md").write_text("# Phase\n\nPending but unblocked\n", encoding="utf-8")
+            (phase_dir / "prompt.md").write_text("Run next layer\n", encoding="utf-8")
+            (phase_dir / "verification.md").write_text("python3 -m unittest\n", encoding="utf-8")
+            (project / ".wily" / "roadmap.yaml").write_text(
+                "\n".join(
+                    [
+                        'roadmap_version: 1',
+                        'phases:',
+                        '  - id: "01"',
+                        '    title: "Finished foundation"',
+                        '    path: "phases/01-finished-foundation"',
+                        '    status: "done"',
+                        '    depends_on: []',
+                        '',
+                        '  - id: "02"',
+                        '    title: "Next layer"',
+                        '    path: "phases/02-next-layer"',
+                        '    status: "pending"',
+                        '    depends_on: ["01"]',
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = self.run_wily(project, "next")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Next phase: 02 - Next layer", result.stdout)
+            self.assertIn("Pending but unblocked", result.stdout)
+            self.assertIn("Run next layer", result.stdout)
 
     def test_replan_records_revision_and_increments_version(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
