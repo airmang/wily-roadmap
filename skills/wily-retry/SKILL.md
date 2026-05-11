@@ -22,3 +22,7 @@ python3 <plugin-root>/scripts/wily.py retry <phase-id>
 - Do not delete or overwrite prior sessions.
 - Read the new `session/input.md` before continuing.
 - Keep the new attempt scoped to the same phase unless the roadmap is explicitly replanned.
+
+## Response Style
+
+- When announcing Wily plugin or skill usage, use Korean if the user is speaking Korean.

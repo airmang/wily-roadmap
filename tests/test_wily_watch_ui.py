@@ -5,6 +5,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import unicodedata
 import unittest
 from pathlib import Path
 
@@ -15,6 +16,15 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import wily_watch_ui
 
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+
+
+def cell_width(text: str) -> int:
+    total = 0
+    for char in text:
+        if unicodedata.combining(char):
+            continue
+        total += 2 if unicodedata.east_asian_width(char) in {"F", "W"} else 1
+    return total
 
 
 def _write_roadmap(project: Path, body: str) -> None:
@@ -70,6 +80,9 @@ class TruncateAndEmitTest(unittest.TestCase):
     def test_truncate_handles_tiny_limits(self) -> None:
         self.assertEqual(wily_watch_ui._truncate("abcdef", 1), "…")
         self.assertEqual(wily_watch_ui._truncate("abcdef", 0), "")
+
+    def test_fit_title_uses_middle_ellipsis(self) -> None:
+        self.assertEqual(wily_watch_ui._fit_title("abcdefghijklmnopqrstuvwxyz", 10), "abcd…vwxyz")
 
     def test_emit_plain_text_strips_empty_spans(self) -> None:
         self.assertEqual(
@@ -229,7 +242,80 @@ class NodeLineTest(unittest.TestCase):
         text = "".join(span for span, _style in line)
 
         self.assertLessEqual(len(text), 20)
-        self.assertTrue(text.endswith("…"))
+        self.assertIn("…", text)
+        self.assertIn("Sett", text)
+        self.assertTrue(text.endswith("date"))
+
+    def test_node_line_long_title_preserves_start_and_end(self) -> None:
+        phase = {
+            "id": "01",
+            "title": "abcdefghijklmnopqrstuvwxyz",
+            "status": "done",
+            "depends_on": [],
+        }
+
+        line = wily_watch_ui._node_line(
+            phase,
+            set(),
+            {"01": phase},
+            prefix=" ",
+            id_width=2,
+            width=17,
+            ascii_=True,
+        )
+        text = "".join(span for span, _style in line)
+
+        self.assertEqual(text, " * 01  abcd…vwxyz")
+
+    def test_node_line_korean_long_title_preserves_start_and_end(self) -> None:
+        phase = {
+            "id": "01",
+            "title": "시작 단계 매우 긴 제목 마지막 단계",
+            "status": "done",
+            "depends_on": [],
+        }
+
+        line = wily_watch_ui._node_line(
+            phase,
+            set(),
+            {"01": phase},
+            prefix=" ",
+            id_width=2,
+            width=25,
+            ascii_=True,
+        )
+        text = "".join(span for span, _style in line)
+
+        self.assertLessEqual(len(text), 25)
+        self.assertLessEqual(cell_width(text), 25)
+        self.assertIn("시작", text)
+        self.assertIn("단계", text)
+        self.assertTrue(text.endswith("지막 단계"))
+        self.assertIn("…", text)
+
+    def test_node_line_preserves_title_when_dependency_label_is_long(self) -> None:
+        phase = {
+            "id": "01",
+            "title": "abcdefghijklmnopqrstuvwxyz",
+            "status": "pending",
+            "depends_on": ["very-long-dependency-id"],
+        }
+
+        line = wily_watch_ui._node_line(
+            phase,
+            set(),
+            {},
+            prefix=" ",
+            id_width=2,
+            width=24,
+            ascii_=True,
+        )
+        text = "".join(span for span, _style in line)
+
+        self.assertLessEqual(cell_width(text), 24)
+        self.assertIn("a", text)
+        self.assertIn("z", text)
+        self.assertIn("…", text)
 
     def test_node_line_truncates_when_fixed_parts_exceed_width(self) -> None:
         phase = {"id": "very-long-id", "title": "Title", "status": "pending", "depends_on": ["missing"]}

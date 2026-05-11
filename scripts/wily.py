@@ -23,9 +23,11 @@ def state_dir(root: Path) -> Path:
     return root / ".wily"
 
 
-def write_once(path: Path, content: str) -> None:
-    if not path.exists():
-        path.write_text(content, encoding="utf-8")
+def write_once(path: Path, content: str) -> bool:
+    if path.exists():
+        return False
+    path.write_text(content, encoding="utf-8")
+    return True
 
 
 def quote(value: str) -> str:
@@ -33,9 +35,9 @@ def quote(value: str) -> str:
     return f'"{escaped}"'
 
 
-def write_baseline_roadmap(path: Path, goal: str | None) -> None:
-    goal_value = goal or "User goal needed"
-    write_once(
+def write_baseline_roadmap(path: Path, goal: str | None) -> bool:
+    goal_value = goal or "사용자 목표 필요"
+    return write_once(
         path,
         "\n".join(
             [
@@ -54,51 +56,59 @@ def command_init(root: Path, args: list[str]) -> int:
     for name in ("phases", "sessions", "revisions"):
         (state / name).mkdir(parents=True, exist_ok=True)
 
-    write_once(
+    preserved_files: list[str] = []
+    if not write_once(
         state / "project.md",
         "\n".join(
             [
                 "# Wily Project",
                 "",
-                f"Root: {root}",
-                f"Goal: {goal or 'User goal needed'}",
+                f"루트: {root}",
+                f"목표: {goal or '사용자 목표 필요'}",
                 "",
-                "Current Baseline:",
-                "- Repository scan needed before phase generation.",
+                "현재 기준:",
+                "- phase 생성 전에 저장소 스캔이 필요합니다.",
                 "",
             ]
         ),
-    )
-    write_baseline_roadmap(state / "roadmap.yaml", goal)
-    write_once(
+    ):
+        preserved_files.append("project.md")
+    if not write_baseline_roadmap(state / "roadmap.yaml", goal):
+        preserved_files.append("roadmap.yaml")
+    if not write_once(
         state / "status.md",
         "\n".join(
             [
                 "# Wily Status",
                 "",
-                "State initialized.",
-                "Next action: scan the repository and generate roadmap phases.",
+                "상태가 초기화되었습니다.",
+                "다음 작업: 저장소를 스캔하고 로드맵 phase를 생성합니다.",
                 "",
             ]
         ),
-    )
-    write_once(
+    ):
+        preserved_files.append("status.md")
+    if not write_once(
         state / "decisions.md",
         "\n".join(
             [
                 "# Wily Decisions",
                 "",
-                "No durable decisions recorded yet.",
+                "아직 기록된 결정이 없습니다.",
                 "",
             ]
         ),
-    )
+    ):
+        preserved_files.append("decisions.md")
 
     print(f"Initialized .wily at {state}")
     if goal:
         print(f"Goal: {goal}")
     else:
         print("Goal: needed")
+        print("Next action: scan the repository, summarize current state, and ask for the intended final outcome.")
+    if preserved_files:
+        print(f"Preserved existing .wily files: {', '.join(sorted(preserved_files))}")
     return 0
 
 
@@ -394,6 +404,7 @@ def command_complete(root: Path, args: list[str]) -> int:
         print(f"Phase not found: {phase_id}", file=sys.stderr)
         return 1
     phase["status"] = "done"
+    phase.pop("blocker", None)
     update_session_status(root, phase, "verified")
     save_roadmap(root, roadmap)
     print(f"Completed phase {phase_id}")

@@ -1,6 +1,6 @@
 ---
 name: wily-workflow
-description: Use when the user wants Wily's personal Codex workflow for software work: initialize or inspect per-repo .wily state, turn a large goal into dependency-aware roadmap phases, choose the next safe phase, execute a phase through an auditable session, revise future roadmap work, summarize progress, or keep remote/destructive actions approval-first.
+description: "Use when the user wants Wily's personal Codex workflow for software work: initialize or inspect per-repo .wily state, turn a large goal into dependency-aware roadmap phases, choose the next safe phase, execute a phase through an auditable session, revise future roadmap work, summarize progress, or keep remote/destructive actions approval-first."
 metadata:
   short-description: Wily Roadmap workflow for Codex
 ---
@@ -11,7 +11,7 @@ metadata:
 
 Use this skill to manage large software work with Wily's local roadmap model. Wily stores project state in `.wily/`, splits large goals into Codex-sized phases, tracks dependencies and parallel candidates, records each execution attempt as a session, and preserves completed history when plans change.
 
-Wily owns the Roadmap Plan. External planners may own detailed Phase Implementation Plans. Do not duplicate specialized implementation planning workflows inside Wily when a phase can be handed to a planner such as `superpowers:writing-plans`.
+Wily owns the Roadmap Plan. External planners may own detailed Phase Implementation Plans when a phase truly needs one. Keep command handling fast: Wily command skills should not invoke external planners or broad verification just to route, inspect, start, retry, block, or complete roadmap state.
 
 ## First Move
 
@@ -38,6 +38,7 @@ Use `$wily-workflow` as the general router when the right command is unclear. Pr
 ```text
 $wily-init
 $wily-status
+$wily-watch
 $wily-next
 $wily-start <phase-id>
 $wily-complete <phase-id>
@@ -56,9 +57,13 @@ The script handles repeatable filesystem work such as `init`, `status`, `next`, 
 
 `$wily-init` scans the repository. If the user already provided a final goal, combine that goal with the scan. If not, summarize the current implementation first, then ask for the intended final outcome before creating a roadmap.
 
-`$wily-next` shows the recommended ready phase, its dependencies, expected files, planner adapter, prompt, and verification. Ask before implementation.
+`$wily-next` shows the recommended executable phase, including `pending` phases whose dependencies are `done`, plus dependencies, expected files, planner adapter, prompt, and verification. Ask before implementation.
 
-`$wily-start <id>` records an approved phase execution session and marks the phase `in_progress`. Do not run it until the user approved starting that phase.
+`$wily-status` renders Korean user-facing status output. Its phase overview is a compact ASCII `Phase 흐름:` section grouped by dependency stage; phases with multiple dependencies keep an explicit `의존:` annotation instead of being forced into a tree edge.
+
+`$wily-watch` renders the same roadmap status in a continuously refreshing read-only view for tmux panes. It must not create sessions, change roadmap state, or implement phases.
+
+`$wily-start <id>` records an approved phase session and marks the phase `in_progress`. This command is session bookkeeping only: after reporting the session path, stop. Do not create plans, edit phase target files, run implementation verification, or continue into implementation in the same turn. A separate explicit user request after the start result is required before implementation.
 
 `$wily-complete <id>` marks a phase `done` after verification evidence and review requirements are satisfied.
 
@@ -112,15 +117,18 @@ blocked
 superseded
 ```
 
+Status summaries translate these markers only for display. Keep stored roadmap status values in English.
+
 ## Operating Rules
 
 - Prefer local completion. Do not push, open PRs, merge, delete user work, or run destructive commands unless the user explicitly asks.
 - Before implementation, name the phase and the files or modules you expect to touch.
 - If a detailed implementation plan is needed, use the phase's planner adapter before implementation.
+- Do not invoke planner adapters while merely handling `$wily-status`, `$wily-watch`, `$wily-next`, `$wily-start`, `$wily-retry`, `$wily-block`, or `$wily-complete`.
 - Implement only the approved phase. Do not silently advance into other phases.
 - Keep phase and session separate: the phase is the planned work; the session is one execution attempt.
 - A phase can have multiple sessions. Retry by creating a new session, not by overwriting old history.
-- Run concrete verification before claiming success.
+- Run concrete, phase-scoped verification before claiming implementation success.
 - If verification fails for an unclear reason, mark the session `needs_work` or the phase `blocked` and report the blocker.
 - Before committing, summarize the diff and wait for explicit commit instruction unless the user asked for commits up front.
 
@@ -146,4 +154,5 @@ Read detailed policy only when needed:
 
 - Be direct and concrete.
 - Lead with current state, next action, and blockers.
+- When announcing Wily plugin or skill usage, use Korean if the user is speaking Korean.
 - Use Korean when the user is speaking Korean, but keep file content and machine-facing markers in English.

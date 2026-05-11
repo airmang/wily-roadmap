@@ -9,9 +9,9 @@
 5. Create a new session under `.wily/sessions/`.
    - Helper command: `python3 <plugin-root>/scripts/wily.py start <phase-id>`
 6. Mark the phase `in_progress`.
-7. If no detailed implementation plan exists and one is needed, use the recommended external planner before changing project files.
+7. If no detailed implementation plan exists and one is needed for implementation, use the recommended external planner before changing project files.
 8. Implement only the approved phase.
-9. Run focused verification.
+9. Run focused phase verification.
 10. Record result, changed files, verification output, planner used, and blockers in the session.
 11. Mark the phase `needs_review`, `blocked`, or `done` based on the result and user approval.
     - Helper command for verified completion: `python3 <plugin-root>/scripts/wily.py complete <phase-id>`
@@ -32,6 +32,7 @@ abandoned
 A session is an execution attempt. Do not overwrite older sessions when retrying a phase.
 
 If the phase has `planner.md`, record its recommended planner in `status.yaml`. `plan.md` is optional and may be absent when the session starts.
+Recording a planner is metadata only; starting or inspecting a phase must not invoke that planner by itself.
 
 ## Completion Criteria
 

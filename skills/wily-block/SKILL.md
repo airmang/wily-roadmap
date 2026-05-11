@@ -24,3 +24,7 @@ python3 <plugin-root>/scripts/wily.py block <phase-id> "<reason>"
 - the requested work would cross into another phase
 - dirty worktree state would risk user changes
 - remote or destructive work is required but not approved
+
+## Response Style
+
+- When announcing Wily plugin or skill usage, use Korean if the user is speaking Korean.

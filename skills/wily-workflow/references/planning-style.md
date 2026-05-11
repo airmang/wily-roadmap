@@ -7,7 +7,7 @@ Wily has two plan levels:
 - Roadmap Plan: Wily-owned project orchestration across all phases.
 - Phase Implementation Plan: optional detailed execution plan for one phase, often produced by an external planner.
 
-Keep Wily focused on the Roadmap Plan. Use planner adapters to hand phase implementation planning to tools such as `superpowers:writing-plans` when that is more efficient.
+Keep Wily focused on the Roadmap Plan. Use planner adapters only when detailed phase implementation planning is worth the extra workflow overhead.
 
 ## Roadmap Format
 
@@ -46,6 +46,8 @@ blocked
 superseded
 ```
 
+Status output may translate these markers for the user, but roadmap files should keep the English status values above.
+
 ## Phase Folder Format
 
 Each phase should have:
@@ -63,13 +65,13 @@ Each phase should have:
 
 `phase.md` describes purpose, dependencies, parallel group, expected starting state, expected output, likely touched files, and known risks.
 
-`planner.md` recommends how to create the detailed implementation plan. The first recommendation line should use:
+`planner.md` recommends how to create the detailed implementation plan when one is needed. The first recommendation line may use an external planner name, for example:
 
 ```text
 Recommended planner: superpowers:writing-plans
 ```
 
-`plan.md` is optional. It contains implementation steps only after an external planner or a Wily-native future planner creates them.
+`plan.md` is optional. It contains implementation steps only after an external planner or a Wily-native future planner creates them. Command skills must not invoke planner adapters just because this file is absent.
 
 `prompt.md` contains the execution prompt that can be reused in a later session.
 
@@ -87,8 +89,8 @@ Each phase should:
 - have a clear behavioral outcome,
 - list dependencies and parallel eligibility,
 - include expected files or modules,
-- include verification,
-- include a planner recommendation,
+- include focused verification,
+- include a planner recommendation only when detailed implementation planning is expected,
 - avoid unrelated refactors,
 - avoid mixing planning changes with implementation changes.
 
@@ -103,6 +105,8 @@ Use parent-style IDs for related work that can run after the same dependency:
 ```
 
 Use `parallel_group: "04"` in `roadmap.yaml` to make that relationship explicit. Do not rely on folder names alone for execution order.
+
+`$wily-status` groups phase summaries by dependency stage so parallel phases with the same rank stay near each other. For phases with more than one dependency, show the full `의존:` list explicitly instead of drawing a misleading single-parent tree.
 
 ## Replanning Style
 

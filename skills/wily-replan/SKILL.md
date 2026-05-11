@@ -24,3 +24,7 @@ python3 <plugin-root>/scripts/wily.py replan "<reason>"
 - Revise, replace, split, remove, or supersede future phases.
 - Add adaptation phases when completed work needs bridging.
 - Record the reason under `.wily/revisions/`.
+
+## Response Style
+
+- When announcing Wily plugin or skill usage, use Korean if the user is speaking Korean.

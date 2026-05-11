@@ -11,6 +11,16 @@ from typing import Any
 
 Phase = dict[str, Any]
 
+STATUS_LABELS = {
+    "pending": "대기",
+    "ready": "준비됨",
+    "in_progress": "진행 중",
+    "needs_review": "검토 필요",
+    "done": "완료",
+    "blocked": "차단",
+    "superseded": "대체됨",
+}
+
 
 def repo_root(start: Path) -> Path:
     current = start.resolve()
@@ -128,73 +138,211 @@ def phase_label(phase: Phase) -> str:
 def dependency_label(phase: Phase) -> str:
     depends_on = phase.get("depends_on") or []
     if not depends_on:
-        return "depends on: none"
-    return f"depends on: {', '.join(str(value) for value in depends_on)}"
+        return "의존: 없음"
+    return f"의존: {', '.join(str(value) for value in depends_on)}"
 
 
-def status_counts(phases: list[Phase]) -> dict[str, int]:
+def parallel_label(phase: Phase) -> str:
+    parallel_group = phase.get("parallel_group")
+    if not parallel_group:
+        return "병렬: 없음"
+    return f"병렬: {parallel_group}"
+
+
+def status_label(phase: Phase, ready_ids: set[str]) -> str:
+    phase_id = str(phase.get("id"))
+    if phase_id in ready_ids:
+        return "실행 가능"
+    return STATUS_LABELS.get(str(phase.get("status", "unknown")), str(phase.get("status", "unknown")))
+
+
+def phase_summary_line(phase: Phase, ready_ids: set[str]) -> str:
+    phase_id = phase.get("id", "unknown")
+    status = status_label(phase, ready_ids)
+    title = phase.get("title", "Untitled phase")
+    return f"  - {phase_id} [{status}] {title} ({dependency_label(phase)}, {parallel_label(phase)})"
+
+
+def phase_node_line(phase: Phase, ready_ids: set[str], *, branch: bool = False) -> str:
+    phase_id = phase.get("id", "unknown")
+    status = status_label(phase, ready_ids)
+    title = phase.get("title", "Untitled phase")
+    prefix = "  +-->" if branch else " "
+    return f"{prefix} [{phase_id} {status}] {title}"
+
+
+def phase_detail_lines(phase: Phase) -> list[str]:
+    lines: list[str] = []
+    depends_on = phase.get("depends_on") or []
+    if depends_on:
+        lines.append(f"    의존: {', '.join(str(value) for value in depends_on)}")
+        if len(depends_on) > 1:
+            lines.extend(f"    ^-- {dependency}" for dependency in depends_on)
+    parallel_group = phase.get("parallel_group")
+    if parallel_group:
+        lines.append(f"    병렬: {parallel_group}")
+    return lines
+
+
+def phase_index(phases: list[Phase]) -> dict[str, Phase]:
+    return {str(phase.get("id")): phase for phase in phases if phase.get("id") is not None}
+
+
+def dependencies_done(phase: Phase, phases: list[Phase]) -> bool:
+    by_id = phase_index(phases)
+    for dependency in phase.get("depends_on") or []:
+        dependency_phase = by_id.get(str(dependency))
+        if not dependency_phase or dependency_phase.get("status") != "done":
+            return False
+    return True
+
+
+def is_executable_phase(phase: Phase, phases: list[Phase]) -> bool:
+    status = phase.get("status")
+    if status == "ready":
+        return True
+    return status == "pending" and dependencies_done(phase, phases)
+
+
+def executable_phases(phases: list[Phase]) -> list[Phase]:
+    return [phase for phase in phases if is_executable_phase(phase, phases)]
+
+
+def phase_stage_map(phases: list[Phase]) -> dict[str, int]:
+    by_id = phase_index(phases)
+    stages: dict[str, int] = {}
+    visiting: set[str] = set()
+
+    def stage_for(phase: Phase) -> int:
+        phase_id = str(phase.get("id"))
+        if phase_id in stages:
+            return stages[phase_id]
+        if phase_id in visiting:
+            return 1
+
+        visiting.add(phase_id)
+        dependency_stages = [
+            stage_for(by_id[str(dependency)])
+            for dependency in phase.get("depends_on") or []
+            if str(dependency) in by_id
+        ]
+        visiting.remove(phase_id)
+
+        stages[phase_id] = max(dependency_stages, default=0) + 1
+        return stages[phase_id]
+
+    for phase in phases:
+        stage_for(phase)
+
+    return stages
+
+
+def stage_groups(phases: list[Phase]) -> dict[int, list[Phase]]:
+    stages = phase_stage_map(phases)
+    grouped: dict[int, list[Phase]] = {}
+    for phase in phases:
+        phase_id = str(phase.get("id"))
+        grouped.setdefault(stages.get(phase_id, 1), []).append(phase)
+    return grouped
+
+
+def phase_flow_lines(phases: list[Phase], ready: list[Phase]) -> list[str]:
+    lines = ["Roadmap:"]
+    if not phases:
+        lines.append("  없음")
+        return lines
+
+    ready_ids = {str(phase.get("id")) for phase in ready}
+    grouped = stage_groups(phases)
+    ordered_stages = sorted(grouped)
+    for index, stage in enumerate(ordered_stages):
+        lines.append(f"Stage {stage}:")
+        stage_phases = grouped[stage]
+        branch = len(stage_phases) > 1
+        for phase in stage_phases:
+            lines.append(phase_node_line(phase, ready_ids, branch=branch))
+            lines.extend(phase_detail_lines(phase))
+        if index < len(ordered_stages) - 1 and len(stage_phases) == 1:
+            lines.append("  |")
+    return lines
+
+
+def status_counts(phases: list[Phase], ready: list[Phase]) -> dict[str, int]:
     statuses = ["done", "ready", "in_progress", "blocked", "superseded"]
-    return {status: sum(1 for phase in phases if phase.get("status") == status) for status in statuses}
+    counts = {status: sum(1 for phase in phases if phase.get("status") == status) for status in statuses}
+    counts["ready"] = len(ready)
+    return counts
 
 
 def phases_with_status(phases: list[Phase], status: str) -> list[Phase]:
     return [phase for phase in phases if phase.get("status") == status]
 
 
+def blocked_phase_lines(phase: Phase) -> list[str]:
+    lines = [f"  - {phase_label(phase)} ({dependency_label(phase)})"]
+    blocker = phase.get("blocker")
+    if blocker:
+        lines.append(f"    blocker: {blocker}")
+    return lines
+
+
 def summarize_roadmap(root: Path, state_dir: Path, roadmap: dict[str, Any]) -> str:
     phases = roadmap.get("phases") or []
-    counts = status_counts(phases)
-    ready = phases_with_status(phases, "ready")
+    ready = executable_phases(phases)
+    counts = status_counts(phases, ready)
     blocked = phases_with_status(phases, "blocked")
     superseded = phases_with_status(phases, "superseded")
     replacements = [phase for phase in phases if phase.get("replaces")]
     next_phase = ready[0] if ready else None
 
     lines = [
-        f"Repo: {root}",
-        f"State: {state_dir.name}",
+        f"저장소: {root}",
+        f"상태 디렉터리: {state_dir.name}",
         f"Git: {git_status(root)}",
-        f"Roadmap version: {roadmap.get('roadmap_version', 'unknown')}",
+        f"로드맵 버전: {roadmap.get('roadmap_version', 'unknown')}",
     ]
 
     goal = roadmap.get("goal")
     if goal:
-        lines.append(f"Goal: {goal}")
+        lines.append(f"목표: {goal}")
 
     lines.append(
-        "Progress: "
-        f"{counts['done']} done, "
-        f"{counts['ready']} ready, "
-        f"{counts['in_progress']} in progress, "
-        f"{counts['blocked']} blocked, "
-        f"{counts['superseded']} superseded"
+        "진행: "
+        f"완료 {counts['done']}, "
+        f"실행 가능 {counts['ready']}, "
+        f"진행 중 {counts['in_progress']}, "
+        f"차단 {counts['blocked']}, "
+        f"대체됨 {counts['superseded']}"
     )
 
     if next_phase:
-        lines.append(f"Next: {next_phase.get('id')} - {next_phase.get('title', 'Untitled phase')}")
+        lines.append(f"다음 단계: {next_phase.get('id')} - {next_phase.get('title', 'Untitled phase')}")
     else:
-        lines.append("Next: none")
+        lines.append("다음 단계: 없음")
 
-    lines.append("Ready phases:")
+    lines.extend(phase_flow_lines(phases, ready))
+
+    lines.append("실행 가능 단계:")
     if ready:
         lines.extend(f"  - {phase_label(phase)}" for phase in ready)
     else:
-        lines.append("  none")
+        lines.append("  없음")
 
-    lines.append("Blocked phases:")
+    lines.append("차단된 단계:")
     if blocked:
-        lines.extend(f"  - {phase_label(phase)} ({dependency_label(phase)})" for phase in blocked)
+        for phase in blocked:
+            lines.extend(blocked_phase_lines(phase))
     else:
-        lines.append("  none")
+        lines.append("  없음")
 
     if replacements:
-        lines.append("Replacements:")
+        lines.append("대체:")
         for phase in replacements:
             replaced = ", ".join(str(value) for value in phase.get("replaces") or [])
-            lines.append(f"  - {phase.get('id')} replaces {replaced}")
+            lines.append(f"  - {phase.get('id')} 대체: {replaced}")
 
     if superseded:
-        lines.append("Superseded phases:")
+        lines.append("대체된 단계:")
         lines.extend(f"  - {phase_label(phase)}" for phase in superseded)
 
     return "\n".join(lines)
@@ -205,10 +353,10 @@ def summarize_state(root: Path, state_dir: Path) -> str:
     if not roadmap_path.exists():
         return "\n".join(
             [
-                f"Repo: {root}",
-                f"State: {state_dir.name}",
+                f"저장소: {root}",
+                f"상태 디렉터리: {state_dir.name}",
                 f"Git: {git_status(root)}",
-                "Roadmap: missing",
+                "로드맵: 없음",
             ]
         )
 
@@ -223,8 +371,8 @@ def main() -> int:
         print(summarize_state(root, state_dir))
         return 0
 
-    print(f"Repo: {root}")
-    print("State: none")
+    print(f"저장소: {root}")
+    print("상태 디렉터리: 없음")
     print(f"Git: {git_status(root)}")
     return 0
 

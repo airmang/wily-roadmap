@@ -9,7 +9,7 @@ metadata:
 
 Use `$wily-complete <phase-id>` to mark a verified phase as done.
 
-This is state-changing. It marks the phase `done` and marks the current session `verified`.
+This is state-changing. It marks the phase `done`, clears stale phase blocker metadata, and marks the current session `verified` when one exists.
 
 ## Command
 
@@ -24,4 +24,8 @@ python3 <plugin-root>/scripts/wily.py complete <phase-id>
 - Changed files and result are summarized in the current session.
 - The user approved completion when review is required.
 
-Complete does not implement the phase. It closes a verified execution attempt.
+Complete does not implement the phase or run broad verification by default. It closes a verified execution attempt.
+
+## Response Style
+
+- When announcing Wily plugin or skill usage, use Korean if the user is speaking Korean.

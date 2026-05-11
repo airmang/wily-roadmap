@@ -21,6 +21,7 @@ python3 <plugin-root>/scripts/wily.py watch --pane
 
 - $wily-watch opens a tmux pane by default. It uses a vertical split on the right.
 - Renders a vertical pipeline of the roadmap: header (`Wily Roadmap · vN  ⟳ Ns`), a progress bar (`done/total · pct%`), then one line per phase as `<status glyph> <id>  <title>`.
+- Long phase titles use middle ellipsis so the start and end stay visible within the pane width.
 - Phase lines include a `git log --graph`-style left rail: `│` for linear flow, `├──` for parallel branches, and `▼` for fan-in.
 - Dependency labels show `needs` for unmet dependencies and `deps` for fan-in dependency lists.
 - Falls back to a flat `Stage N` list when the dependency graph is too tangled for the rail, and to a one-line summary when the pane is very narrow.

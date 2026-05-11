@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import re
 import shutil
+import unicodedata
 from dataclasses import dataclass, field
 from io import StringIO
 from pathlib import Path
@@ -118,14 +119,66 @@ def _load(root: Path) -> _RoadmapView:
     )
 
 
+def _char_width(char: str) -> int:
+    if unicodedata.combining(char):
+        return 0
+    return 2 if unicodedata.east_asian_width(char) in {"F", "W"} else 1
+
+
+def _display_width(text: str) -> int:
+    return sum(_char_width(char) for char in text)
+
+
+def _take_start(text: str, limit: int) -> str:
+    if limit <= 0:
+        return ""
+    width = 0
+    chars = []
+    for char in text:
+        char_width = _char_width(char)
+        if width + char_width > limit:
+            break
+        chars.append(char)
+        width += char_width
+    return "".join(chars)
+
+
+def _take_end(text: str, limit: int) -> str:
+    if limit <= 0:
+        return ""
+    width = 0
+    chars = []
+    for char in reversed(text):
+        char_width = _char_width(char)
+        if width + char_width > limit:
+            break
+        chars.append(char)
+        width += char_width
+    return "".join(reversed(chars))
+
+
 def _truncate(text: str, limit: int) -> str:
     if limit <= 0:
         return ""
-    if len(text) <= limit:
+    if _display_width(text) <= limit:
         return text
     if limit == 1:
         return "…"
-    return f"{text[: limit - 1]}…"
+    return f"{_take_start(text, limit - 1)}…"
+
+
+def _fit_title(text: str, limit: int) -> str:
+    if limit <= 0:
+        return ""
+    if _display_width(text) <= limit:
+        return text
+    if limit == 1:
+        return "…"
+
+    available = limit - 1
+    prefix_len = available // 2
+    suffix_len = available - prefix_len
+    return f"{_take_start(text, prefix_len)}…{_take_end(text, suffix_len)}"
 
 
 def _phase_index(phases: list[Phase]) -> dict[str, Phase]:
@@ -203,9 +256,9 @@ def _crop_line(line: Line, width: int) -> Line:
     for text, style in line:
         if remaining <= 0:
             break
-        cropped_text = text[:remaining]
+        cropped_text = _take_start(text, remaining)
         cropped.append((cropped_text, style))
-        remaining -= len(cropped_text)
+        remaining -= _display_width(cropped_text)
     return cropped
 
 
@@ -294,9 +347,14 @@ def _node_line(
         marker = dependency_marker or "needs"
         dep_text = f"   {marker} " + " ".join(unmet)
 
-    title_width = max(0, width - len(prefix) - len(glyph) - len(id_text) - len(dep_text))
-    title = _truncate(title, title_width)
-    dep_width = max(0, width - len(prefix) - len(glyph) - len(id_text) - len(title))
+    fixed_width = _display_width(prefix) + _display_width(glyph) + _display_width(id_text)
+    available_width = max(0, width - fixed_width)
+    dep_budget = 0
+    if dep_text and available_width > 0:
+        dep_budget = min(_display_width(dep_text), max(0, available_width // 3))
+    title_width = max(0, available_width - dep_budget)
+    title = _fit_title(title, title_width)
+    dep_width = max(0, width - fixed_width - _display_width(title))
     dep_text = _truncate(dep_text, dep_width)
 
     line: Line = [

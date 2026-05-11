@@ -28,6 +28,9 @@ Use these labels in summaries when helpful:
 - If multiple ready phases can run independently, present them as parallel candidates and recommend one.
 - If the user changes the target after progress exists, use `replan_roadmap`, not a fresh phase-1 reset.
 - If remote or destructive work is implied, stop and ask for explicit approval.
+- Keep command routing fast. Do not invoke external planner adapters or run project verification while handling roadmap state commands.
+- Use planner adapters only after the user explicitly continues into phase implementation and the phase needs a detailed implementation plan.
+- Run verification only for implementation completion, and prefer the phase's focused verification over broad test suites.
 
 ## Init Output
 
