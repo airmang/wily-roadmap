@@ -38,6 +38,13 @@ python3 <plugin-root>/scripts/wily.py init "<goal>"
 - Use Korean for phase titles and generated `phase.md`, `planner.md`, `verification.md`, and `handoff.md` prose.
 - Keep YAML field names and status values in English for tool compatibility.
 
+## Mature Repository Contract
+
+- In a repository without `.wily/`, the helper creates baseline Wily state and reports existing project hints such as `README.md`, `scripts/`, `tests/`, `src/`, or common manifest files.
+- Existing project hints are informational only. The active agent still scans the repository, summarizes the current implementation, and asks for the intended final outcome before authoring roadmap phases.
+- In a partial `.wily/` state, the helper repairs required directories: `phases/`, `sessions/`, and `revisions/`.
+- In an existing `.wily/` state, preserve user-authored `project.md`, `roadmap.yaml`, `status.md`, and `decisions.md`.
+
 ## Boundaries
 
 - Do not implement project code during init.

@@ -461,10 +461,11 @@ def _graph_lines(phases: list[Phase], ready_ids: set[str], *, width: int, ascii_
     return lines
 
 
-def _summary_line(done_count: int, ascii_: bool) -> Line:
+def _summary_line(done_count: int, stage_count: int, ascii_: bool) -> Line:
     glyphs = GLYPHS_ASCII if ascii_ else GLYPHS
     rails = RAIL_ASCII if ascii_ else RAIL
-    return [(f" {glyphs['done']} {done_count} phases done {rails['fold']}", "green dim")]
+    stage_word = "stage" if stage_count == 1 else "stages"
+    return [(f" {glyphs['done']} {done_count} phases done across {stage_count} {stage_word} {rails['fold']}", "green dim")]
 
 
 def _collapse_leading_done(lines: list[Line], kinds: list[str], *, ascii_: bool) -> tuple[list[Line], list[str]]:
@@ -474,6 +475,7 @@ def _collapse_leading_done(lines: list[Line], kinds: list[str], *, ascii_: bool)
     if kinds[0] == "header":
         index = 0
         done_count = 0
+        stage_count = 0
         while index < len(kinds) and kinds[index] == "header":
             next_header = index + 1
             while next_header < len(kinds) and kinds[next_header] != "header":
@@ -484,27 +486,46 @@ def _collapse_leading_done(lines: list[Line], kinds: list[str], *, ascii_: bool)
                 break
 
             done_count += len(stage_kinds)
+            stage_count += 1
             index = next_header
 
         if done_count < 2:
             return lines, kinds
-        return [_summary_line(done_count, ascii_)] + lines[index:], ["done"] + kinds[index:]
+        return [_summary_line(done_count, stage_count, ascii_)] + lines[index:], ["done"] + kinds[index:]
 
     index = 0
     done_count = 0
+    stage_count = 0
+    previous_was_done = False
     while index < len(kinds):
         kind = kinds[index]
         if kind == "done":
             done_count += 1
+            if not previous_was_done:
+                stage_count += 1
+            previous_was_done = True
             index += 1
         elif kind in {"link", "merge"} and done_count > 0:
+            previous_was_done = False
             index += 1
         else:
             break
 
     if done_count < 2:
         return lines, kinds
-    return [_summary_line(done_count, ascii_)] + lines[index:], ["done"] + kinds[index:]
+    return [_summary_line(done_count, stage_count, ascii_)] + lines[index:], ["done"] + kinds[index:]
+
+
+def _preserve_unfinished_lines(lines: list[Line], kinds: list[str]) -> tuple[list[Line], list[str]]:
+    if not lines or not kinds or len(lines) != len(kinds) or kinds[0] != "done":
+        return lines, kinds
+    kept_lines = [lines[0]]
+    kept_kinds = [kinds[0]]
+    for line, kind in zip(lines[1:], kinds[1:]):
+        if kind == "node":
+            kept_lines.append(line)
+            kept_kinds.append(kind)
+    return kept_lines, kept_kinds
 
 
 def _one_line(view: _RoadmapView, root: Path, ascii_: bool) -> str:
@@ -535,6 +556,10 @@ def _body_lines(
     if max_rows is not None and len(lines) > max_rows:
         if max_rows == 1:
             return lines[:1]
+        if kinds and kinds[0] == "done":
+            preserved_lines, preserved_kinds = _preserve_unfinished_lines(lines, kinds)
+            if len(preserved_lines) <= max_rows or len(preserved_lines) < len(lines):
+                return preserved_lines
         if kinds and kinds[0] == "done":
             return [lines[0]] + lines[-(max_rows - 1) :]
         return lines[-max_rows:]

@@ -428,6 +428,7 @@ class CollapseTest(unittest.TestCase):
         c_lines, c_kinds = wily_watch_ui._collapse_leading_done(lines, kinds, ascii_=True)
         rendered = ["".join(span for span, _style in line).rstrip() for line in c_lines]
         self.assertTrue(rendered[0].lstrip().startswith("* 3 phases done"))
+        self.assertIn("3 stages", rendered[0])
         self.assertTrue(any("04-1" in line for line in rendered))
         self.assertTrue(any("04-2" in line for line in rendered))
         self.assertTrue(any(line.startswith(" o 05") for line in rendered))
@@ -448,6 +449,7 @@ class CollapseTest(unittest.TestCase):
         c_lines, _ = wily_watch_ui._collapse_leading_done(lines, kinds, ascii_=True)
         rendered = ["".join(span for span, _style in line).rstrip() for line in c_lines]
         self.assertTrue(rendered[0].lstrip().startswith("* 3 phases done"))
+        self.assertIn("3 stages", rendered[0])
         self.assertTrue(any(line.startswith(" Stage 4 ") for line in rendered))
 
 
@@ -503,9 +505,46 @@ class RenderWatchTest(unittest.TestCase):
             self._make(Path(tmp), self.FAN_YAML)
             out = wily_watch_ui.render_watch(Path(tmp), interval=2.0, rich=False, size=(70, 8))
             self.assertIn("3 phases done", out)
+            self.assertIn("3 stages", out)
             self.assertIn("04-1", out)
             self.assertIn("04-2", out)
             self.assertIn("05", out)
+
+    def test_short_render_preserves_unfinished_current_ready_and_blocked_phases(self) -> None:
+        body = "\n".join([
+            'roadmap_version: 4',
+            'phases:',
+            '  - id: "01"',
+            '    title: "Done one"',
+            '    status: "done"',
+            '    depends_on: []',
+            '  - id: "02"',
+            '    title: "Done two"',
+            '    status: "done"',
+            '    depends_on: ["01"]',
+            '  - id: "03"',
+            '    title: "Current phase"',
+            '    status: "in_progress"',
+            '    depends_on: ["02"]',
+            '  - id: "04"',
+            '    title: "Ready phase"',
+            '    status: "pending"',
+            '    depends_on: ["02"]',
+            '  - id: "05"',
+            '    title: "Blocked phase"',
+            '    status: "blocked"',
+            '    depends_on: ["04"]',
+        ])
+        with tempfile.TemporaryDirectory() as tmp:
+            self._make(Path(tmp), body)
+            out = wily_watch_ui.render_watch(Path(tmp), interval=2.0, rich=False, size=(70, 9))
+
+            self.assertIn("2 phases done", out)
+            self.assertIn("2 stages", out)
+            self.assertIn("Current phase", out)
+            self.assertIn("Ready phase", out)
+            self.assertIn("Blocked phase", out)
+            self.assertNotIn("Done one", out)
 
     def test_render_falls_back_to_flat_for_skip_dag(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

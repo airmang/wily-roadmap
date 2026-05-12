@@ -174,6 +174,13 @@ class WilyCommandSkillsTest(unittest.TestCase):
         )
         self.assertIn("Keep YAML field names and status values in English", text)
 
+    def test_wily_init_documents_mature_repo_contract(self) -> None:
+        text = self.skill_text("wily-init")
+        self.assertIn("## Mature Repository Contract", text)
+        self.assertIn("reports existing project hints", text)
+        self.assertIn("repairs required directories", text)
+        self.assertIn("preserve user-authored `project.md`, `roadmap.yaml`, `status.md`, and `decisions.md`", text)
+
     def test_wily_status_response_shows_phase_flow_verbatim(self) -> None:
         text = self.skill_text("wily-status")
         self.assertIn("Include the `Wily Roadmap` pane output verbatim in the user response.", text)
@@ -232,6 +239,9 @@ class WilyCommandSkillsTest(unittest.TestCase):
         self.assertIn("Use `--here` only when the user asks to run watch in the current pane.", text)
         self.assertIn("Uses Rich when installed, otherwise falls back to ASCII.", text)
         self.assertIn("Run `$wily-watch --install-ui` to install the optional Rich UI dependency.", text)
+        self.assertIn("leading fully completed stages collapse", text)
+        self.assertIn("phases done across M stages", text)
+        self.assertIn("unfinished, current, ready, and blocked phases stay visible", text)
 
 
 if __name__ == "__main__":

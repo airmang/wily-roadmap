@@ -150,6 +150,28 @@ class WilyCliTest(unittest.TestCase):
             self.assertTrue((project / ".wily" / "status.md").is_file())
             self.assertTrue((project / ".wily" / "decisions.md").is_file())
 
+    def test_init_in_mature_repo_reports_existing_project_hints_without_goal(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            (project / "README.md").write_text("# Existing Project\n", encoding="utf-8")
+            (project / "scripts").mkdir()
+            (project / "scripts" / "build.py").write_text("print('build')\n", encoding="utf-8")
+            (project / "tests").mkdir()
+            (project / "tests" / "test_existing.py").write_text("def test_existing(): pass\n", encoding="utf-8")
+
+            result = self.run_wily(project, "init")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Initialized .wily", result.stdout)
+            self.assertIn("Goal: needed", result.stdout)
+            self.assertIn("Existing project hints: README.md, scripts/, tests/", result.stdout)
+            self.assertIn("Next action: scan the repository, summarize current state, and ask for the intended final outcome.", result.stdout)
+            self.assertTrue((project / ".wily" / "roadmap.yaml").is_file())
+            self.assertIn(
+                "기존 프로젝트 단서: README.md, scripts/, tests/",
+                (project / ".wily" / "project.md").read_text(encoding="utf-8"),
+            )
+
     def test_init_defaults_authoring_files_to_korean(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp)

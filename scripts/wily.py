@@ -50,9 +50,25 @@ def write_baseline_roadmap(path: Path, goal: str | None) -> bool:
     )
 
 
+def mature_repo_hints(root: Path) -> list[str]:
+    candidates = [
+        ("README.md", root / "README.md"),
+        ("pyproject.toml", root / "pyproject.toml"),
+        ("package.json", root / "package.json"),
+        ("Cargo.toml", root / "Cargo.toml"),
+        ("go.mod", root / "go.mod"),
+        ("src/", root / "src"),
+        ("scripts/", root / "scripts"),
+        ("tests/", root / "tests"),
+        ("docs/", root / "docs"),
+    ]
+    return [label for label, path in candidates if path.exists()]
+
+
 def command_init(root: Path, args: list[str]) -> int:
     goal = " ".join(args).strip() or None
     state = state_dir(root)
+    hints = mature_repo_hints(root)
     for name in ("phases", "sessions", "revisions"):
         (state / name).mkdir(parents=True, exist_ok=True)
 
@@ -67,6 +83,7 @@ def command_init(root: Path, args: list[str]) -> int:
                 f"목표: {goal or '사용자 목표 필요'}",
                 "",
                 "현재 기준:",
+                f"- 기존 프로젝트 단서: {', '.join(hints) if hints else '없음'}",
                 "- phase 생성 전에 저장소 스캔이 필요합니다.",
                 "",
             ]
@@ -107,6 +124,8 @@ def command_init(root: Path, args: list[str]) -> int:
     else:
         print("Goal: needed")
         print("Next action: scan the repository, summarize current state, and ask for the intended final outcome.")
+    if hints:
+        print(f"Existing project hints: {', '.join(hints)}")
     if preserved_files:
         print(f"Preserved existing .wily files: {', '.join(sorted(preserved_files))}")
     return 0

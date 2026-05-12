@@ -25,7 +25,7 @@ python3 <plugin-root>/scripts/wily.py watch --pane
 - Phase lines include a `git log --graph`-style left rail: `│` for linear flow, `├──` for parallel branches, and `▼` for fan-in.
 - Dependency labels show `needs` for unmet dependencies and `deps` for fan-in dependency lists.
 - Falls back to a flat `Stage N` list when the dependency graph is too tangled for the rail, and to a one-line summary when the pane is very narrow.
-- When the pane is too short, the leading run of finished phases collapses to a single `● N phases done ▾` line; unfinished phases always stay visible.
+- When the pane is too short, leading fully completed stages collapse to a single `● N phases done across M stages ▾` line; unfinished, current, ready, and blocked phases stay visible ahead of decorative rails or stage headers.
 - Uses Rich when installed, otherwise falls back to ASCII. The ASCII fallback uses `*`/`>`/`~`/`x`/`o` glyphs and a `[####----]` progress bar.
 - Adds a footer with git dirty-file count, the repo name, and a `^C to stop` hint.
 - Opens a horizontal tmux split (`split-window -h`) when running inside tmux.
