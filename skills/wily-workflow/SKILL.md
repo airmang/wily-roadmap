@@ -59,9 +59,9 @@ The script handles repeatable filesystem work such as `init`, `status`, `next`, 
 
 `$wily-next` shows the recommended executable phase, including `pending` phases whose dependencies are `done`, plus dependencies, expected files, planner adapter, prompt, and verification. Ask before implementation.
 
-`$wily-status` renders Korean user-facing status output. Its phase overview is a compact ASCII `Phase 흐름:` section grouped by dependency stage; phases with multiple dependencies keep an explicit `의존:` annotation instead of being forced into a tree edge.
+`$wily-status` renders the current `Wily Roadmap` pane once. It uses the same visual roadmap renderer as `$wily-watch`, including the progress bar, stage lines, phase glyphs, dependency hints, and git footer. Do not replace it with the fallback prose or stage-summary output.
 
-`$wily-watch` renders the same roadmap status in a continuously refreshing read-only view for tmux panes. It must not create sessions, change roadmap state, or implement phases.
+`$wily-watch` renders the same `Wily Roadmap` pane in a continuously refreshing read-only view for tmux panes. It must not create sessions, change roadmap state, or implement phases.
 
 `$wily-start <id>` records an approved phase session and marks the phase `in_progress`. This command is session bookkeeping only: after reporting the session path, stop. Do not create plans, edit phase target files, run implementation verification, or continue into implementation in the same turn. A separate explicit user request after the start result is required before implementation.
 

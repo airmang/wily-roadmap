@@ -106,7 +106,7 @@ Use parent-style IDs for related work that can run after the same dependency:
 
 Use `parallel_group: "04"` in `roadmap.yaml` to make that relationship explicit. Do not rely on folder names alone for execution order.
 
-`$wily-status` groups phase summaries by dependency stage so parallel phases with the same rank stay near each other. For phases with more than one dependency, show the full `의존:` list explicitly instead of drawing a misleading single-parent tree.
+`$wily-status` shows the `Wily Roadmap` pane once. The pane keeps parallel phases near each other by stage, uses phase glyphs for status, and shows dependency hints such as `needs` instead of a prose-only summary. `$wily-watch` uses the same renderer continuously in a tmux pane.
 
 ## Replanning Style
 

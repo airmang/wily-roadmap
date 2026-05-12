@@ -132,6 +132,17 @@ class WilyCommandSkillsTest(unittest.TestCase):
         self.assertIn("Include the `Wily Roadmap` pane output verbatim in the user response.", text)
         self.assertIn("Do not replace the visual roadmap pane with a prose-only summary.", text)
 
+    def test_workflow_docs_describe_status_pane_not_old_phase_flow(self) -> None:
+        paths = [
+            ROOT / "skills" / "wily-workflow" / "SKILL.md",
+            ROOT / "skills" / "wily-workflow" / "references" / "planning-style.md",
+        ]
+        for path in paths:
+            with self.subTest(path=path):
+                text = path.read_text(encoding="utf-8")
+                self.assertIn("Wily Roadmap", text)
+                self.assertNotIn("Phase 흐름:", text)
+
     def test_wily_watch_opens_tmux_pane_by_default(self) -> None:
         text = self.skill_text("wily-watch")
         self.assertIn("python3 <plugin-root>/scripts/wily.py watch --pane", text)
