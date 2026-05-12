@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -11,6 +12,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "wily.py"
+LAUNCHER = ROOT / "wily"
+ZSH = shutil.which("zsh")
 sys.path.insert(0, str(ROOT / "scripts"))
 import wily  # noqa: E402
 import wily_state_summary  # noqa: E402
@@ -46,6 +49,24 @@ class WilyCliTest(unittest.TestCase):
             stderr=subprocess.PIPE,
             check=False,
             env={**os.environ, **env},
+        )
+
+    def run_launcher(
+        self,
+        project: Path,
+        *args: str,
+        env: dict[str, str] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        if ZSH is None:
+            self.skipTest("zsh is not installed")
+        return subprocess.run(
+            [ZSH, str(LAUNCHER), *args],
+            cwd=project,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            env={**os.environ, **(env or {})},
         )
 
     def create_state(self, project: Path) -> Path:
@@ -273,6 +294,75 @@ class WilyCliTest(unittest.TestCase):
             self.assertIn("Wily Roadmap", result.stdout)
             self.assertIn("no phases yet", result.stdout)
             self.assertNotIn("Rich UI is not installed", result.stdout)
+
+    def test_repo_launcher_status_delegates_from_current_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.create_state(project)
+            (project / ".wily" / "roadmap.yaml").write_text(
+                "\n".join(
+                    [
+                        'roadmap_version: 1',
+                        'goal: "Launcher smoke"',
+                        'phases:',
+                        '  - id: "01"',
+                        '    title: "Launcher phase"',
+                        '    path: "phases/01-launcher-phase"',
+                        '    status: "ready"',
+                        '    depends_on: []',
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = self.run_launcher(project, "status", env={"COLUMNS": "80", "LINES": "30"})
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Wily Roadmap", result.stdout)
+            self.assertIn("Launcher phase", result.stdout)
+            self.assertNotIn(str(ROOT / ".wily"), result.stdout)
+
+    def test_repo_launcher_watch_passes_arguments_to_wily_py(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.create_state(project)
+            (project / ".wily" / "roadmap.yaml").write_text(
+                "\n".join(
+                    [
+                        'roadmap_version: 1',
+                        'phases:',
+                        '  - id: "01"',
+                        '    title: "Watch through launcher"',
+                        '    path: "phases/01-watch-through-launcher"',
+                        '    status: "ready"',
+                        '    depends_on: []',
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = self.run_launcher(
+                project,
+                "watch",
+                "--once",
+                "--ui",
+                "ascii",
+                env={"COLUMNS": "80", "LINES": "30"},
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Wily Roadmap", result.stdout)
+            self.assertIn("Watch through launcher", result.stdout)
+            self.assertNotIn("Rich UI is not installed", result.stdout)
+
+    def test_repo_launcher_is_zsh_and_local_first(self) -> None:
+        text = LAUNCHER.read_text(encoding="utf-8")
+
+        self.assertTrue(text.startswith("#!/usr/bin/env zsh"))
+        self.assertIn('exec python3 "$repo_root/scripts/wily.py" "$@"', text)
+        for forbidden in ("git push", "gh pr", ".zshrc", ".zprofile", "curl ", "rm -rf"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, text)
 
     def test_watch_rich_ui_uses_thin_dashboard_not_panels(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

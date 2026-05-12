@@ -131,6 +131,15 @@ class WilyCommandSkillsTest(unittest.TestCase):
         self.assertIn("$wily-status", joined)
         self.assertIn("$wily-next", joined)
 
+    def test_readme_documents_repo_local_zsh_launcher(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+
+        self.assertIn("zsh", readme)
+        self.assertIn("./wily status", readme)
+        self.assertIn("./wily watch", readme)
+        self.assertIn("does not modify shell startup files", readme)
+        self.assertIn("local-first", readme)
+
     def test_skill_frontmatter_quotes_colon_values(self) -> None:
         for path in sorted((ROOT / "skills").glob("*/SKILL.md")):
             with self.subTest(path=path):
