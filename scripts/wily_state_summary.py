@@ -79,6 +79,10 @@ def parse_scalar(value: str) -> Any:
     return value
 
 
+def line_indent(line: str) -> int:
+    return len(line) - len(line.lstrip(" "))
+
+
 def parse_key_value(line: str) -> tuple[str, Any] | None:
     if ":" not in line:
         return None
@@ -86,46 +90,145 @@ def parse_key_value(line: str) -> tuple[str, Any] | None:
     return key.strip(), parse_scalar(value.strip())
 
 
+def split_key_value(line: str) -> tuple[str, str] | None:
+    if ":" not in line:
+        return None
+    key, value = line.split(":", 1)
+    return key.strip(), value.strip()
+
+
+def parse_block_list(lines: list[str], start: int, parent_indent: int) -> tuple[list[Any], int]:
+    values: list[Any] = []
+    index = start
+    while index < len(lines):
+        raw = lines[index].rstrip()
+        stripped = raw.strip()
+        if not stripped or stripped.startswith("#"):
+            index += 1
+            continue
+        if line_indent(raw) <= parent_indent or not stripped.startswith("- "):
+            break
+        values.append(parse_scalar(stripped[2:].strip()))
+        index += 1
+    return values, index
+
+
+def parse_block_scalar(lines: list[str], start: int, parent_indent: int, marker: str) -> tuple[str, int]:
+    block_lines: list[str] = []
+    index = start
+    while index < len(lines):
+        raw = lines[index].rstrip()
+        stripped = raw.strip()
+        if not stripped:
+            if block_lines:
+                block_lines.append("")
+            index += 1
+            continue
+        if line_indent(raw) <= parent_indent:
+            break
+        block_lines.append(raw)
+        index += 1
+
+    nonblank_indents = [line_indent(line) for line in block_lines if line.strip()]
+    content_indent = min(nonblank_indents) if nonblank_indents else parent_indent + 2
+    dedented = [line[content_indent:] if line.strip() else "" for line in block_lines]
+    if marker.startswith(">"):
+        value = folded_block_text(dedented)
+    else:
+        value = "\n".join(dedented)
+        if not marker.endswith("-"):
+            value += "\n"
+    if marker.endswith("-"):
+        value = value.rstrip("\n")
+    return value, index
+
+
+def folded_block_text(lines: list[str]) -> str:
+    paragraphs: list[str] = []
+    current: list[str] = []
+    for line in lines:
+        if line == "":
+            if current:
+                paragraphs.append(" ".join(current))
+                current = []
+            paragraphs.append("")
+            continue
+        current.append(line)
+    if current:
+        paragraphs.append(" ".join(current))
+    return "\n".join(paragraphs)
+
+
+def parse_roadmap_value(lines: list[str], value: str, index: int, indent: int) -> tuple[Any, int]:
+    if value in {"|", "|-", ">", ">-"}:
+        return parse_block_scalar(lines, index + 1, indent, value)
+    if value == "":
+        parsed_list, next_index = parse_block_list(lines, index + 1, indent)
+        if parsed_list or next_index != index + 1:
+            return parsed_list, next_index
+    return parse_scalar(value), index + 1
+
+
 def parse_roadmap(content: str) -> dict[str, Any]:
     data: dict[str, Any] = {}
     phases: list[Phase] = []
     current_phase: Phase | None = None
     in_phases = False
+    lines = content.splitlines()
+    index = 0
 
-    for raw_line in content.splitlines():
+    while index < len(lines):
+        raw_line = lines[index]
         line = raw_line.rstrip()
         if not line.strip():
+            index += 1
             continue
         if line.strip().startswith("#"):
+            index += 1
             continue
 
-        if line == "phases:":
+        indent = line_indent(line)
+        stripped = line.strip()
+
+        if indent == 0 and stripped == "phases:":
             in_phases = True
             data["phases"] = phases
+            index += 1
             continue
 
         if not in_phases:
-            parsed = parse_key_value(line)
+            parsed = split_key_value(line)
             if parsed:
-                key, value = parsed
+                key, raw_value = parsed
+                value, index = parse_roadmap_value(lines, raw_value, index, indent)
                 data[key] = value
+            else:
+                index += 1
             continue
 
-        stripped = line.strip()
-        if stripped.startswith("- "):
+        if indent == 2 and stripped.startswith("- "):
             current_phase = {}
             phases.append(current_phase)
-            parsed = parse_key_value(stripped[2:])
+            parsed = split_key_value(stripped[2:])
             if parsed:
-                key, value = parsed
+                key, raw_value = parsed
+                value, index = parse_roadmap_value(lines, raw_value, index, indent)
                 current_phase[key] = value
+            else:
+                index += 1
             continue
 
-        if current_phase is not None:
-            parsed = parse_key_value(stripped)
+        if current_phase is not None and indent >= 4:
+            parsed = split_key_value(stripped)
             if parsed:
-                key, value = parsed
+                key, raw_value = parsed
+                value, index = parse_roadmap_value(lines, raw_value, index, indent)
                 current_phase[key] = value
+            else:
+                index += 1
+            continue
+
+        index += 1
 
     data.setdefault("phases", phases)
     return data

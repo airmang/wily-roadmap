@@ -9,6 +9,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "wily_state_summary.py"
+sys.path.insert(0, str(ROOT / "scripts"))
+import wily_state_summary  # noqa: E402
 
 
 class WilyStateSummaryTest(unittest.TestCase):
@@ -279,6 +281,67 @@ class WilyStateSummaryTest(unittest.TestCase):
         self.assertIn("  - 04R 대체: 04", output)
         self.assertIn("대체된 단계:", output)
         self.assertIn("  - 04 Old integration plan", output)
+
+    def test_parse_roadmap_preserves_folded_block_scalar(self) -> None:
+        roadmap = wily_state_summary.parse_roadmap(
+            "\n".join(
+                [
+                    'roadmap_version: 1',
+                    'phases:',
+                    '  - id: "01"',
+                    '    title: "Block scalar phase"',
+                    '    status: "pending"',
+                    '    summary: >-',
+                    '      First sentence',
+                    '      continues here.',
+                ]
+            )
+        )
+
+        self.assertEqual(
+            roadmap["phases"][0]["summary"],
+            "First sentence continues here.",
+        )
+
+    def test_parse_roadmap_preserves_literal_block_scalar(self) -> None:
+        roadmap = wily_state_summary.parse_roadmap(
+            "\n".join(
+                [
+                    'roadmap_version: 1',
+                    'phases:',
+                    '  - id: "01"',
+                    '    title: "Literal scalar phase"',
+                    '    status: "pending"',
+                    '    summary: |',
+                    '      Line one',
+                    '      Line two',
+                ]
+            )
+        )
+
+        self.assertEqual(roadmap["phases"][0]["summary"], "Line one\nLine two\n")
+
+    def test_parse_roadmap_preserves_phase_block_list(self) -> None:
+        roadmap = wily_state_summary.parse_roadmap(
+            "\n".join(
+                [
+                    'roadmap_version: 1',
+                    'phases:',
+                    '  - id: "01"',
+                    '    title: "Foundation"',
+                    '    status: "done"',
+                    '    depends_on: []',
+                    '  - id: "02"',
+                    '    title: "Block list phase"',
+                    '    status: "pending"',
+                    '    depends_on:',
+                    '      - "01"',
+                ]
+            )
+        )
+
+        self.assertEqual(len(roadmap["phases"]), 2)
+        self.assertEqual(roadmap["phases"][1]["depends_on"], ["01"])
 
 
 if __name__ == "__main__":

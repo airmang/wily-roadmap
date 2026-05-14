@@ -991,6 +991,25 @@ class WilyCliTest(unittest.TestCase):
         self.assertEqual(parsed["phases"][0]["superseded_by"], ["04R"])
         self.assertEqual(parsed["phases"][1]["replaces"], ["04"])
 
+    def test_serialize_parse_preserves_multiline_phase_scalar(self) -> None:
+        roadmap = {
+            "roadmap_version": 1,
+            "phases": [
+                {
+                    "id": "01",
+                    "title": "Multiline phase",
+                    "status": "pending",
+                    "summary": "Line one\nLine two\n",
+                    "depends_on": [],
+                },
+            ],
+        }
+
+        serialized = wily.serialize_roadmap(roadmap)
+        parsed = wily_state_summary.parse_roadmap(serialized)
+
+        self.assertEqual(parsed["phases"][0]["summary"], "Line one\nLine two\n")
+
     def test_replan_records_revision_and_increments_version(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp)
@@ -1047,6 +1066,55 @@ class WilyCliTest(unittest.TestCase):
             roadmap = (project / ".wily" / "roadmap.yaml").read_text(encoding="utf-8")
             self.assertIn('status: "in_progress"', roadmap)
             self.assertIn('current_session: "sessions/', roadmap)
+
+    def test_start_preserves_block_yaml_roadmap_values(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.create_state(project)
+            phase_dir = project / ".wily" / "phases" / "02-block-yaml"
+            phase_dir.mkdir(parents=True)
+            (phase_dir / "phase.md").write_text("# Phase\n\nBlock YAML phase\n", encoding="utf-8")
+            (phase_dir / "prompt.md").write_text("Run this phase\n", encoding="utf-8")
+            (phase_dir / "verification.md").write_text("python3 -m unittest\n", encoding="utf-8")
+            (phase_dir / "handoff.md").write_text("Resume from here\n", encoding="utf-8")
+            (phase_dir / "planner.md").write_text("# Planner\n", encoding="utf-8")
+            (phase_dir / "plan.md").write_text("", encoding="utf-8")
+            (project / ".wily" / "roadmap.yaml").write_text(
+                "\n".join(
+                    [
+                        'roadmap_version: 1',
+                        'phases:',
+                        '  - id: "01"',
+                        '    title: "Foundation"',
+                        '    path: "phases/01-foundation"',
+                        '    status: "done"',
+                        '    depends_on: []',
+                        '  - id: "02"',
+                        '    title: "Block YAML"',
+                        '    path: "phases/02-block-yaml"',
+                        '    status: "pending"',
+                        '    depends_on:',
+                        '      - "01"',
+                        '    summary: >-',
+                        '      Preserve this summary',
+                        '      across start.',
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = self.run_wily(project, "start", "02")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            parsed = wily_state_summary.parse_roadmap(
+                (project / ".wily" / "roadmap.yaml").read_text(encoding="utf-8")
+            )
+            self.assertEqual(len(parsed["phases"]), 2)
+            phase = parsed["phases"][1]
+            self.assertEqual(phase["depends_on"], ["01"])
+            self.assertEqual(phase["summary"], "Preserve this summary across start.")
+            self.assertEqual(phase["status"], "in_progress")
+            self.assertIn("current_session", phase)
 
     def test_start_writes_external_planner_context_bundle(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

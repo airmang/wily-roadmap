@@ -1,4 +1,4 @@
-roadmap_version: 11
+roadmap_version: 12
 goal: "wily roadmap 플러그인을 다듬는 중이야."
 phases:
   - id: "01"
@@ -246,3 +246,16 @@ phases:
     preferred: "manual"
     autonomy_mode: "goal_scoped"
     current_session: "sessions/2026-05-14-231915-phase-12-1-attempt-1"
+
+  - id: "13-1"
+    title: "roadmap YAML 블록 문법 데이터 손실 방지"
+    path: "phases/13-1-roadmap-yaml-block-data-loss"
+    status: "done"
+    depends_on: ["12-1"]
+    parallel_group: "13"
+    owner: "codex"
+    task: "fix parser and serializer for block scalars/lists"
+    runner: ""
+    preferred: "manual"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-15-004312-phase-13-1-attempt-1"

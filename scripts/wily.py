@@ -215,12 +215,22 @@ def serialize_scalar(value: Any) -> str:
     return quote(str(value))
 
 
+def serialize_mapping_entry(prefix: str, key: str, value: Any) -> list[str]:
+    if isinstance(value, str) and "\n" in value:
+        marker = "|" if value.endswith("\n") else "|-"
+        body_prefix = " " * (len(prefix) + 2)
+        lines = [f"{prefix}{key}: {marker}"]
+        lines.extend(f"{body_prefix}{line}" if line else body_prefix.rstrip() for line in value.splitlines())
+        return lines
+    return [f"{prefix}{key}: {serialize_scalar(value)}"]
+
+
 def serialize_roadmap(roadmap: dict[str, Any]) -> str:
     lines: list[str] = []
     for key, value in roadmap.items():
         if key == "phases":
             continue
-        lines.append(f"{key}: {serialize_scalar(value)}")
+        lines.extend(serialize_mapping_entry("", key, value))
 
     phases = roadmap.get("phases") or []
     if not phases:
@@ -232,7 +242,7 @@ def serialize_roadmap(roadmap: dict[str, Any]) -> str:
         first = True
         for key, value in phase.items():
             prefix = "  - " if first else "    "
-            lines.append(f"{prefix}{key}: {serialize_scalar(value)}")
+            lines.extend(serialize_mapping_entry(prefix, key, value))
             first = False
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
