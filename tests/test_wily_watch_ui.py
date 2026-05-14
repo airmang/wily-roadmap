@@ -126,6 +126,24 @@ class ChromeTest(unittest.TestCase):
             self.assertIn(Path(tmp).name, text)
             self.assertIn("^C to stop", text)
 
+    def test_footer_interactive_shows_toggle_refresh_and_quit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            line = wily_watch_ui._footer_line(Path(tmp), width=80, ascii_=True, interactive=True)
+            text = "".join(span for span, _style in line)
+            self.assertIn("click/d expand done", text)
+            self.assertIn("r refresh", text)
+            self.assertIn("q quit", text)
+
+            expanded = wily_watch_ui._footer_line(
+                Path(tmp),
+                width=80,
+                ascii_=True,
+                interactive=True,
+                expand_done=True,
+            )
+            expanded_text = "".join(span for span, _style in expanded)
+            self.assertIn("click/d collapse done", expanded_text)
+
     def test_header_tiny_width_does_not_exceed_width(self) -> None:
         line = wily_watch_ui._header_line(version=2, interval=2.0, width=12, ascii_=True)
         text = "".join(span for span, _style in line)
@@ -509,6 +527,23 @@ class RenderWatchTest(unittest.TestCase):
             self.assertIn("04-1", out)
             self.assertIn("04-2", out)
             self.assertIn("05", out)
+
+    def test_render_expands_done_stages_when_requested(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self._make(Path(tmp), self.FAN_YAML)
+            out = wily_watch_ui.render_watch(
+                Path(tmp),
+                interval=2.0,
+                rich=False,
+                size=(70, 8),
+                expand_done=True,
+                interactive=True,
+            )
+            self.assertNotIn("3 phases done", out)
+            self.assertIn("Settle Korean response-style update", out)
+            self.assertIn("Harden command skill consistency", out)
+            self.assertIn("Korean stage-based DAG status output", out)
+            self.assertIn("click/d collapse done", out)
 
     def test_short_render_preserves_unfinished_current_ready_and_blocked_phases(self) -> None:
         body = "\n".join([

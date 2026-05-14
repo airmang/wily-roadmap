@@ -24,6 +24,44 @@ def strip_ansi(value: str) -> str:
     return ANSI_RE.sub("", value)
 
 
+class WatchInputTest(unittest.TestCase):
+    def test_keyboard_actions(self) -> None:
+        self.assertEqual(wily.watch_action_from_input("d"), "toggle_done")
+        self.assertEqual(wily.watch_action_from_input("r"), "refresh")
+        self.assertEqual(wily.watch_action_from_input("q"), "quit")
+        self.assertEqual(wily.watch_action_from_input("\x03"), "quit")
+        self.assertIsNone(wily.watch_action_from_input("x"))
+
+    def test_sgr_mouse_press_on_body_toggles_done(self) -> None:
+        self.assertEqual(
+            wily.watch_action_from_input("\x1b[<0;12;4M", summary_row=4, body_rows=1),
+            "toggle_done",
+        )
+        self.assertEqual(
+            wily.watch_action_from_input("\x1b[<0;12;6M", summary_row=4, body_rows=3),
+            "toggle_done",
+        )
+
+    def test_sgr_mouse_release_or_outside_body_is_ignored(self) -> None:
+        self.assertIsNone(wily.watch_action_from_input("\x1b[<0;12;4m", summary_row=4, body_rows=1))
+        self.assertIsNone(wily.watch_action_from_input("\x1b[<0;12;8M", summary_row=4, body_rows=2))
+
+    def test_sgr_mouse_press_anywhere_toggles_when_done_is_expanded(self) -> None:
+        self.assertEqual(
+            wily.watch_action_from_input("\x1b[<0;12;1M", summary_row=4, body_rows=2, expand_done=True),
+            "toggle_done",
+        )
+        self.assertEqual(
+            wily.watch_action_from_input("\x1b[<0;12;22M", summary_row=4, body_rows=2, expand_done=True),
+            "toggle_done",
+        )
+
+    def test_parse_sgr_mouse_event(self) -> None:
+        self.assertEqual(wily.parse_watch_mouse_event("\x1b[<0;9;12M"), (9, 12, True))
+        self.assertEqual(wily.parse_watch_mouse_event("\x1b[<0;9;12m"), (9, 12, False))
+        self.assertIsNone(wily.parse_watch_mouse_event("not mouse"))
+
+
 class WilyCliTest(unittest.TestCase):
     def run_wily(self, project: Path, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(

@@ -6,10 +6,13 @@ from __future__ import annotations
 import json
 import os
 import re
+import select
 import shlex
 import subprocess
 import sys
+import termios
 import time
+import tty
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -20,6 +23,10 @@ import wily_watch_ui
 
 Phase = dict[str, Any]
 Issue = dict[str, Any]
+WATCH_MOUSE_RE = re.compile(r"\x1b\[<(\d+);(\d+);(\d+)([Mm])")
+WATCH_BODY_START_ROW = 4
+WATCH_MOUSE_ENABLE = "\033[?1000h\033[?1006h"
+WATCH_MOUSE_DISABLE = "\033[?1006l\033[?1000l"
 
 
 def state_dir(root: Path) -> Path:
@@ -783,10 +790,24 @@ def command_install_watch_ui(args: list[str]) -> int:
     return 0
 
 
-def watch_output(root: Path, interval: float = 2.0, ui: str = "auto") -> str:
+def watch_output(
+    root: Path,
+    interval: float = 2.0,
+    ui: str = "auto",
+    *,
+    expand_done: bool = False,
+    interactive: bool = False,
+    show_rich_hint: bool = True,
+) -> str:
     use_rich = ui != "ascii" and rich_available()
-    body = wily_watch_ui.render_watch(root, interval=interval, rich=use_rich)
-    if not use_rich and ui in {"auto", "rich"} and not rich_available():
+    body = wily_watch_ui.render_watch(
+        root,
+        interval=interval,
+        rich=use_rich,
+        expand_done=expand_done,
+        interactive=interactive,
+    )
+    if show_rich_hint and not use_rich and ui in {"auto", "rich"} and not rich_available():
         return "\n".join(
             [
                 "Rich UI is not installed.",
@@ -799,24 +820,65 @@ def watch_output(root: Path, interval: float = 2.0, ui: str = "auto") -> str:
     return body
 
 
+def parse_watch_mouse_event(data: str) -> tuple[int, int, bool] | None:
+    match = WATCH_MOUSE_RE.search(data)
+    if not match:
+        return None
+    _button, x, y, kind = match.groups()
+    return int(x), int(y), kind == "M"
+
+
+def watch_action_from_input(
+    data: str,
+    *,
+    summary_row: int = WATCH_BODY_START_ROW,
+    body_rows: int = 1,
+    expand_done: bool = False,
+) -> str | None:
+    if not data:
+        return None
+    if "\x03" in data or "q" in data:
+        return "quit"
+    if "r" in data:
+        return "refresh"
+    if "d" in data:
+        return "toggle_done"
+
+    mouse = parse_watch_mouse_event(data)
+    if not mouse:
+        return None
+    _x, y, pressed = mouse
+    if not pressed:
+        return None
+    if expand_done:
+        return "toggle_done"
+    end_row = summary_row + max(0, body_rows)
+    if summary_row <= y < end_row:
+        return "toggle_done"
+    return None
+
+
 def tmux_watch_command(root: Path, args: list[str]) -> list[str]:
     script = Path(__file__).resolve()
     interval = watch_interval(args)
-    inner = " ".join(
-        [
-            "cd",
-            shlex.quote(str(root)),
-            "&&",
-            shlex.quote(sys.executable),
-            shlex.quote(str(script)),
-            "watch",
-            "--here",
-            "--ui",
-            shlex.quote(watch_ui(args)),
-            "--interval",
-            shlex.quote(f"{interval:.1f}"),
-        ]
-    )
+    parts = [
+        "cd",
+        shlex.quote(str(root)),
+        "&&",
+        shlex.quote(sys.executable),
+        shlex.quote(str(script)),
+        "watch",
+        "--here",
+        "--ui",
+        shlex.quote(watch_ui(args)),
+        "--interval",
+        shlex.quote(f"{interval:.1f}"),
+    ]
+    if "--show-done" in args:
+        parts.append("--show-done")
+    if "--no-interactive" in args:
+        parts.append("--no-interactive")
+    inner = " ".join(parts)
     return ["tmux", "split-window", "-h", inner]
 
 
@@ -843,24 +905,82 @@ def command_watch_pane(root: Path, args: list[str]) -> int:
     return result.returncode
 
 
+def watch_here_noninteractive(root: Path, interval: float, ui: str, *, expand_done: bool) -> int:
+    try:
+        while True:
+            print("\033[2J\033[H", end="")
+            print(watch_output(root, interval, ui, expand_done=expand_done), flush=True)
+            time.sleep(interval)
+    except KeyboardInterrupt:
+        return 0
+
+
+def read_watch_input(timeout: float) -> str:
+    ready, _write, _error = select.select([sys.stdin], [], [], timeout)
+    if not ready:
+        return ""
+    try:
+        return os.read(sys.stdin.fileno(), 64).decode(errors="ignore")
+    except OSError:
+        return ""
+
+
+def watch_here_interactive(root: Path, interval: float, ui: str, *, expand_done: bool) -> int:
+    fd = sys.stdin.fileno()
+    previous = termios.tcgetattr(fd)
+    current_expand_done = expand_done
+    body_rows = 1
+    try:
+        tty.setcbreak(fd)
+        sys.stdout.write(WATCH_MOUSE_ENABLE)
+        sys.stdout.flush()
+        while True:
+            output = watch_output(
+                root,
+                interval,
+                ui,
+                expand_done=current_expand_done,
+                interactive=True,
+                show_rich_hint=False,
+            )
+            body_rows = max(1, len(output.splitlines()) - wily_watch_ui.CHROME_ROWS)
+            print("\033[2J\033[H", end="")
+            print(output, flush=True)
+            action = watch_action_from_input(
+                read_watch_input(interval),
+                body_rows=body_rows,
+                expand_done=current_expand_done,
+            )
+            if action == "quit":
+                return 0
+            if action == "toggle_done":
+                current_expand_done = not current_expand_done
+            if action in {"toggle_done", "refresh"}:
+                continue
+    except KeyboardInterrupt:
+        return 0
+    finally:
+        sys.stdout.write(WATCH_MOUSE_DISABLE)
+        sys.stdout.flush()
+        termios.tcsetattr(fd, termios.TCSADRAIN, previous)
+
+
 def command_watch(root: Path, args: list[str]) -> int:
     if "--install-ui" in args:
         return command_install_watch_ui(args)
     interval = watch_interval(args)
     ui = watch_ui(args)
+    expand_done = "--show-done" in args
     if "--once" in args:
-        print(watch_output(root, interval, ui))
+        print(watch_output(root, interval, ui, expand_done=expand_done))
         return 0
     if "--here" not in args:
         return command_watch_pane(root, args)
 
-    try:
-        while True:
-            print("\033[2J\033[H", end="")
-            print(watch_output(root, interval, ui), flush=True)
-            time.sleep(interval)
-    except KeyboardInterrupt:
-        return 0
+    can_interact = "--no-interactive" not in args and sys.stdin.isatty() and sys.stdout.isatty()
+    if can_interact:
+        return watch_here_interactive(root, interval, ui, expand_done=expand_done)
+    return watch_here_noninteractive(root, interval, ui, expand_done=expand_done)
 
 
 def usage() -> str:

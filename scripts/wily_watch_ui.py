@@ -316,9 +316,13 @@ def _git_state(root: Path, ascii_: bool) -> str:
     return raw
 
 
-def _footer_line(root: Path, *, width: int, ascii_: bool) -> Line:
+def _footer_line(root: Path, *, width: int, ascii_: bool, interactive: bool = False, expand_done: bool = False) -> Line:
     sep = " - " if ascii_ else " · "
-    text = f" git: {_git_state(root, ascii_)}{sep}{root.name}{sep}^C to stop"
+    if interactive:
+        toggle = "click/d collapse done" if expand_done else "click/d expand done"
+        text = f" {toggle}{sep}r refresh{sep}q quit{sep}git: {_git_state(root, ascii_)}{sep}{root.name}"
+    else:
+        text = f" git: {_git_state(root, ascii_)}{sep}{root.name}{sep}^C to stop"
     return _crop_line([(text, "dim")], width)
 
 
@@ -541,6 +545,7 @@ def _body_lines(
     width: int,
     max_rows: int | None,
     ascii_: bool,
+    expand_done: bool = False,
 ) -> list[Line]:
     if not view.phases:
         return [[(" (no phases yet)", "dim")]]
@@ -550,10 +555,10 @@ def _body_lines(
     else:
         lines, kinds = _flat_lines2(view.phases, view.ready_ids, width=width, ascii_=ascii_)
 
-    if max_rows is not None and len(lines) > max_rows:
+    if not expand_done and max_rows is not None and len(lines) > max_rows:
         lines, kinds = _collapse_leading_done(lines, kinds, ascii_=ascii_)
 
-    if max_rows is not None and len(lines) > max_rows:
+    if not expand_done and max_rows is not None and len(lines) > max_rows:
         if max_rows == 1:
             return lines[:1]
         if kinds and kinds[0] == "done":
@@ -599,6 +604,8 @@ def render_watch(
     interval: float,
     rich: bool,
     size: tuple[int, int] | None = None,
+    expand_done: bool = False,
+    interactive: bool = False,
 ) -> str:
     cols, rows = size if size is not None else shutil.get_terminal_size((80, 24))
     ascii_ = not rich
@@ -612,18 +619,18 @@ def render_watch(
             _crop_line([(_one_line(view, root, ascii_), "bold")], cols),
             _crop_line([(" run $wily-init to start", "dim")], cols),
             _rule_line(cols, ascii_),
-            _footer_line(root, width=cols, ascii_=ascii_),
+            _footer_line(root, width=cols, ascii_=ascii_, interactive=interactive, expand_done=expand_done),
         ]
         return _emit(lines, rich=rich, width=cols)
 
     max_rows = max(1, rows - CHROME_ROWS) if rows else None
-    body = _body_lines(view, width=cols, max_rows=max_rows, ascii_=ascii_)
+    body = _body_lines(view, width=cols, max_rows=max_rows, ascii_=ascii_, expand_done=expand_done)
     lines = [
         _header_line(version=view.version, interval=interval, width=cols, ascii_=ascii_),
         _progress_line(done=view.done, total=view.total, width=cols, ascii_=ascii_),
         _rule_line(cols, ascii_),
         *body,
         _rule_line(cols, ascii_),
-        _footer_line(root, width=cols, ascii_=ascii_),
+        _footer_line(root, width=cols, ascii_=ascii_, interactive=interactive, expand_done=expand_done),
     ]
     return _emit(lines, rich=rich, width=cols)
