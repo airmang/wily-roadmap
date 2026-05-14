@@ -1,55 +1,30 @@
-# Wily Roadmap
+# Wily Roadmap Marketplace
 
-Wily is a local-first roadmap workflow plugin for agentic coding sessions.
+Git-backed Codex plugin marketplace for `wily-roadmap`.
 
-## Install and Update
-
-For first-time sharing, Wily can be sent as a zip bootstrap package. A zip install works locally, but it cannot pull future updates in place because it has no git metadata.
-
-After installing a bootstrap zip, migrate once to a managed GitHub install:
+## Install
 
 ```bash
-./wily update --migrate
+codex plugin marketplace add airmang/wily-roadmap
 ```
 
-The migration creates a sibling `wily-roadmap-managed` directory and leaves the original zip directory unchanged.
+Then install or enable `wily-roadmap` from the `Wily Castle` marketplace in Codex.
 
-For an install that is already git-managed, check for updates with:
+## Update
 
 ```bash
-./wily update --check
+codex plugin marketplace upgrade wily-castle
 ```
 
-Apply an available update only when the working tree is clean:
+## Layout
 
-```bash
-./wily update --yes
+```text
+.agents/plugins/marketplace.json
+plugins/wily-roadmap/
 ```
 
-Updates are explicit and approval-first. Wily does not check for updates in the background, does not patch zip installs in place, and only applies fast-forward git updates.
+The Codex plugin manifest lives at:
 
-## Repo-Local Zsh Command
-
-From the repository root, run Wily with the checked-in zsh launcher:
-
-```bash
-./wily status
-./wily next
-./wily watch
-./wily watch --once --ui ascii
-./wily update --check
+```text
+plugins/wily-roadmap/.codex-plugin/plugin.json
 ```
-
-`./wily watch` is the live roadmap dashboard. Inside tmux it opens a right-side split pane and targets the current `TMUX_PANE` when tmux exposes it. Outside tmux, including when working beside Codex app, run it in a side terminal and it will use that terminal directly.
-
-For the styled Rich dashboard, install the optional watch UI dependency once:
-
-```bash
-./wily watch --install-ui
-```
-
-The launcher delegates to `scripts/wily.py` and keeps the current working directory as the target repository. It does not modify shell startup files, install aliases, touch PATH, contact remotes, or perform destructive actions by itself.
-
-Use `python3 scripts/wily.py <command>` when a Python-only invocation is preferred.
-
-Wily behavior stays local-first: remote or destructive work requires explicit user approval.

@@ -1,17 +1,16 @@
-# Wily Plugin Agent Guide
+# Wily Roadmap Marketplace Agent Guide
 
 ## Scope
 
-This file governs `/Users/wilycastle/Code/projects/wily-roadmap`.
+This file governs the marketplace repository root.
 
 ## Project Intent
 
-This project contains Wily's personal Codex plugin. Keep it focused on reusable Codex workflow behavior, especially skills, references, scripts, and future plugin integrations.
+This repository publishes Wily Roadmap as a Codex plugin marketplace. Keep marketplace metadata at the repository root and keep the plugin implementation under `plugins/wily-roadmap/`.
 
 ## Rules
 
+- Keep `.agents/plugins/marketplace.json` present and pointing to `./plugins/wily-roadmap`.
+- Keep the plugin manifest at `plugins/wily-roadmap/.codex-plugin/plugin.json`.
 - Keep plugin behavior local-first and approval-first for remote actions.
-- Keep skill bodies concise; move detailed policy into `references/`.
-- Put deterministic repeated logic in `scripts/`.
 - Do not add hooks, MCP servers, or app integrations until the user explicitly asks for that layer.
-- Preserve compatibility with Codex plugin discovery: keep `.codex-plugin/plugin.json` and `skills/`.

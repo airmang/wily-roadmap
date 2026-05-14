@@ -17,7 +17,7 @@
       },
       "category": "productivity",
       "homepage": "https://github.com/airmang/wily-roadmap",
-      "source": "./",
+      "source": "./plugins/wily-roadmap",
       "tags": [
         "wily",
         "roadmap",

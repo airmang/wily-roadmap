@@ -1,0 +1,20 @@
+{
+  "name": "wily-castle",
+  "interface": {
+    "displayName": "Wily Castle"
+  },
+  "plugins": [
+    {
+      "name": "wily-roadmap",
+      "source": {
+        "source": "local",
+        "path": "./plugins/wily-roadmap"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
