@@ -15,6 +15,13 @@ Commit these files so every collaborator sees the same roadmap:
 
 These files are project coordination state. They record phase definitions, dependencies, replans, and durable decisions.
 
+For visible collaboration claims, store compact phase assignment metadata in `.wily/roadmap.yaml`:
+
+- `owner`, `assignee`, or `assigned_to` records who currently owns the phase.
+- `task` or `assignment` records the specific task being handled.
+
+`$wily-watch` renders those fields as compact `@name` and `task ...` details so collaborators can see who is doing what without reading local session logs.
+
 ## Local-Only Execution Traces
 
 Keep these local by default:

@@ -641,6 +641,47 @@ class RenderWatchTest(unittest.TestCase):
             self.assertIn("Runner phase", out)
             self.assertIn("runner needs_review", out)
 
+    def test_render_shows_phase_owner_and_task_metadata(self) -> None:
+        body = "\n".join([
+            'roadmap_version: 4',
+            'phases:',
+            '  - id: "01"',
+            '    title: "Collaboration phase"',
+            '    status: "in_progress"',
+            '    depends_on: []',
+            '    owner: "wily"',
+            '    task: "review watch roadmap assignments"',
+        ])
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self._make(project, body)
+
+            out = wily_watch_ui.render_watch(project, interval=2.0, rich=False, size=(100, 12))
+
+            self.assertIn("Collaboration phase", out)
+            self.assertIn("@wily", out)
+            self.assertIn("task review watch roadmap assignments", out)
+
+    def test_render_accepts_assignee_alias_for_phase_owner(self) -> None:
+        body = "\n".join([
+            'roadmap_version: 4',
+            'phases:',
+            '  - id: "01"',
+            '    title: "Alias phase"',
+            '    status: "pending"',
+            '    depends_on: []',
+            '    assigned_to: "claude"',
+            '    assignment: "draft release notes"',
+        ])
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self._make(project, body)
+
+            out = wily_watch_ui.render_watch(project, interval=2.0, rich=False, size=(100, 12))
+
+            self.assertIn("@claude", out)
+            self.assertIn("task draft release notes", out)
+
     def test_render_falls_back_to_flat_for_skip_dag(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             self._make(Path(tmp), "\n".join([

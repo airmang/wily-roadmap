@@ -998,7 +998,12 @@ def tmux_watch_command(root: Path, args: list[str]) -> list[str]:
     if "--no-interactive" in args:
         parts.append("--no-interactive")
     inner = " ".join(parts)
-    return ["tmux", "split-window", "-h", inner]
+    command = ["tmux", "split-window"]
+    current_pane = os.environ.get("TMUX_PANE", "").strip()
+    if current_pane:
+        command.extend(["-t", current_pane])
+    command.extend(["-h", inner])
+    return command
 
 
 def format_shell_command(command: list[str]) -> str:

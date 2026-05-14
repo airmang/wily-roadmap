@@ -40,7 +40,7 @@ From the repository root, run Wily with the checked-in zsh launcher:
 ./wily update --check
 ```
 
-`./wily watch` is the live roadmap dashboard. Inside tmux it opens a right-side split pane. Outside tmux, including when working beside Codex app, run it in a side terminal and it will use that terminal directly.
+`./wily watch` is the live roadmap dashboard. Inside tmux it opens a right-side split pane and targets the current `TMUX_PANE` when tmux exposes it. Outside tmux, including when working beside Codex app, run it in a side terminal and it will use that terminal directly.
 
 For the styled Rich dashboard, install the optional watch UI dependency once:
 

@@ -755,6 +755,21 @@ class WilyCliTest(unittest.TestCase):
             self.assertIn("tmux split-window -h", result.stdout)
             self.assertIn("watch --here", result.stdout)
 
+    def test_watch_pane_mode_targets_current_tmux_pane_when_available(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+
+            result = self.run_wily_with_env(
+                project,
+                "watch",
+                "--dry-run-pane",
+                env={"TMUX": "/tmp/tmux", "TMUX_PANE": "%42"},
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("tmux split-window -t %42 -h", result.stdout)
+            self.assertIn("watch --here", result.stdout)
+
     def test_next_prints_ready_phase_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp)

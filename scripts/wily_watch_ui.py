@@ -281,6 +281,28 @@ def _runner_status_detail(root: Path | None, phase: Phase) -> str:
     return "runner active"
 
 
+def _first_phase_text(phase: Phase, keys: tuple[str, ...]) -> str:
+    for key in keys:
+        value = phase.get(key)
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text:
+            return text
+    return ""
+
+
+def _phase_assignment_detail(phase: Phase) -> str:
+    owner = _first_phase_text(phase, ("owner", "assignee", "assigned_to"))
+    task = _first_phase_text(phase, ("task", "assignment"))
+    parts: list[str] = []
+    if owner:
+        parts.append(owner if owner.startswith("@") else f"@{owner}")
+    if task:
+        parts.append(f"task {task}")
+    return "   ".join(parts)
+
+
 def _crop_line(line: Line, width: int) -> Line:
     remaining = max(0, width)
     cropped: Line = []
@@ -386,6 +408,9 @@ def _node_line(
     if unmet:
         marker = dependency_marker or "needs"
         detail_parts.append(f"{marker} " + " ".join(unmet))
+    assignment_detail = _phase_assignment_detail(phase)
+    if assignment_detail:
+        detail_parts.append(assignment_detail)
     if runner_detail:
         detail_parts.append(runner_detail)
     detail_text = f"   {'   '.join(detail_parts)}" if detail_parts else ""
