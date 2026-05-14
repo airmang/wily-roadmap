@@ -507,6 +507,42 @@ class RenderWatchTest(unittest.TestCase):
     def _make(self, project: Path, body: str) -> None:
         _write_roadmap(project, body)
 
+    def _long_unfinished_roadmap(self) -> str:
+        lines = [
+            'roadmap_version: 5',
+            'phases:',
+            '  - id: "s00-done"',
+            '    title: "Completed foundation"',
+            '    status: "done"',
+            '    depends_on: []',
+        ]
+        stage2_ids = ["s01-api", "s01-ui", "s01-tests"]
+        for pid in stage2_ids:
+            lines.extend([
+                f'  - id: "{pid}"',
+                f'    title: "Frontier work {pid}"',
+                '    status: "pending"',
+                '    depends_on: ["s00-done"]',
+            ])
+        stage3_ids = [f"s02-future-{num}" for num in range(1, 10)]
+        for pid in stage3_ids:
+            deps = ", ".join(f'"{dep}"' for dep in stage2_ids)
+            lines.extend([
+                f'  - id: "{pid}"',
+                f'    title: "Future middle work {pid}"',
+                '    status: "pending"',
+                f'    depends_on: [{deps}]',
+            ])
+        deps = ", ".join(f'"{dep}"' for dep in stage3_ids)
+        for pid in ("s03-tail-a", "s03-tail-b"):
+            lines.extend([
+                f'  - id: "{pid}"',
+                f'    title: "Late tail work {pid}"',
+                '    status: "pending"',
+                f'    depends_on: [{deps}]',
+            ])
+        return "\n".join(lines)
+
     def test_full_render_plain(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             self._make(Path(tmp), self.FAN_YAML)
@@ -615,6 +651,25 @@ class RenderWatchTest(unittest.TestCase):
             self.assertIn("Ready phase", out)
             self.assertIn("Blocked phase", out)
             self.assertNotIn("Done one", out)
+
+    def test_long_unfinished_roadmap_compacts_around_frontier(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self._make(Path(tmp), self._long_unfinished_roadmap())
+            out = wily_watch_ui.render_watch(Path(tmp), interval=2.0, rich=False, size=(90, 12))
+
+            self.assertIn("Stage 2", out)
+            self.assertIn("s01-api", out)
+            self.assertIn("Frontier work s01-api", out)
+            self.assertIn("Stage 3 - 9 phases pending", out)
+            self.assertNotIn("s03-tail-a", out)
+
+    def test_tiny_body_still_prefers_frontier(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self._make(Path(tmp), self._long_unfinished_roadmap())
+            out = wily_watch_ui.render_watch(Path(tmp), interval=2.0, rich=False, size=(90, 7))
+
+            self.assertIn("s01-api", out)
+            self.assertNotIn("s03-tail-a", out)
 
     def test_render_shows_runner_progress_from_session_artifacts(self) -> None:
         body = "\n".join([

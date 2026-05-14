@@ -805,7 +805,12 @@ class WilyCliTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp)
 
-            result = self.run_wily_with_env(project, "watch", "--dry-run-pane", env={"TMUX": "/tmp/tmux"})
+            result = self.run_wily_with_env(
+                project,
+                "watch",
+                "--dry-run-pane",
+                env={"TMUX": "/tmp/tmux", "TMUX_PANE": ""},
+            )
 
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("tmux split-window -h", result.stdout)

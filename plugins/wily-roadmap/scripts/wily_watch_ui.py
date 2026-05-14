@@ -536,8 +536,17 @@ def _graph_lines(phases: list[Phase], ready_ids: set[str], *, width: int, ascii_
 def _summary_line(done_count: int, stage_count: int, ascii_: bool) -> Line:
     glyphs = GLYPHS_ASCII if ascii_ else GLYPHS
     rails = RAIL_ASCII if ascii_ else RAIL
+    phase_word = "phase" if done_count == 1 else "phases"
     stage_word = "stage" if stage_count == 1 else "stages"
-    return [(f" {glyphs['done']} {done_count} phases done across {stage_count} {stage_word} {rails['fold']}", "green dim")]
+    return [(f" {glyphs['done']} {done_count} {phase_word} done across {stage_count} {stage_word} {rails['fold']}", "green dim")]
+
+
+def _future_stage_summary_line(num: int, stage: list[Phase], width: int, ascii_: bool) -> Line:
+    unfinished = sum(1 for phase in stage if phase.get("status") != "done")
+    count = unfinished if unfinished else len(stage)
+    phase_word = "phase" if count == 1 else "phases"
+    text = f" Stage {num} - {count} {phase_word} pending"
+    return _crop_line([(text, "dim")], width)
 
 
 def _collapse_leading_done(lines: list[Line], kinds: list[str], *, ascii_: bool) -> tuple[list[Line], list[str]]:
@@ -600,6 +609,100 @@ def _preserve_unfinished_lines(lines: list[Line], kinds: list[str]) -> tuple[lis
     return kept_lines, kept_kinds
 
 
+def _frontier_stage_index(stages: list[list[Phase]], ready_ids: set[str]) -> int | None:
+    for index, stage in enumerate(stages):
+        if all(phase.get("status") == "done" for phase in stage):
+            continue
+        if any(str(phase.get("id", "?")) in ready_ids for phase in stage):
+            return index
+
+    for index, stage in enumerate(stages):
+        if any(phase.get("status") != "done" for phase in stage):
+            return index
+    return None
+
+
+def _trim_frontier_compact_lines(lines: list[Line], kinds: list[str], max_rows: int) -> list[Line]:
+    if len(lines) <= max_rows:
+        return lines
+    if max_rows <= 0:
+        return []
+
+    frontier_indexes = [index for index, kind in enumerate(kinds) if kind in {"frontier-header", "frontier-node"}]
+    if not frontier_indexes:
+        return lines[:max_rows]
+
+    frontier_lines = [lines[index] for index in frontier_indexes]
+    if len(frontier_lines) >= max_rows:
+        if max_rows == 1:
+            node_indexes = [index for index in frontier_indexes if kinds[index] == "frontier-node"]
+            return [lines[node_indexes[0]]] if node_indexes else [frontier_lines[0]]
+        return frontier_lines[:max_rows]
+
+    kept: list[Line] = []
+    if kinds and kinds[0] == "done" and max_rows > len(frontier_lines):
+        kept.append(lines[0])
+
+    remaining = max_rows - len(kept)
+    if remaining <= 0:
+        return kept
+    kept.extend(frontier_lines[:remaining])
+    remaining = max_rows - len(kept)
+    if remaining <= 0:
+        return kept
+
+    future_lines = [line for line, kind in zip(lines, kinds) if kind == "future-summary"]
+    kept.extend(future_lines[:remaining])
+    return kept
+
+
+def _compact_frontier_lines(
+    view: _RoadmapView,
+    *,
+    width: int,
+    max_rows: int,
+    ascii_: bool,
+) -> list[Line]:
+    stages = _ordered_stages(view.phases)
+    frontier_index = _frontier_stage_index(stages, view.ready_ids)
+    if frontier_index is None:
+        return []
+
+    by_id = _phase_index(view.phases)
+    id_width = _id_width(view.phases)
+    lines: list[Line] = []
+    kinds: list[str] = []
+    done_prefix = stages[:frontier_index]
+    done_count = sum(len(stage) for stage in done_prefix if all(phase.get("status") == "done" for phase in stage))
+    if done_count:
+        lines.append(_summary_line(done_count, len(done_prefix), ascii_))
+        kinds.append("done")
+
+    frontier = stages[frontier_index]
+    lines.append(_stage_header(frontier_index + 1, len(frontier), width, ascii_))
+    kinds.append("frontier-header")
+    for phase in frontier:
+        lines.append(
+            _node_line(
+                phase,
+                view.ready_ids,
+                by_id,
+                prefix=" ",
+                id_width=id_width,
+                width=width,
+                ascii_=ascii_,
+                runner_detail=_runner_status_detail(view.root, phase),
+            )
+        )
+        kinds.append("frontier-node")
+
+    for num, stage in enumerate(stages[frontier_index + 1 :], start=frontier_index + 2):
+        lines.append(_future_stage_summary_line(num, stage, width, ascii_))
+        kinds.append("future-summary")
+
+    return _trim_frontier_compact_lines(lines, kinds, max_rows)
+
+
 def _one_line(view: _RoadmapView, root: Path, ascii_: bool) -> str:
     sep = " - " if ascii_ else " · "
     if view.roadmap is None:
@@ -629,11 +732,15 @@ def _body_lines(
 
     if not expand_done and max_rows is not None and len(lines) > max_rows:
         if max_rows == 1:
-            return lines[:1]
+            compact = _compact_frontier_lines(view, width=width, max_rows=max_rows, ascii_=ascii_)
+            return compact or lines[:1]
         if kinds and kinds[0] == "done":
             preserved_lines, preserved_kinds = _preserve_unfinished_lines(lines, kinds)
             if len(preserved_lines) <= max_rows or len(preserved_lines) < len(lines):
                 return preserved_lines
+        compact = _compact_frontier_lines(view, width=width, max_rows=max_rows, ascii_=ascii_)
+        if compact:
+            return compact
         if kinds and kinds[0] == "done":
             return [lines[0]] + lines[-(max_rows - 1) :]
         return lines[-max_rows:]
