@@ -22,8 +22,10 @@ python3 <plugin-root>/scripts/wily.py start <phase-id>
 - $wily-start is session bookkeeping only.
 - Run only when the user explicitly chooses to start a phase session.
 - Prefer starting in a fresh agent session.
+- In shared Wily repositories, treat start as a phase claim. Before starting, prefer a fresh pull or clearly note if remote state was not checked.
 - After start, read the generated `session/input.md`.
 - Report the session path and immediate next action, then stop.
+- If `.wily/roadmap.yaml` is shared through Git, tell the user that the `in_progress` roadmap change should be committed/pushed when they want collaborators to see the claim. Do not push unless explicitly asked.
 - Do not continue into implementation in the same turn.
 - A separate explicit user request after the start result is required before implementation.
 - Do not create or update implementation plans.

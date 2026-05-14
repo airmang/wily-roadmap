@@ -1,0 +1,30 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "wily-castle",
+  "owner": {
+    "name": "Wily Castle"
+  },
+  "metadata": {
+    "description": "Personal Wily Roadmap workflow plugin for local-first, approval-first agentic coding."
+  },
+  "plugins": [
+    {
+      "name": "wily",
+      "description": "Personal agent workflow plugin for Wily roadmap, phase, and session management.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Wily Castle"
+      },
+      "category": "productivity",
+      "homepage": "https://github.com/airmang/wily-roadmap",
+      "source": "./",
+      "tags": [
+        "wily",
+        "roadmap",
+        "workflow",
+        "planning",
+        "orchestration"
+      ]
+    }
+  ]
+}

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import json
 import shutil
 import subprocess
 import sys
@@ -32,7 +33,7 @@ class WatchInputTest(unittest.TestCase):
         self.assertEqual(wily.watch_action_from_input("\x03"), "quit")
         self.assertIsNone(wily.watch_action_from_input("x"))
 
-    def test_sgr_mouse_press_on_body_toggles_done(self) -> None:
+    def test_left_mouse_press_on_body_toggles_done(self) -> None:
         self.assertEqual(
             wily.watch_action_from_input("\x1b[<0;12;4M", summary_row=4, body_rows=1),
             "toggle_done",
@@ -42,24 +43,102 @@ class WatchInputTest(unittest.TestCase):
             "toggle_done",
         )
 
+    def test_middle_mouse_press_does_not_toggle_done(self) -> None:
+        self.assertIsNone(wily.watch_action_from_input("\x1b[<1;12;4M", summary_row=4, body_rows=1))
+
+    def test_right_mouse_press_opens_tmux_menu_action(self) -> None:
+        self.assertEqual(
+            wily.watch_action_from_input("\x1b[<2;12;4M", summary_row=4, body_rows=1),
+            "tmux_menu",
+        )
+        self.assertEqual(
+            wily.watch_action_from_input("\x1b[<2;12;22M", summary_row=4, body_rows=2, expand_done=True),
+            "tmux_menu",
+        )
+
     def test_sgr_mouse_release_or_outside_body_is_ignored(self) -> None:
         self.assertIsNone(wily.watch_action_from_input("\x1b[<0;12;4m", summary_row=4, body_rows=1))
         self.assertIsNone(wily.watch_action_from_input("\x1b[<0;12;8M", summary_row=4, body_rows=2))
 
-    def test_sgr_mouse_press_anywhere_toggles_when_done_is_expanded(self) -> None:
+    def test_expanded_done_only_left_click_on_body_toggles(self) -> None:
         self.assertEqual(
-            wily.watch_action_from_input("\x1b[<0;12;1M", summary_row=4, body_rows=2, expand_done=True),
+            wily.watch_action_from_input("\x1b[<0;12;4M", summary_row=4, body_rows=2, expand_done=True),
             "toggle_done",
         )
-        self.assertEqual(
+        self.assertIsNone(
             wily.watch_action_from_input("\x1b[<0;12;22M", summary_row=4, body_rows=2, expand_done=True),
-            "toggle_done",
+        )
+        self.assertEqual(
+            wily.watch_action_from_input("\x1b[<2;12;4M", summary_row=4, body_rows=2, expand_done=True),
+            "tmux_menu",
         )
 
-    def test_parse_sgr_mouse_event(self) -> None:
-        self.assertEqual(wily.parse_watch_mouse_event("\x1b[<0;9;12M"), (9, 12, True))
-        self.assertEqual(wily.parse_watch_mouse_event("\x1b[<0;9;12m"), (9, 12, False))
+    def test_mouse_wheel_returns_scroll_actions(self) -> None:
+        self.assertEqual(wily.watch_action_from_input("\x1b[<64;12;4M", expand_done=True), "scroll_up")
+        self.assertEqual(wily.watch_action_from_input("\x1b[<65;12;4M", expand_done=True), "scroll_down")
+        self.assertIsNone(wily.watch_action_from_input("\x1b[<64;12;4M", expand_done=False))
+
+    def test_parse_sgr_mouse_event_includes_button_code(self) -> None:
+        self.assertEqual(wily.parse_watch_mouse_event("\x1b[<0;9;12M"), (0, 9, 12, True))
+        self.assertEqual(wily.parse_watch_mouse_event("\x1b[<2;9;12M"), (2, 9, 12, True))
+        self.assertEqual(wily.parse_watch_mouse_event("\x1b[<64;9;12M"), (64, 9, 12, True))
+        self.assertEqual(wily.parse_watch_mouse_event("\x1b[<0;9;12m"), (0, 9, 12, False))
         self.assertIsNone(wily.parse_watch_mouse_event("not mouse"))
+
+    def test_apply_watch_scroll_action_updates_offset(self) -> None:
+        self.assertEqual(wily.apply_watch_scroll_action(0, "scroll_down", max_offset=3), 1)
+        self.assertEqual(wily.apply_watch_scroll_action(3, "scroll_down", max_offset=3), 3)
+        self.assertEqual(wily.apply_watch_scroll_action(2, "scroll_up", max_offset=3), 1)
+        self.assertEqual(wily.apply_watch_scroll_action(0, "scroll_up", max_offset=3), 0)
+        self.assertEqual(wily.apply_watch_scroll_action(2, "refresh", max_offset=3), 2)
+
+    def test_tmux_context_menu_command_uses_mouse_position(self) -> None:
+        command = wily.tmux_context_menu_command(12, 4)
+        self.assertEqual(command[:2], ["tmux", "display-menu"])
+        self.assertIn("-x", command)
+        self.assertIn("12", command)
+        self.assertIn("-y", command)
+        self.assertIn("4", command)
+        self.assertIn("Horizontal Split", command)
+        self.assertIn("Vertical Split", command)
+
+
+class CollaborationPolicyTest(unittest.TestCase):
+    def check_ignore(self, path: str) -> int:
+        if not (ROOT / ".git").exists():
+            self.skipTest("git metadata is not available")
+        return subprocess.run(
+            ["git", "check-ignore", "-q", path],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        ).returncode
+
+    def test_shared_wily_state_is_trackable_and_sessions_remain_local(self) -> None:
+        self.assertEqual(self.check_ignore(".wily/roadmap.yaml"), 1)
+        self.assertEqual(self.check_ignore(".wily/project.md"), 1)
+        self.assertEqual(self.check_ignore(".wily/phases/08-2-collaborative-wily-state-sync/phase.md"), 1)
+        self.assertEqual(self.check_ignore(".wily/revisions/2026-05-14-163046-replan-7.md"), 1)
+        self.assertEqual(self.check_ignore(".wily/sessions/example"), 0)
+
+
+class ReferenceOnlyWorkflowTest(unittest.TestCase):
+    def test_custom_workflow_bundle_is_not_part_of_live_plugin(self) -> None:
+        self.assertFalse((ROOT / "runners" / "custom-workflow").exists())
+
+    def test_workflow_guidance_treats_custom_workflow_as_external_reference(self) -> None:
+        workflow = (ROOT / "skills" / "wily-workflow" / "SKILL.md").read_text(encoding="utf-8")
+        reference = (
+            ROOT / "skills" / "wily-workflow" / "references" / "runner-adapter-contract.md"
+        ).read_text(encoding="utf-8")
+
+        combined = workflow + "\n" + reference
+        self.assertIn("external workflow", combined)
+        self.assertIn("reference-only", combined)
+        self.assertNotIn("bundled default runner", combined)
+        self.assertNotIn("runners/custom-workflow/runner.yaml", combined)
 
 
 class WilyCliTest(unittest.TestCase):
@@ -137,6 +216,7 @@ class WilyCliTest(unittest.TestCase):
             ),
             encoding="utf-8",
         )
+        (phase_dir / "plan.md").write_text("", encoding="utf-8")
         (project / ".wily" / "roadmap.yaml").write_text(
             "\n".join(
                 [
@@ -148,6 +228,76 @@ class WilyCliTest(unittest.TestCase):
                     '    path: "phases/01-first-phase"',
                     '    status: "ready"',
                     '    depends_on: []',
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+    def write_blocked_dependency_phase(self, project: Path) -> None:
+        self.create_state(project)
+        phase_dir = project / ".wily" / "phases" / "02-blocked-phase"
+        phase_dir.mkdir(parents=True, exist_ok=True)
+        for name, content in {
+            "phase.md": "# Phase\n\nBlocked by dependency\n",
+            "prompt.md": "Run blocked phase\n",
+            "verification.md": "python3 -m unittest\n",
+            "handoff.md": "Resume from here\n",
+            "planner.md": "# Planner Adapter\n\nRecommended planner: superpowers:writing-plans\n",
+            "plan.md": "",
+        }.items():
+            (phase_dir / name).write_text(content, encoding="utf-8")
+        (project / ".wily" / "roadmap.yaml").write_text(
+            "\n".join(
+                [
+                    'roadmap_version: 1',
+                    'goal: "Ship useful app"',
+                    'phases:',
+                    '  - id: "01"',
+                    '    title: "Unfinished dependency"',
+                    '    path: "phases/01-unfinished-dependency"',
+                    '    status: "pending"',
+                    '    depends_on: []',
+                    '',
+                    '  - id: "02"',
+                    '    title: "Blocked phase"',
+                    '    path: "phases/02-blocked-phase"',
+                    '    status: "pending"',
+                    '    depends_on: ["01"]',
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+    def write_pending_unblocked_phase(self, project: Path) -> None:
+        self.create_state(project)
+        phase_dir = project / ".wily" / "phases" / "02-unblocked-phase"
+        phase_dir.mkdir(parents=True, exist_ok=True)
+        for name, content in {
+            "phase.md": "# Phase\n\nPending with completed dependency\n",
+            "prompt.md": "Run unblocked phase\n",
+            "verification.md": "python3 -m unittest\n",
+            "handoff.md": "Resume from here\n",
+            "planner.md": "# Planner Adapter\n\nRecommended planner: superpowers:writing-plans\n",
+            "plan.md": "",
+        }.items():
+            (phase_dir / name).write_text(content, encoding="utf-8")
+        (project / ".wily" / "roadmap.yaml").write_text(
+            "\n".join(
+                [
+                    'roadmap_version: 1',
+                    'goal: "Ship useful app"',
+                    'phases:',
+                    '  - id: "01"',
+                    '    title: "Finished dependency"',
+                    '    path: "phases/01-finished-dependency"',
+                    '    status: "done"',
+                    '    depends_on: []',
+                    '',
+                    '  - id: "02"',
+                    '    title: "Unblocked phase"',
+                    '    path: "phases/02-unblocked-phase"',
+                    '    status: "pending"',
+                    '    depends_on: ["01"]',
                 ]
             ),
             encoding="utf-8",
@@ -335,6 +485,83 @@ class WilyCliTest(unittest.TestCase):
             self.assertNotIn("Phase 흐름:", result.stdout)
             self.assertNotIn("Repo: ", result.stdout)
 
+    def test_run_creates_external_workflow_handoff_without_bundled_runner(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.write_ready_phase(project)
+
+            result = self.run_wily(project, "run", "01", "--runner", "custom-workflow")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Prepared phase 01 for external workflow", result.stdout)
+            self.assertIn("Workflow: custom-workflow", result.stdout)
+            self.assertIn("Reference-only handoff:", result.stdout)
+            self.assertIn("Native goal command:", result.stdout)
+            self.assertIn("/goal Execute Wily phase 01", result.stdout)
+
+            roadmap = (project / ".wily" / "roadmap.yaml").read_text(encoding="utf-8")
+            self.assertIn('status: "in_progress"', roadmap)
+            self.assertNotIn('status: "done"', roadmap)
+            session = next((project / ".wily" / "sessions").glob("*phase-01-attempt-1"))
+            status = (session / "status.yaml").read_text(encoding="utf-8")
+            self.assertIn('status: "started"', status)
+            self.assertNotIn("runner:", status)
+            self.assertFalse((session / "runner").exists())
+            self.assertTrue((session / "external-workflow-handoff.md").is_file())
+            self.assertTrue((project / "agent-handoffs" / "01-first-phase-external-workflow.md").is_file())
+
+    def test_run_keeps_runner_and_autonomy_flags_as_external_workflow_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.write_ready_phase(project)
+
+            result = self.run_wily(project, "run", "01", "--runner", "custom-workflow", "--autonomy", "conservative")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Workflow: custom-workflow", result.stdout)
+            self.assertIn("Autonomy: conservative", result.stdout)
+            session = next((project / ".wily" / "sessions").glob("*phase-01-attempt-1"))
+            handoff = (session / "external-workflow-handoff.md").read_text(encoding="utf-8")
+            self.assertIn("- External workflow: `custom-workflow`", handoff)
+            self.assertIn("- Autonomy mode: `conservative`", handoff)
+
+    def test_run_rejects_non_executable_phase(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.write_blocked_dependency_phase(project)
+
+            result = self.run_wily(project, "run", "02")
+
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("Phase is not executable: 02", result.stderr)
+            self.assertFalse((project / "agent-handoffs").exists())
+
+    def test_run_dispatches_pending_phase_when_dependencies_are_done(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.write_pending_unblocked_phase(project)
+
+            result = self.run_wily(project, "run", "02")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Prepared phase 02 for external workflow", result.stdout)
+            roadmap = (project / ".wily" / "roadmap.yaml").read_text(encoding="utf-8")
+            self.assertIn('id: "02"', roadmap)
+            self.assertIn('status: "in_progress"', roadmap)
+            self.assertTrue((project / "agent-handoffs" / "02-unblocked-phase-external-workflow.md").is_file())
+
+    def test_run_attaches_existing_in_progress_session(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.write_ready_phase(project)
+            self.run_wily(project, "start", "01")
+
+            result = self.run_wily(project, "run", "01")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(len(list((project / ".wily" / "sessions").glob("*phase-01-attempt-*"))), 1)
+            self.assertIn("Prepared phase 01 for external workflow", result.stdout)
+
     def test_watch_ascii_ui_does_not_print_rich_install_hint(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp)
@@ -493,16 +720,30 @@ class WilyCliTest(unittest.TestCase):
             self.assertIn("-m pip install -r", result.stdout)
             self.assertIn("requirements-watch.txt", result.stdout)
 
-    def test_watch_defaults_to_tmux_pane_mode_outside_tmux(self) -> None:
+    def test_watch_defaults_to_here_mode_outside_tmux_interactive(self) -> None:
+        self.assertEqual(
+            wily.watch_launch_mode([], in_tmux=False, stdin_tty=True, stdout_tty=True),
+            "here",
+        )
+        self.assertEqual(
+            wily.watch_launch_mode([], in_tmux=True, stdin_tty=True, stdout_tty=True),
+            "pane",
+        )
+        self.assertEqual(
+            wily.watch_launch_mode(["--here"], in_tmux=True, stdin_tty=True, stdout_tty=True),
+            "here",
+        )
+
+    def test_watch_without_tty_outside_tmux_reports_side_terminal_guidance(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp)
 
             result = self.run_wily_with_env(project, "watch", env={"TMUX": ""})
 
             self.assertEqual(result.returncode, 1)
-            self.assertIn("tmux 세션이 아니라서 pane을 열 수 없습니다.", result.stderr)
-            self.assertIn("python3", result.stderr)
-            self.assertIn("watch --here", result.stderr)
+            self.assertIn("interactive terminal", result.stderr)
+            self.assertIn("./wily watch", result.stderr)
+            self.assertIn("Codex app", result.stderr)
 
     def test_watch_pane_mode_builds_tmux_split_command_when_inside_tmux(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -951,6 +1192,128 @@ class WilyCliTest(unittest.TestCase):
             self.assertIn('status: "in_progress"', roadmap)
             self.assertIn('current_session: "sessions/', roadmap)
             self.assertNotIn("blocker:", roadmap)
+
+
+class SelfUpdateCliTest(unittest.TestCase):
+    def run_script(
+        self,
+        plugin: Path,
+        *args: str,
+        env: dict[str, str] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, str(plugin / "scripts" / "wily.py"), *args],
+            cwd=plugin,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            env={**os.environ, **(env or {})},
+        )
+
+    def copy_plugin(self, target: Path) -> Path:
+        plugin = target / "wily-roadmap"
+        shutil.copytree(ROOT / "scripts", plugin / "scripts")
+        shutil.copytree(ROOT / ".codex-plugin", plugin / ".codex-plugin")
+        (plugin / "README.md").write_text("# Wily Roadmap\n", encoding="utf-8")
+        return plugin
+
+    def git(self, cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
+        if shutil.which("git") is None:
+            self.skipTest("git is not installed")
+        return subprocess.run(
+            ["git", *args],
+            cwd=cwd,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+    def assert_git_ok(self, cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
+        result = self.git(cwd, *args)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return result
+
+    def init_git_plugin_with_origin(self, tmp: Path) -> tuple[Path, Path]:
+        plugin = self.copy_plugin(tmp / "source")
+        self.assert_git_ok(plugin, "init", "-b", "main")
+        self.assert_git_ok(plugin, "config", "user.email", "wily@example.test")
+        self.assert_git_ok(plugin, "config", "user.name", "Wily Test")
+        self.assert_git_ok(plugin, "add", ".")
+        self.assert_git_ok(plugin, "commit", "-m", "initial")
+        remote = tmp / "remote.git"
+        self.assert_git_ok(tmp, "init", "--bare", str(remote))
+        self.assert_git_ok(plugin, "remote", "add", "origin", str(remote))
+        self.assert_git_ok(plugin, "push", "-u", "origin", "main")
+        return plugin, remote
+
+    def test_update_check_reports_zip_install_without_changing_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            plugin = self.copy_plugin(Path(tmp))
+
+            result = self.run_script(plugin, "update", "--check")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Current version: 0.1.0", result.stdout)
+            self.assertIn("Install type: zip", result.stdout)
+            self.assertIn("./wily update --migrate", result.stdout)
+            self.assertFalse((plugin / ".git").exists())
+
+    def test_update_check_refuses_dirty_git_install_before_fetch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            plugin, remote = self.init_git_plugin_with_origin(Path(tmp))
+            (plugin / "README.md").write_text("# local edit\n", encoding="utf-8")
+
+            result = self.run_script(
+                plugin,
+                "update",
+                "--check",
+                env={"WILY_UPDATE_REPOSITORY_URL": str(remote)},
+            )
+
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("Working tree has local changes.", result.stdout)
+            self.assertIn("README.md", result.stdout)
+            self.assertNotIn("Fetching", result.stdout)
+
+    def test_update_check_reports_already_current_git_install(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            plugin, remote = self.init_git_plugin_with_origin(Path(tmp))
+
+            result = self.run_script(
+                plugin,
+                "update",
+                "--check",
+                env={"WILY_UPDATE_REPOSITORY_URL": str(remote)},
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Current version: 0.1.0", result.stdout)
+            self.assertIn("Install type: git", result.stdout)
+            self.assertIn("Already current.", result.stdout)
+
+    def test_update_migrate_clones_zip_install_to_managed_sibling(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            source, remote = self.init_git_plugin_with_origin(tmp_path / "repo")
+            zip_plugin = self.copy_plugin(tmp_path / "zip")
+
+            result = self.run_script(
+                zip_plugin,
+                "update",
+                "--migrate",
+                env={"WILY_UPDATE_REPOSITORY_URL": str(remote)},
+            )
+
+            managed = zip_plugin.parent / "wily-roadmap-managed"
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(managed.is_dir())
+            self.assertTrue((managed / ".git").is_dir())
+            self.assertTrue((zip_plugin / "scripts" / "wily.py").is_file())
+            self.assertIn(str(managed), result.stdout)
+            self.assertIn("Original zip install left unchanged.", result.stdout)
+            self.assertTrue((source / "scripts" / "wily.py").is_file())
 
 
 if __name__ == "__main__":

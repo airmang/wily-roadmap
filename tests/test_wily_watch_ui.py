@@ -130,7 +130,8 @@ class ChromeTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             line = wily_watch_ui._footer_line(Path(tmp), width=80, ascii_=True, interactive=True)
             text = "".join(span for span, _style in line)
-            self.assertIn("click/d expand done", text)
+            self.assertIn("left-click/d expand done", text)
+            self.assertIn("right-click menu", text)
             self.assertIn("r refresh", text)
             self.assertIn("q quit", text)
 
@@ -142,7 +143,9 @@ class ChromeTest(unittest.TestCase):
                 expand_done=True,
             )
             expanded_text = "".join(span for span, _style in expanded)
-            self.assertIn("click/d collapse done", expanded_text)
+            self.assertIn("left-click/d collapse done", expanded_text)
+            self.assertIn("right-click menu", expanded_text)
+            self.assertIn("wheel scroll", expanded_text)
 
     def test_header_tiny_width_does_not_exceed_width(self) -> None:
         line = wily_watch_ui._header_line(version=2, interval=2.0, width=12, ascii_=True)
@@ -542,8 +545,40 @@ class RenderWatchTest(unittest.TestCase):
             self.assertNotIn("3 phases done", out)
             self.assertIn("Settle Korean response-style update", out)
             self.assertIn("Harden command skill consistency", out)
-            self.assertIn("Korean stage-based DAG status output", out)
-            self.assertIn("click/d collapse done", out)
+            self.assertIn("left-click/d collapse done", out)
+
+    def test_scroll_offset_clamps_to_body_length(self) -> None:
+        self.assertEqual(wily_watch_ui.clamp_scroll_offset(0, total_rows=10, visible_rows=4), 0)
+        self.assertEqual(wily_watch_ui.clamp_scroll_offset(3, total_rows=10, visible_rows=4), 3)
+        self.assertEqual(wily_watch_ui.clamp_scroll_offset(99, total_rows=10, visible_rows=4), 6)
+        self.assertEqual(wily_watch_ui.clamp_scroll_offset(-3, total_rows=10, visible_rows=4), 0)
+        self.assertEqual(wily_watch_ui.clamp_scroll_offset(5, total_rows=3, visible_rows=4), 0)
+
+    def test_render_expanded_done_stages_scrolls_body(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self._make(Path(tmp), self.FAN_YAML)
+            top = wily_watch_ui.render_watch(
+                Path(tmp),
+                interval=2.0,
+                rich=False,
+                size=(70, 8),
+                expand_done=True,
+                interactive=True,
+                scroll_offset=0,
+            )
+            scrolled = wily_watch_ui.render_watch(
+                Path(tmp),
+                interval=2.0,
+                rich=False,
+                size=(70, 8),
+                expand_done=True,
+                interactive=True,
+                scroll_offset=2,
+            )
+            self.assertIn("Settle Korean response-style update", top)
+            self.assertNotIn("Settle Korean response-style update", scrolled)
+            self.assertIn("Korean stage-based DAG status output", scrolled)
+            self.assertIn("left-click/d collapse done", scrolled)
 
     def test_short_render_preserves_unfinished_current_ready_and_blocked_phases(self) -> None:
         body = "\n".join([
@@ -580,6 +615,31 @@ class RenderWatchTest(unittest.TestCase):
             self.assertIn("Ready phase", out)
             self.assertIn("Blocked phase", out)
             self.assertNotIn("Done one", out)
+
+    def test_render_shows_runner_progress_from_session_artifacts(self) -> None:
+        body = "\n".join([
+            'roadmap_version: 4',
+            'phases:',
+            '  - id: "01"',
+            '    title: "Runner phase"',
+            '    status: "in_progress"',
+            '    depends_on: []',
+            '    current_session: "sessions/example-phase-01-attempt-1"',
+        ])
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self._make(project, body)
+            runner = project / ".wily" / "sessions" / "example-phase-01-attempt-1" / "runner"
+            runner.mkdir(parents=True)
+            (runner / "status-board.md").write_text(
+                "# Status Board\n\nstatus: needs_review\n",
+                encoding="utf-8",
+            )
+
+            out = wily_watch_ui.render_watch(project, interval=2.0, rich=False, size=(90, 12))
+
+            self.assertIn("Runner phase", out)
+            self.assertIn("runner needs_review", out)
 
     def test_render_falls_back_to_flat_for_skip_dag(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

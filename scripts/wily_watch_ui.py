@@ -250,6 +250,37 @@ def _unmet_deps(phase: Phase, by_id: dict[str, Phase]) -> list[str]:
     return unmet
 
 
+def _runner_status_from_text(text: str) -> str | None:
+    for line in text.splitlines():
+        match = re.match(r"\s*status:\s*`?([A-Za-z0-9_-]+)`?", line)
+        if match:
+            return match.group(1)
+        match = re.match(r"\s*-\s*Recommended Wily status:\s*`?([A-Za-z0-9_-]+)`?", line)
+        if match:
+            return match.group(1)
+    return None
+
+
+def _runner_status_detail(root: Path | None, phase: Phase) -> str:
+    if root is None:
+        return ""
+    current = phase.get("current_session")
+    if not current:
+        return ""
+    session = root / ".wily" / str(current)
+    runner_dir = session / "runner"
+    if not runner_dir.exists():
+        return ""
+    for name in ("status-board.md", "progress.md", "verification.md", "archive-summary.md"):
+        path = runner_dir / name
+        if not path.exists():
+            continue
+        status = _runner_status_from_text(path.read_text(encoding="utf-8"))
+        if status:
+            return f"runner {status}"
+    return "runner active"
+
+
 def _crop_line(line: Line, width: int) -> Line:
     remaining = max(0, width)
     cropped: Line = []
@@ -319,8 +350,12 @@ def _git_state(root: Path, ascii_: bool) -> str:
 def _footer_line(root: Path, *, width: int, ascii_: bool, interactive: bool = False, expand_done: bool = False) -> Line:
     sep = " - " if ascii_ else " · "
     if interactive:
-        toggle = "click/d collapse done" if expand_done else "click/d expand done"
-        text = f" {toggle}{sep}r refresh{sep}q quit{sep}git: {_git_state(root, ascii_)}{sep}{root.name}"
+        toggle = "left-click/d collapse done" if expand_done else "left-click/d expand done"
+        scroll = f"{sep}wheel scroll" if expand_done else ""
+        text = (
+            f" {toggle}{sep}right-click menu{scroll}{sep}r refresh{sep}q quit"
+            f"{sep}git: {_git_state(root, ascii_)}{sep}{root.name}"
+        )
     else:
         text = f" git: {_git_state(root, ascii_)}{sep}{root.name}{sep}^C to stop"
     return _crop_line([(text, "dim")], width)
@@ -337,6 +372,7 @@ def _node_line(
     ascii_: bool,
     dependency_ids: list[str] | None = None,
     dependency_marker: str | None = None,
+    runner_detail: str = "",
 ) -> Line:
     status = _phase_status(phase, ready_ids)
     glyphs = GLYPHS_ASCII if ascii_ else GLYPHS
@@ -346,20 +382,23 @@ def _node_line(
     title = str(phase.get("title", "Untitled phase"))
     id_text = f" {pid.ljust(id_width)}  "
     unmet = dependency_ids if dependency_ids is not None else _unmet_deps(phase, by_id)
-    dep_text = ""
+    detail_parts = []
     if unmet:
         marker = dependency_marker or "needs"
-        dep_text = f"   {marker} " + " ".join(unmet)
+        detail_parts.append(f"{marker} " + " ".join(unmet))
+    if runner_detail:
+        detail_parts.append(runner_detail)
+    detail_text = f"   {'   '.join(detail_parts)}" if detail_parts else ""
 
     fixed_width = _display_width(prefix) + _display_width(glyph) + _display_width(id_text)
     available_width = max(0, width - fixed_width)
-    dep_budget = 0
-    if dep_text and available_width > 0:
-        dep_budget = min(_display_width(dep_text), max(0, available_width // 3))
-    title_width = max(0, available_width - dep_budget)
+    detail_budget = 0
+    if detail_text and available_width > 0:
+        detail_budget = min(_display_width(detail_text), max(0, available_width // 3))
+    title_width = max(0, available_width - detail_budget)
     title = _fit_title(title, title_width)
-    dep_width = max(0, width - fixed_width - _display_width(title))
-    dep_text = _truncate(dep_text, dep_width)
+    detail_width = max(0, width - fixed_width - _display_width(title))
+    detail_text = _truncate(detail_text, detail_width)
 
     line: Line = [
         (prefix, "dim"),
@@ -367,8 +406,8 @@ def _node_line(
         (id_text, style),
         (title, ""),
     ]
-    if dep_text:
-        line.append((dep_text, "dim"))
+    if detail_text:
+        line.append((detail_text, "dim"))
     return _crop_line(line, width)
 
 
@@ -378,6 +417,7 @@ def _flat_lines2(
     *,
     width: int,
     ascii_: bool,
+    root: Path | None = None,
 ) -> tuple[list[Line], list[str]]:
     by_id = _phase_index(phases)
     id_width = _id_width(phases)
@@ -397,6 +437,7 @@ def _flat_lines2(
                     id_width=id_width,
                     width=width,
                     ascii_=ascii_,
+                    runner_detail=_runner_status_detail(root, phase),
                 )
             )
             kinds.append("done" if phase.get("status") == "done" else "node")
@@ -415,6 +456,7 @@ def _graph_lines2(
     *,
     width: int,
     ascii_: bool,
+    root: Path | None = None,
 ) -> tuple[list[Line], list[str]]:
     rails = RAIL_ASCII if ascii_ else RAIL
     by_id = _phase_index(phases)
@@ -452,6 +494,7 @@ def _graph_lines2(
                     ascii_=ascii_,
                     dependency_ids=dependency_ids,
                     dependency_marker=dependency_marker,
+                    runner_detail=_runner_status_detail(root, phase),
                 )
             )
             kinds.append("done" if phase.get("status") == "done" else "node")
@@ -546,14 +589,15 @@ def _body_lines(
     max_rows: int | None,
     ascii_: bool,
     expand_done: bool = False,
+    scroll_offset: int = 0,
 ) -> list[Line]:
     if not view.phases:
         return [[(" (no phases yet)", "dim")]]
 
     if _pipeline_renderable(view.phases) and width >= MIN_WIDTH_RAIL:
-        lines, kinds = _graph_lines2(view.phases, view.ready_ids, width=width, ascii_=ascii_)
+        lines, kinds = _graph_lines2(view.phases, view.ready_ids, width=width, ascii_=ascii_, root=view.root)
     else:
-        lines, kinds = _flat_lines2(view.phases, view.ready_ids, width=width, ascii_=ascii_)
+        lines, kinds = _flat_lines2(view.phases, view.ready_ids, width=width, ascii_=ascii_, root=view.root)
 
     if not expand_done and max_rows is not None and len(lines) > max_rows:
         lines, kinds = _collapse_leading_done(lines, kinds, ascii_=ascii_)
@@ -569,7 +613,35 @@ def _body_lines(
             return [lines[0]] + lines[-(max_rows - 1) :]
         return lines[-max_rows:]
 
+    if expand_done and max_rows is not None and len(lines) > max_rows:
+        offset = clamp_scroll_offset(scroll_offset, total_rows=len(lines), visible_rows=max_rows)
+        return lines[offset : offset + max_rows]
+
     return lines
+
+
+def clamp_scroll_offset(offset: int, *, total_rows: int, visible_rows: int) -> int:
+    max_offset = max(0, total_rows - max(1, visible_rows))
+    return min(max(0, offset), max_offset)
+
+
+def rendered_body_row_count(
+    root: Path,
+    *,
+    width: int,
+    rich: bool,
+    expand_done: bool,
+) -> int:
+    view = _load(root)
+    return len(
+        _body_lines(
+            view,
+            width=width,
+            max_rows=None,
+            ascii_=not rich,
+            expand_done=expand_done,
+        )
+    )
 
 
 def _emit(lines: list[Line], *, rich: bool, width: int) -> str:
@@ -606,6 +678,7 @@ def render_watch(
     size: tuple[int, int] | None = None,
     expand_done: bool = False,
     interactive: bool = False,
+    scroll_offset: int = 0,
 ) -> str:
     cols, rows = size if size is not None else shutil.get_terminal_size((80, 24))
     ascii_ = not rich
@@ -624,7 +697,14 @@ def render_watch(
         return _emit(lines, rich=rich, width=cols)
 
     max_rows = max(1, rows - CHROME_ROWS) if rows else None
-    body = _body_lines(view, width=cols, max_rows=max_rows, ascii_=ascii_, expand_done=expand_done)
+    body = _body_lines(
+        view,
+        width=cols,
+        max_rows=max_rows,
+        ascii_=ascii_,
+        expand_done=expand_done,
+        scroll_offset=scroll_offset,
+    )
     lines = [
         _header_line(version=view.version, interval=interval, width=cols, ascii_=ascii_),
         _progress_line(done=view.done, total=view.total, width=cols, ascii_=ascii_),

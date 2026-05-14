@@ -32,7 +32,9 @@
       "$wily-status: show current roadmap state",
       "$wily-watch: watch roadmap state in a tmux pane",
       "$wily-issues: inspect optional GitHub issue linkage",
-      "$wily-next: show the next ready phase"
+      "$wily-next: show the next ready phase",
+      "$wily-run <phase-id>: prepare a reference-only external workflow handoff",
+      "$wily-update: check or apply Wily plugin updates"
     ],
     "brandColor": "#2563EB"
   }

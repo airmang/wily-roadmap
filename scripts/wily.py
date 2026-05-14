@@ -8,6 +8,7 @@ import os
 import re
 import select
 import shlex
+import shutil
 import subprocess
 import sys
 import termios
@@ -25,8 +26,14 @@ Phase = dict[str, Any]
 Issue = dict[str, Any]
 WATCH_MOUSE_RE = re.compile(r"\x1b\[<(\d+);(\d+);(\d+)([Mm])")
 WATCH_BODY_START_ROW = 4
+WATCH_MOUSE_LEFT = 0
+WATCH_MOUSE_MIDDLE = 1
+WATCH_MOUSE_RIGHT = 2
+WATCH_MOUSE_WHEEL_UP = 64
+WATCH_MOUSE_WHEEL_DOWN = 65
 WATCH_MOUSE_ENABLE = "\033[?1000h\033[?1006h"
 WATCH_MOUSE_DISABLE = "\033[?1006l\033[?1000l"
+DEFAULT_UPDATE_REPOSITORY = "https://github.com/airmang/wily-roadmap"
 
 
 def state_dir(root: Path) -> Path:
@@ -481,6 +488,30 @@ def session_status_text(
     return "\n".join(lines) + "\n"
 
 
+SESSION_STATUS_CORE_KEYS = {"phase", "attempt", "status", "planner", "blocker"}
+
+
+def preserved_session_status_blocks(text: str) -> str:
+    lines = text.splitlines()
+    blocks: list[str] = []
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        if line and not line.startswith(" ") and ":" in line:
+            key = line.split(":", 1)[0]
+            if key not in SESSION_STATUS_CORE_KEYS:
+                if blocks and blocks[-1].strip():
+                    blocks.append("")
+                blocks.append(line)
+                index += 1
+                while index < len(lines) and (not lines[index].strip() or lines[index].startswith(" ")):
+                    blocks.append(lines[index])
+                    index += 1
+                continue
+        index += 1
+    return "\n".join(blocks).strip()
+
+
 def markdown_section(title: str, content: str) -> str:
     body = content.strip() or "Missing."
     return f"## {title}\n\n{body}\n"
@@ -592,15 +623,26 @@ def update_session_status(root: Path, phase: Phase, status: str, blocker: str | 
         if suffix.isdigit():
             attempt = int(suffix)
     planner = None
+    preserved = ""
     if status_path.exists():
-        for line in status_path.read_text(encoding="utf-8").splitlines():
+        existing = status_path.read_text(encoding="utf-8")
+        preserved = preserved_session_status_blocks(existing)
+        for line in existing.splitlines():
             if line.startswith("planner:"):
                 planner = wily_state_summary.parse_scalar(line.split(":", 1)[1].strip())
                 break
-    status_path.write_text(
-        session_status_text(str(phase.get("id", "unknown")), attempt, status, blocker, planner),
-        encoding="utf-8",
-    )
+    text = session_status_text(str(phase.get("id", "unknown")), attempt, status, blocker, planner)
+    if preserved:
+        text = text.rstrip() + "\n" + preserved + "\n"
+    status_path.write_text(text, encoding="utf-8")
+
+
+def snapshot_runner_session(root: Path, phase: Phase, recommended_status: str) -> None:
+    try:
+        import wily_runner
+    except ImportError:
+        return
+    wily_runner.snapshot_runner_artifacts(root, phase, recommended_status)
 
 
 def require_phase_id(args: list[str], command: str) -> str | None:
@@ -648,6 +690,7 @@ def command_complete(root: Path, args: list[str]) -> int:
     phase["status"] = "done"
     phase.pop("blocker", None)
     update_session_status(root, phase, "verified")
+    snapshot_runner_session(root, phase, "done")
     save_roadmap(root, roadmap)
     print(f"Completed phase {phase_id}")
     return 0
@@ -666,6 +709,7 @@ def command_block(root: Path, args: list[str]) -> int:
     phase["status"] = "blocked"
     phase["blocker"] = reason
     update_session_status(root, phase, "blocked", reason)
+    snapshot_runner_session(root, phase, "blocked")
     save_roadmap(root, roadmap)
     print(f"Blocked phase {phase_id}: {reason}")
     return 0
@@ -798,6 +842,7 @@ def watch_output(
     expand_done: bool = False,
     interactive: bool = False,
     show_rich_hint: bool = True,
+    scroll_offset: int = 0,
 ) -> str:
     use_rich = ui != "ascii" and rich_available()
     body = wily_watch_ui.render_watch(
@@ -806,6 +851,7 @@ def watch_output(
         rich=use_rich,
         expand_done=expand_done,
         interactive=interactive,
+        scroll_offset=scroll_offset,
     )
     if show_rich_hint and not use_rich and ui in {"auto", "rich"} and not rich_available():
         return "\n".join(
@@ -820,12 +866,12 @@ def watch_output(
     return body
 
 
-def parse_watch_mouse_event(data: str) -> tuple[int, int, bool] | None:
+def parse_watch_mouse_event(data: str) -> tuple[int, int, int, bool] | None:
     match = WATCH_MOUSE_RE.search(data)
     if not match:
         return None
-    _button, x, y, kind = match.groups()
-    return int(x), int(y), kind == "M"
+    button, x, y, kind = match.groups()
+    return int(button), int(x), int(y), kind == "M"
 
 
 def watch_action_from_input(
@@ -847,15 +893,88 @@ def watch_action_from_input(
     mouse = parse_watch_mouse_event(data)
     if not mouse:
         return None
-    _x, y, pressed = mouse
+    button, _x, y, pressed = mouse
     if not pressed:
         return None
-    if expand_done:
-        return "toggle_done"
+    if button == WATCH_MOUSE_WHEEL_UP:
+        return "scroll_up" if expand_done else None
+    if button == WATCH_MOUSE_WHEEL_DOWN:
+        return "scroll_down" if expand_done else None
+    if button == WATCH_MOUSE_RIGHT:
+        return "tmux_menu"
+    if button != WATCH_MOUSE_LEFT:
+        return None
+
     end_row = summary_row + max(0, body_rows)
     if summary_row <= y < end_row:
         return "toggle_done"
     return None
+
+
+def apply_watch_scroll_action(current: int, action: str | None, *, max_offset: int) -> int:
+    if action == "scroll_down":
+        return min(max_offset, current + 1)
+    if action == "scroll_up":
+        return max(0, current - 1)
+    return min(max(0, current), max_offset)
+
+
+def tmux_context_menu_command(x: int, y: int) -> list[str]:
+    return [
+        "tmux",
+        "display-menu",
+        "-T",
+        "#[align=centre]#{pane_index} (#{pane_id})",
+        "-x",
+        str(x),
+        "-y",
+        str(y),
+        "Horizontal Split",
+        "h",
+        "split-window -h",
+        "Vertical Split",
+        "v",
+        "split-window -v",
+        "",
+        "",
+        "",
+        "Copy Mode",
+        "c",
+        "copy-mode",
+        "#{?pane_marked,Unmark,Mark}",
+        "m",
+        "select-pane -m",
+        "#{?#{>:#{window_panes},1},,-}#{?window_zoomed_flag,Unzoom,Zoom}",
+        "z",
+        "resize-pane -Z",
+        "",
+        "",
+        "",
+        "Kill",
+        "X",
+        "kill-pane",
+        "Respawn",
+        "R",
+        "respawn-pane -k",
+    ]
+
+
+def show_tmux_context_menu(data: str) -> None:
+    if not os.environ.get("TMUX"):
+        return
+    mouse = parse_watch_mouse_event(data)
+    if not mouse:
+        return
+    button, x, y, pressed = mouse
+    if button != WATCH_MOUSE_RIGHT or not pressed:
+        return
+    subprocess.run(
+        tmux_context_menu_command(x, y),
+        text=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
 
 
 def tmux_watch_command(root: Path, args: list[str]) -> list[str]:
@@ -905,6 +1024,16 @@ def command_watch_pane(root: Path, args: list[str]) -> int:
     return result.returncode
 
 
+def watch_launch_mode(args: list[str], *, in_tmux: bool, stdin_tty: bool, stdout_tty: bool) -> str:
+    if "--here" in args:
+        return "here"
+    if in_tmux:
+        return "pane"
+    if stdin_tty and stdout_tty:
+        return "here"
+    return "needs_interactive_terminal"
+
+
 def watch_here_noninteractive(root: Path, interval: float, ui: str, *, expand_done: bool) -> int:
     try:
         while True:
@@ -929,12 +1058,24 @@ def watch_here_interactive(root: Path, interval: float, ui: str, *, expand_done:
     fd = sys.stdin.fileno()
     previous = termios.tcgetattr(fd)
     current_expand_done = expand_done
+    scroll_offset = 0
     body_rows = 1
     try:
         tty.setcbreak(fd)
         sys.stdout.write(WATCH_MOUSE_ENABLE)
         sys.stdout.flush()
         while True:
+            terminal_size = shutil.get_terminal_size((80, 24))
+            use_rich = ui != "ascii" and rich_available()
+            visible_body_rows = max(1, terminal_size.lines - wily_watch_ui.CHROME_ROWS)
+            total_body_rows = wily_watch_ui.rendered_body_row_count(
+                root,
+                width=terminal_size.columns,
+                rich=use_rich,
+                expand_done=current_expand_done,
+            )
+            max_scroll_offset = max(0, total_body_rows - visible_body_rows) if current_expand_done else 0
+            scroll_offset = apply_watch_scroll_action(scroll_offset, None, max_offset=max_scroll_offset)
             output = watch_output(
                 root,
                 interval,
@@ -942,12 +1083,14 @@ def watch_here_interactive(root: Path, interval: float, ui: str, *, expand_done:
                 expand_done=current_expand_done,
                 interactive=True,
                 show_rich_hint=False,
+                scroll_offset=scroll_offset,
             )
             body_rows = max(1, len(output.splitlines()) - wily_watch_ui.CHROME_ROWS)
             print("\033[2J\033[H", end="")
             print(output, flush=True)
+            input_data = read_watch_input(interval)
             action = watch_action_from_input(
-                read_watch_input(interval),
+                input_data,
                 body_rows=body_rows,
                 expand_done=current_expand_done,
             )
@@ -955,7 +1098,12 @@ def watch_here_interactive(root: Path, interval: float, ui: str, *, expand_done:
                 return 0
             if action == "toggle_done":
                 current_expand_done = not current_expand_done
-            if action in {"toggle_done", "refresh"}:
+                scroll_offset = 0
+            if action in {"scroll_up", "scroll_down"}:
+                scroll_offset = apply_watch_scroll_action(scroll_offset, action, max_offset=max_scroll_offset)
+            if action == "tmux_menu":
+                show_tmux_context_menu(input_data)
+            if action in {"toggle_done", "refresh", "scroll_up", "scroll_down", "tmux_menu"}:
                 continue
     except KeyboardInterrupt:
         return 0
@@ -974,13 +1122,231 @@ def command_watch(root: Path, args: list[str]) -> int:
     if "--once" in args:
         print(watch_output(root, interval, ui, expand_done=expand_done))
         return 0
-    if "--here" not in args:
+    mode = watch_launch_mode(
+        args,
+        in_tmux=bool(os.environ.get("TMUX")),
+        stdin_tty=sys.stdin.isatty(),
+        stdout_tty=sys.stdout.isatty(),
+    )
+    if mode == "pane":
         return command_watch_pane(root, args)
+    if mode == "needs_interactive_terminal":
+        print("wily watch needs an interactive terminal outside tmux.", file=sys.stderr)
+        print("In Codex app, open a side terminal and run: ./wily watch", file=sys.stderr)
+        print(
+            "For a one-shot text preview, run: "
+            f"{shlex.quote(sys.executable)} {shlex.quote(str(Path(__file__).resolve()))} watch --once --ui ascii",
+            file=sys.stderr,
+        )
+        return 1
 
     can_interact = "--no-interactive" not in args and sys.stdin.isatty() and sys.stdout.isatty()
     if can_interact:
         return watch_here_interactive(root, interval, ui, expand_done=expand_done)
     return watch_here_noninteractive(root, interval, ui, expand_done=expand_done)
+
+
+def command_run(root: Path, args: list[str]) -> int:
+    import wily_runner
+
+    return wily_runner.command_run(root, args)
+
+
+def update_repository_url() -> str:
+    return os.environ.get("WILY_UPDATE_REPOSITORY_URL", DEFAULT_UPDATE_REPOSITORY)
+
+
+def normalize_repository_url(value: str) -> str:
+    normalized = value.strip()
+    if normalized.endswith(".git"):
+        normalized = normalized[:-4]
+    return normalized.rstrip("/")
+
+
+def plugin_version(root: Path) -> str:
+    manifest = root / ".codex-plugin" / "plugin.json"
+    try:
+        loaded = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return "unknown"
+    return str(loaded.get("version") or "unknown")
+
+
+def git_run(root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *args],
+        cwd=root,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+
+def git_stdout(root: Path, args: list[str]) -> str | None:
+    result = git_run(root, args)
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip()
+
+
+def git_install_root(root: Path) -> Path | None:
+    detected = git_stdout(root, ["rev-parse", "--show-toplevel"])
+    if not detected:
+        return None
+    return Path(detected).resolve()
+
+
+def git_changed_paths(root: Path) -> list[str]:
+    result = git_run(root, ["status", "--porcelain", "--untracked-files=all"])
+    if result.returncode != 0:
+        return ["<unable to read git status>"]
+    paths = []
+    for line in result.stdout.splitlines():
+        value = line[3:].strip()
+        if value:
+            paths.append(value)
+    return paths
+
+
+def current_git_branch(root: Path) -> str | None:
+    branch = git_stdout(root, ["rev-parse", "--abbrev-ref", "HEAD"])
+    if not branch or branch == "HEAD":
+        return None
+    return branch
+
+
+def git_commit(root: Path, ref: str) -> str | None:
+    return git_stdout(root, ["rev-parse", "--short", ref])
+
+
+def print_update_header(root: Path) -> None:
+    print(f"Current version: {plugin_version(root)}")
+
+
+def command_update_migrate(root: Path) -> int:
+    print_update_header(root)
+    if git_install_root(root):
+        print("Install type: git")
+        print("This install is already git-managed. Use ./wily update --check or ./wily update --yes.")
+        return 0
+
+    print("Install type: zip")
+    target = root.parent / "wily-roadmap-managed"
+    if target.exists():
+        print(f"Managed install already exists: {target}", file=sys.stderr)
+        return 1
+
+    repository = update_repository_url()
+    command = ["git", "clone", repository, str(target)]
+    result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    if result.returncode != 0:
+        print(f"Migration failed while running: {format_shell_command(command)}", file=sys.stderr)
+        if result.stderr.strip():
+            print(result.stderr.strip(), file=sys.stderr)
+        return result.returncode
+
+    print(f"Managed install created: {target}")
+    print("Original zip install left unchanged.")
+    print("Use the managed install for future updates.")
+    return 0
+
+
+def command_update(root: Path, args: list[str]) -> int:
+    install_root = plugin_root()
+    check_only = "--check" in args
+    migrate = "--migrate" in args
+    yes = "--yes" in args
+
+    if migrate:
+        return command_update_migrate(install_root)
+
+    print_update_header(install_root)
+    git_root = git_install_root(install_root)
+    if not git_root:
+        print("Install type: zip")
+        print("This install was copied from a zip, so Wily cannot pull updates in place.")
+        print("Run ./wily update --migrate to create a git-managed install next to this directory.")
+        return 0
+
+    print("Install type: git")
+    if git_root != install_root.resolve():
+        print(f"Plugin root: {install_root}")
+        print(f"Git root: {git_root}")
+
+    changed = git_changed_paths(git_root)
+    if changed:
+        print("Working tree has local changes.")
+        for path in changed[:12]:
+            print(f"- {path}")
+        if len(changed) > 12:
+            print(f"- ... {len(changed) - 12} more")
+        print("Commit, stash, or use a fresh managed clone before updating.")
+        return 1
+
+    expected = update_repository_url()
+    remote = git_stdout(git_root, ["config", "--get", "remote.origin.url"])
+    if not remote:
+        print("No origin remote configured for this managed install.", file=sys.stderr)
+        return 1
+    if normalize_repository_url(remote) != normalize_repository_url(expected):
+        print("Unexpected origin remote.")
+        print(f"Expected: {expected}")
+        print(f"Detected: {remote}")
+        if not yes:
+            print("Re-run with --yes only if you trust this remote.")
+            return 1
+
+    branch = current_git_branch(git_root)
+    if not branch:
+        print("Cannot update while HEAD is detached.", file=sys.stderr)
+        return 1
+
+    print(f"Local commit: {git_commit(git_root, 'HEAD') or 'unknown'}")
+    print("Fetching origin...")
+    fetch = git_run(git_root, ["fetch", "origin", branch])
+    if fetch.returncode != 0:
+        print("Fetch failed.", file=sys.stderr)
+        if fetch.stderr.strip():
+            print(fetch.stderr.strip(), file=sys.stderr)
+        return fetch.returncode
+
+    remote_ref = f"origin/{branch}"
+    remote_commit = git_commit(git_root, remote_ref)
+    if not remote_commit:
+        print(f"Remote branch not found: {remote_ref}", file=sys.stderr)
+        return 1
+    print(f"Remote commit: {remote_commit}")
+
+    local_full = git_stdout(git_root, ["rev-parse", "HEAD"])
+    remote_full = git_stdout(git_root, ["rev-parse", remote_ref])
+    if local_full == remote_full:
+        print("Already current.")
+        return 0
+
+    log = git_run(git_root, ["log", "--oneline", f"HEAD..{remote_ref}"])
+    if log.returncode == 0 and log.stdout.strip():
+        print("Pending commits:")
+        for line in log.stdout.splitlines()[:10]:
+            print(f"- {line}")
+
+    if check_only:
+        print("Update available. Run ./wily update --yes to apply a fast-forward update.")
+        return 0
+
+    if not yes:
+        print("Update available. Re-run with --yes to apply a fast-forward update.")
+        return 1
+
+    pull = git_run(git_root, ["pull", "--ff-only", "origin", branch])
+    if pull.returncode != 0:
+        print("Fast-forward update failed.", file=sys.stderr)
+        if pull.stderr.strip():
+            print(pull.stderr.strip(), file=sys.stderr)
+        return pull.returncode
+    print(f"Updated version: {plugin_version(install_root)}")
+    print("Update complete.")
+    return 0
 
 
 def usage() -> str:
@@ -998,6 +1364,8 @@ def usage() -> str:
             "  retry <phase-id>",
             "  replan [reason]",
             "  issues [--add-to-roadmap]",
+            "  run <phase-id> [--runner <id>] [--autonomy <mode>]",
+            "  update [--check|--migrate|--yes]",
             "  watch",
         ]
     )
@@ -1029,6 +1397,10 @@ def main(argv: list[str] | None = None) -> int:
         return command_replan(root, args)
     if command == "issues":
         return command_issues(root, args)
+    if command == "run":
+        return command_run(root, args)
+    if command == "update":
+        return command_update(root, args)
     if command == "watch":
         return command_watch(root, args)
 

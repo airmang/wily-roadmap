@@ -11,7 +11,9 @@ metadata:
 
 Use this skill to manage large software work with Wily's local roadmap model. Wily stores project state in `.wily/`, splits large goals into focused agent-sized phases, tracks dependencies and parallel candidates, records each execution attempt as a session, and preserves completed history when plans change.
 
-Wily owns the Roadmap Plan. External planners may own detailed Phase Implementation Plans when a phase truly needs one. Keep command handling fast: Wily command skills should not invoke external planners or broad verification just to route, inspect, start, retry, block, or complete roadmap state.
+Wily owns the Roadmap Plan. External planners may own detailed Phase Implementation Plans when a phase truly needs one. External workflows such as Custom Workflow may execute one selected phase by reference, but Wily still owns dependencies, attempts, status transitions, replans, and durable session history. Keep command handling fast: Wily command skills should not invoke external planners or broad verification just to route, inspect, start, retry, block, or complete roadmap state.
+
+When a repository shares Wily state through Git, Wily should guide collaborators toward a lightweight source-of-truth split: commit durable roadmap state, keep active execution sessions local, pull before claiming phases, and commit/push roadmap progress only when the user has approved remote work.
 
 ## First Move
 
@@ -106,6 +108,10 @@ Each project owns this local state:
     <date>-replan-<n>.md
 ```
 
+In collaborative repositories, track durable project state (`roadmap.yaml`, `project.md`, `decisions.md`, `status.md`, `phases/**`, `revisions/**`) and keep active `.wily/sessions/**` local unless an explicit archive policy says otherwise.
+
+External workflows such as Custom Workflow may be used by reference. Wily can prepare a phase handoff with `$wily-run`, but Wily does not bundle or execute those workflows. The external workflow contract is documented in `references/runner-adapter-contract.md`.
+
 Phase IDs may be sequential (`01`, `02`, `03`) or grouped (`04-1`, `04-2`, `04-3`) to show related work that can run in parallel after shared dependencies finish.
 
 Supported phase statuses:
@@ -126,6 +132,7 @@ Status summaries translate these markers only for display. Keep stored roadmap s
 
 - Prefer local completion. Do not push, open PRs, merge, delete user work, or run destructive commands unless the user explicitly asks.
 - Before implementation, name the phase and the files or modules you expect to touch.
+- In shared Wily repositories, remind the user to pull before claiming work and to keep code changes plus shared Wily state together in commits.
 - If a detailed implementation plan is needed, use the phase's planner adapter before implementation.
 - Do not invoke planner adapters while merely handling `$wily-status`, `$wily-watch`, `$wily-next`, `$wily-start`, `$wily-retry`, `$wily-block`, or `$wily-complete`.
 - Implement only the approved phase. Do not silently advance into other phases.
@@ -155,6 +162,8 @@ Read detailed policy only when needed:
 - Quiet user-facing responses: `references/response-style.md`
 - Agent compatibility and Claude Code usage: `references/agent-compatibility.md`
 - Optional GitHub Issues linkage: `references/github-issues-policy.md`
+- Collaboration state sync: `references/collaboration-policy.md`
+- External workflow reference: `references/runner-adapter-contract.md`
 
 ## Response Style
 

@@ -19,9 +19,20 @@ COMMANDS = {
     "wily-block": "scripts/wily.py block",
     "wily-retry": "scripts/wily.py retry",
     "wily-replan": "scripts/wily.py replan",
+    "wily-run": "scripts/wily.py run",
+    "wily-update": "scripts/wily.py update",
 }
 
-MUTATING_COMMANDS = {"wily-init", "wily-start", "wily-complete", "wily-block", "wily-retry", "wily-replan"}
+MUTATING_COMMANDS = {
+    "wily-init",
+    "wily-start",
+    "wily-complete",
+    "wily-block",
+    "wily-retry",
+    "wily-replan",
+    "wily-run",
+    "wily-update",
+}
 READONLY_COMMANDS = {"wily-status", "wily-watch", "wily-issues", "wily-next"}
 QUIET_RESPONSE_PHRASE = "Do not echo internal helper commands in normal user-facing responses."
 
@@ -132,6 +143,34 @@ class WilyCommandSkillsTest(unittest.TestCase):
         self.assertIn("$wily-status", joined)
         self.assertIn("$wily-issues", joined)
         self.assertIn("$wily-next", joined)
+        self.assertIn("$wily-run", joined)
+        self.assertIn("$wily-update", joined)
+
+    def test_wily_update_documents_self_update_boundaries(self) -> None:
+        skill = self.skill_text("wily-update")
+        command = (ROOT / "commands" / "update.md").read_text(encoding="utf-8")
+
+        self.assertIn("$wily-update", skill)
+        self.assertIn("scripts/wily.py update", skill)
+        self.assertIn("zip-based install", skill)
+        self.assertIn("git-managed install", skill)
+        self.assertIn("No background checks.", skill)
+        self.assertIn("Remote actions remain approval-first.", skill)
+        self.assertIn("Run the `wily-update` skill", command)
+        self.assertIn("scripts/wily.py update", command)
+
+    def test_wily_run_documents_external_workflow_handoff_without_completion(self) -> None:
+        skill = (ROOT / "skills" / "wily-run" / "SKILL.md").read_text(encoding="utf-8")
+        command = (ROOT / "commands" / "run.md").read_text(encoding="utf-8")
+
+        self.assertIn("$wily-run <phase-id> [--runner <external-workflow-id>]", skill)
+        self.assertIn("reference-only external workflow handoff", skill)
+        self.assertIn("does not execute Custom Workflow", skill)
+        self.assertIn("does not require bundled runner files", skill)
+        self.assertNotIn("bundled default", skill)
+        self.assertNotIn("runners/custom-workflow", skill)
+        self.assertIn("Run the `wily-run` skill", command)
+        self.assertIn("reference-only external workflow handoff", command)
 
     def test_readme_documents_repo_local_zsh_launcher(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -249,11 +288,15 @@ class WilyCommandSkillsTest(unittest.TestCase):
     def test_wily_watch_opens_tmux_pane_by_default(self) -> None:
         text = self.skill_text("wily-watch")
         self.assertIn("python3 <plugin-root>/scripts/wily.py watch --pane", text)
-        self.assertIn("$wily-watch opens a tmux pane by default.", text)
-        self.assertIn("Use `--here` only when the user asks to run watch in the current pane.", text)
+        self.assertIn("$wily-watch opens a tmux pane when already running inside tmux.", text)
+        self.assertIn("Outside tmux, `$wily-watch` runs the live dashboard in the current interactive terminal.", text)
+        self.assertIn("In Codex app, open a side terminal and run `./wily watch`.", text)
         self.assertIn("Uses Rich when installed, otherwise falls back to ASCII.", text)
         self.assertIn("Run `$wily-watch --install-ui` to install the optional Rich UI dependency.", text)
         self.assertIn("leading fully completed stages collapse", text)
+        self.assertIn("left-click the collapsed done-stage summary", text)
+        self.assertIn("Right-click opens a tmux context menu.", text)
+        self.assertIn("mouse wheel to scroll", text)
         self.assertIn("phases done across M stages", text)
         self.assertIn("unfinished, current, ready, and blocked phases stay visible", text)
 

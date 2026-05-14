@@ -1,0 +1,248 @@
+roadmap_version: 11
+goal: "wily roadmap 플러그인을 다듬는 중이야."
+phases:
+  - id: "01"
+    title: "Settle Korean response-style update"
+    path: "phases/01-settle-korean-response-style"
+    status: "done"
+    depends_on: []
+    parallel_group: null
+
+  - id: "02"
+    title: "Harden command skill consistency"
+    path: "phases/02-harden-command-skill-consistency"
+    status: "done"
+    depends_on: ["01"]
+    parallel_group: null
+    current_session: "sessions/2026-05-11-114923-phase-02-attempt-1"
+
+  - id: "03"
+    title: "Korean stage-based DAG status output"
+    path: "phases/03-korean-stage-dag-status-output"
+    status: "done"
+    depends_on: ["02"]
+    parallel_group: null
+    current_session: "sessions/2026-05-11-125059-phase-03-attempt-1"
+
+  - id: "04-1"
+    title: "Improve init roadmap authoring"
+    path: "phases/04-1-improve-init-roadmap-authoring"
+    status: "done"
+    depends_on: ["03"]
+    parallel_group: "04"
+    current_session: "sessions/2026-05-11-222656-phase-04-1-attempt-1"
+
+  - id: "04-2"
+    title: "Harden lifecycle status CLI"
+    path: "phases/04-2-harden-lifecycle-status-cli"
+    status: "done"
+    depends_on: ["03"]
+    parallel_group: "04"
+    current_session: "sessions/2026-05-11-222658-phase-04-2-attempt-1"
+
+  - id: "05-1"
+    title: "wily-status에서 Roadmap 출력 예시 보여주기"
+    path: "phases/05-1-wily-status-roadmap-output"
+    status: "done"
+    depends_on: ["04-1", "04-2"]
+    parallel_group: "05"
+    current_session: "sessions/2026-05-11-224438-phase-05-1-attempt-1"
+
+  - id: "05-2"
+    title: "긴 Phase 제목 표시 방식 개선 검토"
+    path: "phases/05-2-long-phase-title-display"
+    status: "done"
+    depends_on: ["04-1", "04-2"]
+    parallel_group: "05"
+    current_session: "sessions/2026-05-11-224438-phase-05-2-attempt-1"
+
+  - id: "05"
+    title: "Plugin discovery and release polish"
+    path: "phases/05-plugin-discovery-release-polish"
+    status: "done"
+    depends_on: ["05-1", "05-2"]
+    parallel_group: null
+    current_session: "sessions/2026-05-12-084025-phase-05-attempt-1"
+
+  - id: "06-1"
+    title: "Skill 실행 시 불필요한 출력 줄이기"
+    path: "phases/06-1-quiet-skill-output"
+    status: "done"
+    depends_on: ["05"]
+    parallel_group: "06"
+    current_session: "sessions/2026-05-12-091127-phase-06-1-attempt-1"
+
+  - id: "06-2"
+    title: "Claude Code 호환성 확보"
+    path: "phases/06-2-claude-code-compatibility"
+    status: "done"
+    depends_on: ["05"]
+    parallel_group: "06"
+    current_session: "sessions/2026-05-12-104138-phase-06-2-attempt-1"
+
+  - id: "06-3"
+    title: "zsh 레포 단독 실행 명령 제공"
+    path: "phases/06-3-zsh-repo-launcher"
+    status: "done"
+    depends_on: ["05"]
+    parallel_group: "06"
+    current_session: "sessions/2026-05-12-141729-phase-06-3-attempt-1"
+
+  - id: "06-4"
+    title: "진행된 레포에서 wily-init 동작 계약 확정"
+    path: "phases/06-4-mature-repo-init-contract"
+    status: "done"
+    depends_on: ["05"]
+    parallel_group: "06"
+    current_session: "sessions/2026-05-12-144349-phase-06-4-attempt-1"
+
+  - id: "06-5"
+    title: "긴 로드맵 Pane에서 완료 Stage 접기 전략"
+    path: "phases/06-5-long-roadmap-pane-compaction"
+    status: "done"
+    depends_on: ["05"]
+    parallel_group: "06"
+    current_session: "sessions/2026-05-12-144349-phase-06-5-attempt-1"
+
+  - id: "07-1"
+    title: "GitHub Issues 선택적 연동 계약 정의"
+    path: "phases/07-1-github-issues-linkage-contract"
+    status: "done"
+    depends_on: ["06-3", "06-4", "06-5"]
+    parallel_group: "07"
+    current_session: "sessions/2026-05-13-095737-phase-07-1-attempt-1"
+
+  - id: "08-1"
+    title: "Watch pane Stage별 접기 펼치기 인터랙션"
+    path: "phases/08-1-watch-stage-expand-collapse-interaction"
+    status: "done"
+    depends_on: ["06-5"]
+    parallel_group: "08"
+    current_session: "sessions/2026-05-14-145850-phase-08-1-attempt-1"
+
+  - id: "08-2"
+    title: "협업용 Wily state Git 동기화 정책"
+    path: "phases/08-2-collaborative-wily-state-sync"
+    status: "done"
+    depends_on: ["07-1", "08-1"]
+    parallel_group: "08"
+    runner_preferred: "manual"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-163245-phase-08-2-attempt-1"
+
+  - id: "09-1"
+    title: "Runner adapter 계약과 Custom Workflow manifest 정의"
+    path: "phases/09-1-runner-adapter-contract"
+    status: "done"
+    depends_on: ["08-2"]
+    parallel_group: "09"
+    source_spec: "docs/superpowers/specs/2026-05-14-wily-bundled-runner-architecture.md"
+    runner: ""
+    preferred: "manual"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-164208-phase-09-1-attempt-1"
+
+  - id: "09-2"
+    title: "Custom Workflow bundled runner 파일 구성"
+    path: "phases/09-2-bundle-custom-workflow-runner"
+    status: "done"
+    depends_on: ["09-1"]
+    parallel_group: "09"
+    source_spec: "docs/superpowers/specs/2026-05-14-wily-bundled-runner-architecture.md"
+    runner: ""
+    preferred: "manual"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-164931-phase-09-2-attempt-1"
+
+  - id: "09-3"
+    title: "wily-run 명령과 skill 추가"
+    path: "phases/09-3-wily-run-command-skill"
+    status: "done"
+    depends_on: ["09-1"]
+    parallel_group: "09"
+    source_spec: "docs/superpowers/specs/2026-05-14-wily-bundled-runner-architecture.md"
+    runner: ""
+    preferred: "manual"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-164934-phase-09-3-attempt-1"
+
+  - id: "09-4"
+    title: "Runner dispatch helper 구현"
+    path: "phases/09-4-runner-dispatch-helper"
+    status: "done"
+    depends_on: ["09-2", "09-3"]
+    parallel_group: null
+    source_spec: "docs/superpowers/specs/2026-05-14-wily-bundled-runner-architecture.md"
+    runner: ""
+    preferred: "custom-workflow"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-170132-phase-09-4-attempt-1"
+
+  - id: "09-5"
+    title: "Runner artifact archive와 review handoff 연결"
+    path: "phases/09-5-runner-artifact-archive-review"
+    status: "done"
+    depends_on: ["09-4"]
+    parallel_group: null
+    source_spec: "docs/superpowers/specs/2026-05-14-wily-bundled-runner-architecture.md"
+    runner: ""
+    preferred: "custom-workflow"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-171611-phase-09-5-attempt-1"
+
+  - id: "09-6"
+    title: "Optional runner hooks와 watch progress 후속 통합"
+    path: "phases/09-6-optional-runner-hooks-watch-progress"
+    status: "done"
+    depends_on: ["09-5"]
+    parallel_group: null
+    source_spec: "docs/superpowers/specs/2026-05-14-wily-bundled-runner-architecture.md"
+    runner: ""
+    preferred: "custom-workflow"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-173015-phase-09-6-attempt-1"
+
+  - id: "10-1"
+    title: "Zip bootstrap에서 GitHub self-update 경로 제공"
+    path: "phases/10-1-wily-self-update"
+    status: "done"
+    depends_on: ["09-6"]
+    parallel_group: "10"
+    source_spec: "docs/superpowers/specs/2026-05-14-wily-self-update-design.md"
+    runner: ""
+    preferred: "custom-workflow"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-215005-phase-10-1-attempt-1"
+
+  - id: "10-2"
+    title: "Codex app 환경의 wily-watch 전략 확정"
+    path: "phases/10-2-codex-app-watch-strategy"
+    status: "done"
+    depends_on: ["10-1"]
+    parallel_group: "10"
+    runner: ""
+    preferred: "manual"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-220323-phase-10-2-attempt-1"
+
+  - id: "11-1"
+    title: "Custom Workflow bundled runner 제거와 참조 전용 회귀"
+    path: "phases/11-1-custom-workflow-reference-only"
+    status: "done"
+    depends_on: ["10-2"]
+    parallel_group: "11"
+    runner: ""
+    preferred: "manual"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-224704-phase-11-1-attempt-1"
+
+  - id: "12-1"
+    title: "Watch pane 왼쪽 버튼 토글과 펼친 상태 스크롤 보정"
+    path: "phases/12-1-watch-left-toggle-scroll"
+    status: "done"
+    depends_on: ["10-2", "11-1"]
+    parallel_group: "12"
+    runner: ""
+    preferred: "manual"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-231915-phase-12-1-attempt-1"

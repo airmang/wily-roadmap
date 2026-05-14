@@ -2,5 +2,18 @@
 __pycache__/
 *.pyc
 .crack/
-.wily/
 .worktrees/
+
+# Wily collaboration state. Share durable roadmap state through Git, but keep
+# personal execution attempts local unless a later archive policy opts in.
+.wily/*
+!.wily/project.md
+!.wily/roadmap.yaml
+!.wily/status.md
+!.wily/decisions.md
+!.wily/phases/
+!.wily/phases/**
+!.wily/revisions/
+!.wily/revisions/**
+.wily/sessions/
+.wily/sessions/**
