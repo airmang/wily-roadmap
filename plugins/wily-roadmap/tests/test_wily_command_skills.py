@@ -20,6 +20,7 @@ COMMANDS = {
     "wily-retry": "scripts/wily.py retry",
     "wily-replan": "scripts/wily.py replan",
     "wily-run": "scripts/wily.py run",
+    "wily-decompose-stage": "scripts/wily.py decompose-stage",
     "wily-update": "scripts/wily.py update",
 }
 
@@ -31,6 +32,7 @@ MUTATING_COMMANDS = {
     "wily-retry",
     "wily-replan",
     "wily-run",
+    "wily-decompose-stage",
     "wily-update",
 }
 READONLY_COMMANDS = {"wily-status", "wily-watch", "wily-issues", "wily-next"}
@@ -224,6 +226,29 @@ class WilyCommandSkillsTest(unittest.TestCase):
         self.assertIn("reports existing project hints", text)
         self.assertIn("repairs required directories", text)
         self.assertIn("preserve user-authored `project.md`, `roadmap.yaml`, `status.md`, and `decisions.md`", text)
+
+    def test_wily_init_documents_stage_first_collaboration_authoring(self) -> None:
+        text = self.skill_text("wily-init")
+        self.assertIn("## Stage-First Roadmap Authoring", text)
+        self.assertIn("Create top-level `stages:` entries, not top-level implementation `phases:`", text)
+        self.assertIn("Use `depends_on` to make the Stage DAG explicit.", text)
+        self.assertIn("Record `owner` and `write_scope` when collaboration or parallel work is expected.", text)
+        self.assertIn("Do not create child Phases during init.", text)
+        self.assertIn("$wily-decompose-stage", text)
+
+    def test_workflow_docs_describe_stage_as_primary_collaboration_unit(self) -> None:
+        paths = [
+            ROOT / "skills" / "wily-workflow" / "SKILL.md",
+            ROOT / "skills" / "wily-workflow" / "references" / "routing-policy.md",
+            ROOT / "skills" / "wily-workflow" / "references" / "planning-style.md",
+            ROOT / "skills" / "wily-workflow" / "references" / "collaboration-policy.md",
+        ]
+        for path in paths:
+            with self.subTest(path=path):
+                text = path.read_text(encoding="utf-8")
+                self.assertIn("Stage", text)
+                self.assertIn("Phase", text)
+                self.assertIn("write_scope", text)
 
     def test_wily_status_response_shows_phase_flow_verbatim(self) -> None:
         text = self.skill_text("wily-status")

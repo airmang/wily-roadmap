@@ -23,6 +23,7 @@ import wily_watch_ui
 
 
 Phase = dict[str, Any]
+Stage = dict[str, Any]
 Issue = dict[str, Any]
 WATCH_MOUSE_RE = re.compile(r"\x1b\[<(\d+);(\d+);(\d+)([Mm])")
 WATCH_BODY_START_ROW = 4
@@ -60,7 +61,7 @@ def write_baseline_roadmap(path: Path, goal: str | None) -> bool:
             [
                 "roadmap_version: 1",
                 f"goal: {quote(goal_value)}",
-                "phases: []",
+                "stages: []",
                 "",
             ]
         ),
@@ -86,7 +87,7 @@ def command_init(root: Path, args: list[str]) -> int:
     goal = " ".join(args).strip() or None
     state = state_dir(root)
     hints = mature_repo_hints(root)
-    for name in ("phases", "sessions", "revisions"):
+    for name in ("phases", "stages", "sessions", "revisions"):
         (state / name).mkdir(parents=True, exist_ok=True)
 
     preserved_files: list[str] = []
@@ -172,14 +173,131 @@ def find_phase(roadmap: dict[str, Any], phase_id: str) -> Phase | None:
     return None
 
 
+def find_stage(roadmap: dict[str, Any], stage_id: str) -> Stage | None:
+    for stage in roadmap.get("stages") or []:
+        if str(stage.get("id")) == stage_id:
+            return stage
+    return None
+
+
+def stage_state_path(root: Path, stage: Stage) -> Path | None:
+    stage_path = stage.get("path")
+    if not stage_path:
+        return None
+    return state_dir(root) / str(stage_path) / "stage.yaml"
+
+
+def load_stage_state(root: Path, stage: Stage) -> dict[str, Any]:
+    path = stage_state_path(root, stage)
+    if not path or not path.exists():
+        return {}
+    return wily_state_summary.parse_roadmap(wily_state_summary.read_text(path))
+
+
+def save_stage_state(root: Path, stage: Stage, stage_state: dict[str, Any]) -> None:
+    path = stage_state_path(root, stage)
+    if not path:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    phases = stage_state.get("phases") or []
+    path.write_text(serialize_stage_state(stage, phases), encoding="utf-8")
+
+
+def find_stage_phase(root: Path, roadmap: dict[str, Any], phase_id: str) -> tuple[Stage, Phase, dict[str, Any]] | None:
+    for stage in roadmap.get("stages") or []:
+        stage_state = load_stage_state(root, stage)
+        for phase in stage_state.get("phases") or []:
+            if str(phase.get("id")) == phase_id:
+                return stage, phase, stage_state
+    return None
+
+
+def stage_child_phases_done(stage_state: dict[str, Any]) -> bool:
+    phases = stage_state.get("phases") or []
+    return bool(phases) and all(phase.get("status") == "done" for phase in phases)
+
+
 def ready_phase(roadmap: dict[str, Any]) -> Phase | None:
     phases = roadmap.get("phases") or []
     ready = wily_state_summary.executable_phases(phases)
     return ready[0] if ready else None
 
 
+def ready_stage(roadmap: dict[str, Any]) -> Stage | None:
+    stages = roadmap.get("stages") or []
+    ready = wily_state_summary.executable_stages(stages)
+    return ready[0] if ready else None
+
+
+def active_stage_context(root: Path, roadmap: dict[str, Any]) -> tuple[Stage, Phase | None] | None:
+    active_statuses = {"in_progress", "needs_review", "blocked"}
+    for stage in roadmap.get("stages") or []:
+        if stage.get("status") not in active_statuses:
+            continue
+        stage_state = load_stage_state(root, stage)
+        for phase in stage_state.get("phases") or []:
+            if phase.get("status") in active_statuses:
+                return stage, phase
+        return stage, None
+    return None
+
+
 def command_next(root: Path) -> int:
     roadmap = load_roadmap(root)
+    ready_stages = wily_state_summary.executable_stages(roadmap.get("stages") or [])
+    stage = ready_stages[0] if ready_stages else None
+    if stage:
+        if len(ready_stages) > 1:
+            print("Ready stage candidates:")
+            for candidate in ready_stages:
+                owner = candidate.get("owner") or candidate.get("assignee") or candidate.get("assigned_to") or "unassigned"
+                scopes = ", ".join(sorted(wily_state_summary.write_scopes(candidate))) or "unspecified"
+                print(f"- {candidate.get('id')} @{owner} ({scopes})")
+            has_overlap = any(
+                wily_state_summary.write_scopes_overlap(left, right)
+                for index, left in enumerate(ready_stages)
+                for right in ready_stages[index + 1 :]
+            )
+            if has_overlap:
+                print("Parallel-safe: write_scope overlaps; coordinate before parallel work")
+            else:
+                print("Parallel-safe: write_scope does not overlap")
+            print()
+        stage_id = stage.get("id", "unknown")
+        title = stage.get("title", "Untitled stage")
+        print(f"Next stage: {stage_id} - {title}")
+        depends_on = stage.get("depends_on") or []
+        print(f"Depends on: {', '.join(str(value) for value in depends_on) if depends_on else 'none'}")
+        stage_path = stage.get("path")
+        if not stage_path:
+            print("Stage path: missing")
+            return 0
+        folder = state_dir(root) / str(stage_path)
+        print(f"Stage path: {folder}")
+        print()
+        context = stage_context_bundle(str(stage_id), str(title), folder)
+        print(context.strip())
+        print("Approval required before implementation.")
+        return 0
+
+    if roadmap.get("stages"):
+        active = active_stage_context(root, roadmap)
+        if active:
+            active_stage, active_phase = active
+            stage_id = active_stage.get("id", "unknown")
+            title = active_stage.get("title", "Untitled stage")
+            print(f"Active stage: {stage_id} - {title}")
+            if active_phase:
+                phase_id = active_phase.get("id", "unknown")
+                phase_title = active_phase.get("title", "Untitled phase")
+                print(f"Active phase: {phase_id} - {phase_title}")
+                session = active_phase.get("current_session") or active_stage.get("current_session")
+            else:
+                session = active_stage.get("current_session")
+            if session:
+                print(f"Session: {session}")
+            return 0
+
     phase = ready_phase(roadmap)
     if not phase:
         print("Next phase: none")
@@ -228,9 +346,17 @@ def serialize_mapping_entry(prefix: str, key: str, value: Any) -> list[str]:
 def serialize_roadmap(roadmap: dict[str, Any]) -> str:
     lines: list[str] = []
     for key, value in roadmap.items():
-        if key == "phases":
+        if key in {"phases", "stages"}:
             continue
         lines.extend(serialize_mapping_entry("", key, value))
+
+    stages = roadmap.get("stages") or []
+    if stages:
+        lines.append("stages:")
+        for stage in stages:
+            lines.extend(serialize_stage(stage))
+            lines.append("")
+        return "\n".join(lines).rstrip() + "\n"
 
     phases = roadmap.get("phases") or []
     if not phases:
@@ -239,13 +365,67 @@ def serialize_roadmap(roadmap: dict[str, Any]) -> str:
 
     lines.append("phases:")
     for phase in phases:
-        first = True
-        for key, value in phase.items():
-            prefix = "  - " if first else "    "
-            lines.extend(serialize_mapping_entry(prefix, key, value))
-            first = False
+        lines.extend(serialize_phase_with_lanes(phase, first_prefix="  - ", rest_prefix="    ", lanes_prefix="    "))
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
+
+
+def serialize_nested_mapping(prefix: str, mapping: dict[str, Any], skip: set[str] | None = None) -> list[str]:
+    skip = skip or set()
+    lines: list[str] = []
+    for key, value in mapping.items():
+        if key in skip:
+            continue
+        lines.extend(serialize_mapping_entry(prefix, key, value))
+    return lines
+
+
+def serialize_stage(stage: Stage) -> list[str]:
+    lines: list[str] = []
+    first = True
+    for key, value in stage.items():
+        if key == "phases":
+            continue
+        prefix = "  - " if first else "    "
+        lines.extend(serialize_mapping_entry(prefix, key, value))
+        first = False
+    phases = stage.get("phases") or []
+    if phases:
+        lines.append("    phases:")
+        for phase in phases:
+            lines.extend(serialize_phase_with_lanes(phase, first_prefix="      - ", rest_prefix="        ", lanes_prefix="        "))
+    return lines
+
+
+def serialize_phase_with_lanes(phase: Phase, *, first_prefix: str, rest_prefix: str, lanes_prefix: str) -> list[str]:
+    lines: list[str] = []
+    first = True
+    for key, value in phase.items():
+        if key == "lanes":
+            continue
+        prefix = first_prefix if first else rest_prefix
+        lines.extend(serialize_mapping_entry(prefix, key, value))
+        first = False
+    lanes = phase.get("lanes") or []
+    if lanes:
+        lines.append(f"{lanes_prefix}lanes:")
+        for lane in lanes:
+            first_lane = True
+            for key, value in lane.items():
+                prefix = f"{lanes_prefix}  - " if first_lane else f"{lanes_prefix}    "
+                lines.extend(serialize_mapping_entry(prefix, key, value))
+                first_lane = False
+    return lines
+
+
+def serialize_stage_state(stage: Stage, phases: list[Phase]) -> str:
+    data: dict[str, Any] = {
+        "stage_id": str(stage.get("id", "unknown")),
+        "execution_mode": "decomposed",
+        "decomposition_status": "applied",
+        "phases": phases,
+    }
+    return serialize_roadmap(data)
 
 
 def phase_slug(phase_id: str) -> str:
@@ -479,6 +659,14 @@ def next_attempt(root: Path, phase_id: str) -> int:
     return len(session_glob(root, phase_id)) + 1
 
 
+def stage_session_glob(root: Path, stage_id: str) -> list[Path]:
+    return sorted((state_dir(root) / "sessions").glob(f"*stage-{phase_slug(stage_id)}-attempt-*"))
+
+
+def next_stage_attempt(root: Path, stage_id: str) -> int:
+    return len(stage_session_glob(root, stage_id)) + 1
+
+
 def session_status_text(
     phase_id: str,
     attempt: int,
@@ -586,6 +774,40 @@ def phase_context_bundle(phase_id: str, title: str, folder: Path | None) -> tupl
     return content, planner
 
 
+def stage_context_bundle(stage_id: str, title: str, folder: Path | None) -> str:
+    if folder is None:
+        return "\n".join(
+            [
+                "# Wily Stage Context",
+                "",
+                f"Stage: {stage_id} - {title}",
+                "",
+                "Stage folder is missing.",
+                "",
+            ]
+        )
+
+    stage_text = wily_state_summary.read_text(folder / "stage.md")
+    prompt_text = wily_state_summary.read_text(folder / "prompt.md")
+    verification_text = wily_state_summary.read_text(folder / "verification.md")
+    handoff_text = wily_state_summary.read_text(folder / "handoff.md")
+    notes_text = wily_state_summary.read_text(folder / "notes.md")
+
+    return "\n".join(
+        [
+            "# Wily Stage Context",
+            "",
+            f"Stage: {stage_id} - {title}",
+            "",
+            markdown_section("Stage", stage_text),
+            markdown_section("Prompt", prompt_text),
+            markdown_section("Verification", verification_text),
+            markdown_section("Handoff", handoff_text),
+            markdown_section("Notes", notes_text),
+        ]
+    )
+
+
 def create_session(root: Path, phase: Phase, attempt: int) -> Path:
     phase_id = str(phase.get("id", "unknown"))
     title = str(phase.get("title", "Untitled phase"))
@@ -600,6 +822,29 @@ def create_session(root: Path, phase: Phase, attempt: int) -> Path:
 
     (session / "status.yaml").write_text(
         session_status_text(phase_id, attempt, "started", planner=planner),
+        encoding="utf-8",
+    )
+    (session / "input.md").write_text(input_text, encoding="utf-8")
+    (session / "result.md").write_text("# Result\n\nPending.\n", encoding="utf-8")
+    (session / "verification.md").write_text(verification or "# Verification\n\nPending.\n", encoding="utf-8")
+    (session / "changed-files.md").write_text("# Changed Files\n\nPending.\n", encoding="utf-8")
+    return session
+
+
+def create_stage_session(root: Path, stage: Stage, attempt: int) -> Path:
+    stage_id = str(stage.get("id", "unknown"))
+    title = str(stage.get("title", "Untitled stage"))
+    stamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+    session = state_dir(root) / "sessions" / f"{stamp}-stage-{phase_slug(stage_id)}-attempt-{attempt}"
+    session.mkdir(parents=True, exist_ok=False)
+
+    stage_path = stage.get("path")
+    stage_folder = state_dir(root) / str(stage_path) if stage_path else None
+    input_text = stage_context_bundle(stage_id, title, stage_folder)
+    verification = wily_state_summary.read_text(stage_folder / "verification.md") if stage_folder else ""
+
+    (session / "status.yaml").write_text(
+        session_status_text(stage_id, attempt, "started"),
         encoding="utf-8",
     )
     (session / "input.md").write_text(input_text, encoding="utf-8")
@@ -669,8 +914,40 @@ def command_start(root: Path, args: list[str], *, retry: bool = False) -> int:
     roadmap = load_roadmap(root)
     phase = find_phase(roadmap, phase_id)
     if not phase:
-        print(f"Phase not found: {phase_id}", file=sys.stderr)
-        return 1
+        found = find_stage_phase(root, roadmap, phase_id)
+        if found:
+            stage, phase, stage_state = found
+            attempt = next_attempt(root, phase_id)
+            session = create_session(root, phase, attempt)
+            phase["status"] = "in_progress"
+            phase["current_session"] = relative_session_path(root, session)
+            stage["status"] = "in_progress"
+            stage["current_session"] = relative_session_path(root, session)
+            phase.pop("blocker", None)
+            save_stage_state(root, stage, stage_state)
+            save_roadmap(root, roadmap)
+            if retry:
+                print(f"Started phase {phase_id} attempt {attempt}")
+            else:
+                print(f"Started phase {phase_id}")
+            print(f"Session: {session}")
+            return 0
+        stage = find_stage(roadmap, phase_id)
+        if not stage:
+            print(f"Phase or stage not found: {phase_id}", file=sys.stderr)
+            return 1
+        attempt = next_stage_attempt(root, phase_id)
+        session = create_stage_session(root, stage, attempt)
+        stage["status"] = "in_progress"
+        stage["current_session"] = relative_session_path(root, session)
+        stage.pop("blocker", None)
+        save_roadmap(root, roadmap)
+        if retry:
+            print(f"Started stage {phase_id} attempt {attempt}")
+        else:
+            print(f"Started stage {phase_id}")
+        print(f"Session: {session}")
+        return 0
 
     attempt = next_attempt(root, phase_id)
     session = create_session(root, phase, attempt)
@@ -695,8 +972,28 @@ def command_complete(root: Path, args: list[str]) -> int:
     roadmap = load_roadmap(root)
     phase = find_phase(roadmap, phase_id)
     if not phase:
-        print(f"Phase not found: {phase_id}", file=sys.stderr)
-        return 1
+        found = find_stage_phase(root, roadmap, phase_id)
+        if found:
+            stage, phase, stage_state = found
+            phase["status"] = "done"
+            phase.pop("blocker", None)
+            if stage_child_phases_done(stage_state):
+                stage["status"] = "done"
+            update_session_status(root, phase, "verified")
+            save_stage_state(root, stage, stage_state)
+            save_roadmap(root, roadmap)
+            print(f"Completed phase {phase_id}")
+            return 0
+        stage = find_stage(roadmap, phase_id)
+        if not stage:
+            print(f"Phase or stage not found: {phase_id}", file=sys.stderr)
+            return 1
+        stage["status"] = "done"
+        stage.pop("blocker", None)
+        update_session_status(root, stage, "verified")
+        save_roadmap(root, roadmap)
+        print(f"Completed stage {phase_id}")
+        return 0
     phase["status"] = "done"
     phase.pop("blocker", None)
     update_session_status(root, phase, "verified")
@@ -714,8 +1011,28 @@ def command_block(root: Path, args: list[str]) -> int:
     roadmap = load_roadmap(root)
     phase = find_phase(roadmap, phase_id)
     if not phase:
-        print(f"Phase not found: {phase_id}", file=sys.stderr)
-        return 1
+        found = find_stage_phase(root, roadmap, phase_id)
+        if found:
+            stage, phase, stage_state = found
+            phase["status"] = "blocked"
+            phase["blocker"] = reason
+            stage["status"] = "blocked"
+            stage["blocker"] = reason
+            update_session_status(root, phase, "blocked", reason)
+            save_stage_state(root, stage, stage_state)
+            save_roadmap(root, roadmap)
+            print(f"Blocked phase {phase_id}: {reason}")
+            return 0
+        stage = find_stage(roadmap, phase_id)
+        if not stage:
+            print(f"Phase or stage not found: {phase_id}", file=sys.stderr)
+            return 1
+        stage["status"] = "blocked"
+        stage["blocker"] = reason
+        update_session_status(root, stage, "blocked", reason)
+        save_roadmap(root, roadmap)
+        print(f"Blocked stage {phase_id}: {reason}")
+        return 0
     phase["status"] = "blocked"
     phase["blocker"] = reason
     update_session_status(root, phase, "blocked", reason)
@@ -761,6 +1078,179 @@ def command_replan(root: Path, args: list[str]) -> int:
 
     print(f"Recorded replan revision: {revision_path}")
     print(f"Roadmap version: {version + 1}")
+    return 0
+
+
+def stage_decomposition_proposal(stage: Stage) -> list[Phase]:
+    stage_id = str(stage.get("id", "stage"))
+    title = str(stage.get("title", "Untitled stage"))
+    return [
+        {
+            "id": f"{stage_id}-p01",
+            "title": f"{title} implementation slice",
+            "status": "pending",
+            "depends_on": [],
+            "parallel_group": f"{stage_id}-lane-a",
+            "lanes": [
+                {
+                    "id": "server-lane",
+                    "title": "Server-side work",
+                    "write_scope": ["src/server"],
+                },
+                {
+                    "id": "client-lane",
+                    "title": "Client-side work",
+                    "write_scope": ["src/client"],
+                },
+            ],
+        },
+        {
+            "id": f"{stage_id}-p02",
+            "title": f"{title} integration and verification",
+            "status": "pending",
+            "depends_on": [f"{stage_id}-p01"],
+            "parallel_group": None,
+            "lanes": [],
+        },
+    ]
+
+
+def print_stage_decomposition(stage: Stage, phases: list[Phase]) -> None:
+    stage_id = stage.get("id", "unknown")
+    print(f"Stage decomposition proposal: {stage_id}")
+    print("Automatic decomposition is disabled; apply only after user approval.")
+    for phase in phases:
+        print(f"- {phase.get('id')} {phase.get('title')}")
+        lanes = phase.get("lanes") or []
+        if lanes:
+            print(f"  parallel lanes: {len(lanes)}")
+            for lane in lanes:
+                scope = ", ".join(str(value) for value in lane.get("write_scope") or [])
+                print(f"  - {lane.get('id')} write_scope: {scope}")
+
+
+def stage_decomposition_from_json(path: Path) -> tuple[list[Phase], str | None]:
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        return [], f"Cannot read decomposition file: {exc}"
+    except json.JSONDecodeError as exc:
+        return [], f"Invalid decomposition JSON: {exc}"
+    if not isinstance(loaded, list):
+        return [], "Invalid decomposition JSON: expected a list of phases."
+    phases: list[Phase] = []
+    for index, item in enumerate(loaded, start=1):
+        if not isinstance(item, dict):
+            return [], f"Invalid decomposition JSON: phase {index} is not an object."
+        if not item.get("id") or not item.get("title"):
+            return [], f"Invalid decomposition JSON: phase {index} needs id and title."
+        lanes = item.get("lanes") or []
+        if not isinstance(lanes, list):
+            return [], f"Invalid decomposition JSON: phase {item.get('id')} lanes must be a list."
+        for lane_index, lane in enumerate(lanes, start=1):
+            if not isinstance(lane, dict):
+                return [], f"Invalid decomposition JSON: lane {lane_index} in {item.get('id')} is not an object."
+            if not lane.get("id"):
+                return [], f"Invalid decomposition JSON: lane {lane_index} in {item.get('id')} needs id."
+        phase = dict(item)
+        phase.setdefault("status", "pending")
+        phase.setdefault("depends_on", [])
+        phase.setdefault("lanes", lanes)
+        phases.append(phase)
+    return phases, None
+
+
+def write_decomposed_stage_phase_files(root: Path, stage: Stage, phases: list[Phase]) -> None:
+    stage_path = str(stage.get("path") or f"stages/{stage.get('id')}")
+    stage_folder = state_dir(root) / stage_path
+    stage_folder.mkdir(parents=True, exist_ok=True)
+    (stage_folder / "stage.yaml").write_text(serialize_stage_state(stage, phases), encoding="utf-8")
+    phase_root = state_dir(root) / stage_path / "phases"
+    for phase in phases:
+        phase_id = str(phase.get("id"))
+        folder = phase_root / phase_id
+        folder.mkdir(parents=True, exist_ok=True)
+        title = str(phase.get("title") or "Untitled phase")
+        lanes = phase.get("lanes") or []
+        lane_lines = []
+        for lane in lanes:
+            scope = ", ".join(str(value) for value in lane.get("write_scope") or [])
+            lane_lines.append(f"- {lane.get('id')}: {lane.get('title')} ({scope})")
+        (folder / "phase.md").write_text(
+            "\n".join(
+                [
+                    f"# Phase {phase_id}: {title}",
+                    "",
+                    "## Purpose",
+                    "",
+                    "Execute one decomposed slice of the parent Stage.",
+                    "",
+                    "## Parallel Lanes",
+                    "",
+                    *(lane_lines or ["- none"]),
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        (folder / "planner.md").write_text(
+            "# Planner\n\nRecommended planner: manual\n",
+            encoding="utf-8",
+        )
+        (folder / "prompt.md").write_text(f"# Execution Prompt\n\nImplement {phase_id}: {title}\n", encoding="utf-8")
+        (folder / "verification.md").write_text("# Verification\n\nRun phase-scoped checks.\n", encoding="utf-8")
+        (folder / "handoff.md").write_text("# Handoff\n\nRead the parent Stage and lane write scopes first.\n", encoding="utf-8")
+        (folder / "plan.md").write_text("# Implementation Plan\n\nNo detailed implementation plan exists yet.\n", encoding="utf-8")
+        (folder / "notes.md").write_text("# Notes\n\nCreated by stage decomposition.\n", encoding="utf-8")
+
+
+def command_decompose_stage(root: Path, args: list[str]) -> int:
+    stage_id = require_phase_id(args, "decompose-stage")
+    if not stage_id:
+        return 2
+    roadmap = load_roadmap(root)
+    stage = find_stage(roadmap, stage_id)
+    if not stage:
+        print(f"Stage not found: {stage_id}", file=sys.stderr)
+        return 1
+
+    from_json: Path | None = None
+    if "--from-json" in args:
+        index = args.index("--from-json")
+        try:
+            from_json = Path(args[index + 1])
+        except IndexError:
+            print("Usage: wily.py decompose-stage <stage-id> --from-json <path>", file=sys.stderr)
+            return 2
+
+    phases = stage_decomposition_proposal(stage)
+    if from_json:
+        phases, error = stage_decomposition_from_json(from_json)
+        if error:
+            print(error, file=sys.stderr)
+            return 1
+
+    if "--dry-run" in args or "--apply-fixture" not in args:
+        print_stage_decomposition(stage, phases)
+        if "--apply-fixture" not in args and not from_json:
+            print("No files changed.")
+        if from_json and "--dry-run" not in args:
+            stage["execution_mode"] = "decomposed"
+            stage["decomposition_status"] = "applied"
+            stage.pop("phases", None)
+            write_decomposed_stage_phase_files(root, stage, phases)
+            save_roadmap(root, roadmap)
+            print(f"Decomposed stage {stage_id}")
+            print(f"Stage path: {state_dir(root) / str(stage.get('path'))}")
+        return 0
+
+    stage["execution_mode"] = "decomposed"
+    stage["decomposition_status"] = "applied"
+    stage.pop("phases", None)
+    write_decomposed_stage_phase_files(root, stage, phases)
+    save_roadmap(root, roadmap)
+    print(f"Decomposed stage {stage_id}")
+    print(f"Stage path: {state_dir(root) / str(stage.get('path'))}")
     return 0
 
 
@@ -1379,6 +1869,7 @@ def usage() -> str:
             "  retry <phase-id>",
             "  replan [reason]",
             "  issues [--add-to-roadmap]",
+            "  decompose-stage <stage-id> [--dry-run|--from-json <path>|--apply-fixture]",
             "  run <phase-id> [--runner <id>] [--autonomy <mode>]",
             "  update [--check|--migrate|--yes]",
             "  watch",
@@ -1412,6 +1903,8 @@ def main(argv: list[str] | None = None) -> int:
         return command_replan(root, args)
     if command == "issues":
         return command_issues(root, args)
+    if command == "decompose-stage":
+        return command_decompose_stage(root, args)
     if command == "run":
         return command_run(root, args)
     if command == "update":

@@ -737,6 +737,129 @@ class RenderWatchTest(unittest.TestCase):
             self.assertIn("@claude", out)
             self.assertIn("task draft release notes", out)
 
+    def test_render_stage_local_child_phases_under_active_stage(self) -> None:
+        body = "\n".join([
+            'roadmap_version: 13',
+            'stages:',
+            '  - id: "s13"',
+            '    title: "Parser hardening"',
+            '    status: "done"',
+            '    depends_on: []',
+            '    path: "stages/s13"',
+            '  - id: "s14"',
+            '    title: "Stage and mobile watch"',
+            '    status: "in_progress"',
+            '    depends_on: ["s13"]',
+            '    path: "stages/s14"',
+            '    execution_mode: "decomposed"',
+            '    decomposition_status: "applied"',
+        ])
+        stage_state = "\n".join([
+            'stage_id: "s14"',
+            'execution_mode: "decomposed"',
+            'decomposition_status: "applied"',
+            'phases:',
+            '  - id: "14-1"',
+            '    title: "Stage와 Phase 계층 분리"',
+            '    status: "done"',
+            '    depends_on: []',
+            '  - id: "14-2"',
+            '    title: "스마트폰 하단 watch 레이아웃"',
+            '    status: "in_progress"',
+            '    depends_on: ["14-1"]',
+        ])
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self._make(project, body)
+            stage_dir = project / ".wily" / "stages" / "s14"
+            stage_dir.mkdir(parents=True, exist_ok=True)
+            (stage_dir / "stage.yaml").write_text(stage_state, encoding="utf-8")
+
+            out = wily_watch_ui.render_watch(project, interval=2.0, rich=False, size=(100, 14))
+
+            self.assertIn("s14", out)
+            self.assertIn("Stage and mobile watch", out)
+            self.assertIn("14-1", out)
+            self.assertIn("Stage와 Phase 계층 분리", out)
+            self.assertIn("14-2", out)
+            self.assertIn("스마트폰 하단 watch 레이아웃", out)
+
+    def test_stage_first_summary_counts_done_stages_not_child_phases(self) -> None:
+        body = "\n".join([
+            'roadmap_version: 14',
+            'stages:',
+            '  - id: "s12"',
+            '    title: "Watch pane polish"',
+            '    status: "done"',
+            '    depends_on: []',
+            '    path: "stages/s12"',
+            '  - id: "s13"',
+            '    title: "Parser hardening"',
+            '    status: "done"',
+            '    depends_on: ["s12"]',
+            '    path: "stages/s13"',
+            '  - id: "s14"',
+            '    title: "Stage and mobile watch"',
+            '    status: "in_progress"',
+            '    depends_on: ["s13"]',
+            '    path: "stages/s14"',
+        ])
+        first_done_stage_state = "\n".join([
+            'stage_id: "s12"',
+            'execution_mode: "decomposed"',
+            'decomposition_status: "applied"',
+            'phases:',
+            '  - id: "12-1"',
+            '    title: "Watch toggle"',
+            '    status: "done"',
+            '    depends_on: []',
+        ])
+        done_stage_state = "\n".join([
+            'stage_id: "s13"',
+            'execution_mode: "decomposed"',
+            'decomposition_status: "applied"',
+            'phases:',
+            '  - id: "13-1"',
+            '    title: "Keep literal YAML blocks"',
+            '    status: "done"',
+            '    depends_on: []',
+            '  - id: "13-2"',
+            '    title: "Serializer regression"',
+            '    status: "done"',
+            '    depends_on: ["13-1"]',
+        ])
+        active_stage_state = "\n".join([
+            'stage_id: "s14"',
+            'execution_mode: "decomposed"',
+            'decomposition_status: "applied"',
+            'phases:',
+            '  - id: "14-1"',
+            '    title: "Stage와 Phase 계층 분리"',
+            '    status: "done"',
+            '    depends_on: []',
+            '  - id: "14-2"',
+            '    title: "스마트폰 하단 watch 레이아웃"',
+            '    status: "in_progress"',
+            '    depends_on: ["14-1"]',
+        ])
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self._make(project, body)
+            for stage_id, stage_state in {
+                "s12": first_done_stage_state,
+                "s13": done_stage_state,
+                "s14": active_stage_state,
+            }.items():
+                stage_dir = project / ".wily" / "stages" / stage_id
+                stage_dir.mkdir(parents=True, exist_ok=True)
+                (stage_dir / "stage.yaml").write_text(stage_state, encoding="utf-8")
+
+            out = wily_watch_ui.render_watch(project, interval=2.0, rich=False, size=(100, 10))
+
+            self.assertIn("2 stages done", out)
+            self.assertNotIn("5 phases done", out)
+            self.assertIn("14-2", out)
+
     def test_render_falls_back_to_flat_for_skip_dag(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             self._make(Path(tmp), "\n".join([

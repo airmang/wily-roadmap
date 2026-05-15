@@ -1,0 +1,14 @@
+stage_id: "s12"
+execution_mode: "decomposed"
+decomposition_status: "applied"
+phases:
+  - id: "12-1"
+    title: "Watch pane 왼쪽 버튼 토글과 펼친 상태 스크롤 보정"
+    path: "phases/12-1-watch-left-toggle-scroll"
+    status: "done"
+    depends_on: []
+    parallel_group: "12"
+    runner: ""
+    preferred: "manual"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-231915-phase-12-1-attempt-1"

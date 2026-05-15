@@ -304,6 +304,41 @@ class WilyCliTest(unittest.TestCase):
             encoding="utf-8",
         )
 
+    def write_stage_roadmap(self, project: Path) -> None:
+        state = self.create_state(project)
+        (state / "stages").mkdir(parents=True, exist_ok=True)
+        stage_dir = state / "stages" / "s01-mvp0"
+        stage_dir.mkdir(parents=True, exist_ok=True)
+        (stage_dir / "stage.md").write_text("# Stage s01-mvp0\n\nMVP 0 loop.\n", encoding="utf-8")
+        (stage_dir / "prompt.md").write_text("Run the whole stage directly.\n", encoding="utf-8")
+        (stage_dir / "verification.md").write_text("python3 -m unittest\n", encoding="utf-8")
+        (stage_dir / "handoff.md").write_text("Start from Stage context.\n", encoding="utf-8")
+        (stage_dir / "notes.md").write_text("# Notes\n", encoding="utf-8")
+        (state / "roadmap.yaml").write_text(
+            "\n".join(
+                [
+                    'roadmap_version: 2',
+                    'goal: "Ship stage-first app"',
+                    'stages:',
+                    '  - id: "s00-foundation"',
+                    '    title: "Foundation"',
+                    '    path: "stages/s00-foundation"',
+                    '    status: "done"',
+                    '    depends_on: []',
+                    '    execution_mode: "direct"',
+                    '',
+                    '  - id: "s01-mvp0"',
+                    '    title: "MVP 0 loop"',
+                    '    path: "stages/s01-mvp0"',
+                    '    status: "pending"',
+                    '    depends_on: ["s00-foundation"]',
+                    '    execution_mode: "direct"',
+                    '    decomposition_status: "none"',
+                ]
+            ),
+            encoding="utf-8",
+        )
+
     def test_init_creates_wily_state(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp)
@@ -317,9 +352,13 @@ class WilyCliTest(unittest.TestCase):
             self.assertTrue((project / ".wily" / "status.md").is_file())
             self.assertTrue((project / ".wily" / "decisions.md").is_file())
             self.assertTrue((project / ".wily" / "phases").is_dir())
+            self.assertTrue((project / ".wily" / "stages").is_dir())
             self.assertTrue((project / ".wily" / "sessions").is_dir())
             self.assertTrue((project / ".wily" / "revisions").is_dir())
             self.assertIn("Ship useful app", (project / ".wily" / "project.md").read_text(encoding="utf-8"))
+            roadmap = (project / ".wily" / "roadmap.yaml").read_text(encoding="utf-8")
+            self.assertIn("stages: []", roadmap)
+            self.assertNotIn("phases: []", roadmap)
 
     def test_init_without_goal_creates_baseline_state_and_reports_goal_needed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -338,6 +377,7 @@ class WilyCliTest(unittest.TestCase):
             self.assertTrue((project / ".wily" / "roadmap.yaml").is_file())
             self.assertTrue((project / ".wily" / "status.md").is_file())
             self.assertTrue((project / ".wily" / "decisions.md").is_file())
+            self.assertTrue((project / ".wily" / "stages").is_dir())
 
     def test_init_in_mature_repo_reports_existing_project_hints_without_goal(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -374,6 +414,8 @@ class WilyCliTest(unittest.TestCase):
             decisions_text = (project / ".wily" / "decisions.md").read_text(encoding="utf-8")
             self.assertIn("목표: 사용자 목표 필요", project_text)
             self.assertIn('goal: "사용자 목표 필요"', roadmap_text)
+            self.assertIn("stages: []", roadmap_text)
+            self.assertNotIn("phases: []", roadmap_text)
             self.assertIn("상태가 초기화되었습니다.", status_text)
             self.assertIn("아직 기록된 결정이 없습니다.", decisions_text)
 
@@ -412,6 +454,7 @@ class WilyCliTest(unittest.TestCase):
 
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue((state / "phases").is_dir())
+            self.assertTrue((state / "stages").is_dir())
             self.assertTrue((state / "sessions").is_dir())
             self.assertTrue((state / "revisions").is_dir())
             self.assertEqual((state / "project.md").read_text(encoding="utf-8"), "# Existing Project\n")
@@ -485,6 +528,278 @@ class WilyCliTest(unittest.TestCase):
             self.assertIn("git:", result.stdout)
             self.assertNotIn("Phase 흐름:", result.stdout)
             self.assertNotIn("Repo: ", result.stdout)
+
+    def test_next_recommends_ready_stage_without_decomposing_it(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.write_stage_roadmap(project)
+
+            result = self.run_wily(project, "next")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Next stage: s01-mvp0 - MVP 0 loop", result.stdout)
+            self.assertIn("Stage path:", result.stdout)
+            self.assertNotIn("Phase path:", result.stdout)
+            roadmap = (project / ".wily" / "roadmap.yaml").read_text(encoding="utf-8")
+            self.assertIn('decomposition_status: "none"', roadmap)
+
+    def test_next_lists_parallel_ready_stage_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            state = self.create_state(project)
+            (state / "roadmap.yaml").write_text(
+                "\n".join(
+                    [
+                        'roadmap_version: 2',
+                        'stages:',
+                        '  - id: "s00-foundation"',
+                        '    title: "Foundation"',
+                        '    status: "done"',
+                        '    depends_on: []',
+                        '    path: "stages/s00-foundation"',
+                        '',
+                        '  - id: "s01-server"',
+                        '    title: "Server work"',
+                        '    status: "pending"',
+                        '    owner: "wily"',
+                        '    depends_on: ["s00-foundation"]',
+                        '    path: "stages/s01-server"',
+                        '    write_scope: ["src/server"]',
+                        '',
+                        '  - id: "s02-client"',
+                        '    title: "Client work"',
+                        '    status: "pending"',
+                        '    owner: "right"',
+                        '    depends_on: ["s00-foundation"]',
+                        '    path: "stages/s02-client"',
+                        '    write_scope: ["src/client"]',
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = self.run_wily(project, "next")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Ready stage candidates:", result.stdout)
+            self.assertIn("- s01-server @wily", result.stdout)
+            self.assertIn("- s02-client @right", result.stdout)
+            self.assertIn("Parallel-safe: write_scope does not overlap", result.stdout)
+
+    def test_next_reports_active_stage_local_phase_when_no_stage_is_ready(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            state = self.create_state(project)
+            stage_dir = state / "stages" / "s14"
+            stage_dir.mkdir(parents=True)
+            (state / "roadmap.yaml").write_text(
+                "\n".join(
+                    [
+                        'roadmap_version: 14',
+                        'stages:',
+                        '  - id: "s13"',
+                        '    title: "Parser hardening"',
+                        '    status: "done"',
+                        '    depends_on: []',
+                        '    path: "stages/s13"',
+                        '',
+                        '  - id: "s14"',
+                        '    title: "Stage and mobile watch"',
+                        '    status: "in_progress"',
+                        '    depends_on: ["s13"]',
+                        '    path: "stages/s14"',
+                        '    current_session: "sessions/active-stage"',
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (stage_dir / "stage.yaml").write_text(
+                "\n".join(
+                    [
+                        'stage_id: "s14"',
+                        'execution_mode: "decomposed"',
+                        'decomposition_status: "applied"',
+                        'phases:',
+                        '  - id: "14-1"',
+                        '    title: "Stage hierarchy"',
+                        '    status: "done"',
+                        '    depends_on: []',
+                        '  - id: "14-2"',
+                        '    title: "Mobile watch layout"',
+                        '    status: "in_progress"',
+                        '    depends_on: ["14-1"]',
+                        '    current_session: "sessions/active-phase"',
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = self.run_wily(project, "next")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Active stage: s14 - Stage and mobile watch", result.stdout)
+            self.assertIn("Active phase: 14-2 - Mobile watch layout", result.stdout)
+            self.assertIn("Session: sessions/active-phase", result.stdout)
+
+    def test_start_stage_creates_stage_session_without_child_phases(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.write_stage_roadmap(project)
+
+            result = self.run_wily(project, "start", "s01-mvp0")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Started stage s01-mvp0", result.stdout)
+            session = next((project / ".wily" / "sessions").glob("*stage-s01-mvp0-attempt-1"))
+            self.assertTrue((session / "input.md").is_file())
+            self.assertIn("Stage: s01-mvp0 - MVP 0 loop", (session / "input.md").read_text(encoding="utf-8"))
+            roadmap = (project / ".wily" / "roadmap.yaml").read_text(encoding="utf-8")
+            self.assertIn('id: "s01-mvp0"', roadmap)
+            self.assertIn('status: "in_progress"', roadmap)
+            self.assertNotIn('phases:', roadmap)
+
+    def test_decompose_stage_dry_run_does_not_mutate_roadmap(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.write_stage_roadmap(project)
+            before = (project / ".wily" / "roadmap.yaml").read_text(encoding="utf-8")
+
+            result = self.run_wily(project, "decompose-stage", "s01-mvp0", "--dry-run")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Stage decomposition proposal: s01-mvp0", result.stdout)
+            self.assertIn("parallel lanes", result.stdout)
+            self.assertEqual((project / ".wily" / "roadmap.yaml").read_text(encoding="utf-8"), before)
+
+    def test_decompose_stage_apply_fixture_records_phase_and_parallel_lanes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.write_stage_roadmap(project)
+
+            result = self.run_wily(project, "decompose-stage", "s01-mvp0", "--apply-fixture")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Decomposed stage s01-mvp0", result.stdout)
+            roadmap = (project / ".wily" / "roadmap.yaml").read_text(encoding="utf-8")
+            self.assertIn('execution_mode: "decomposed"', roadmap)
+            self.assertIn('decomposition_status: "applied"', roadmap)
+            self.assertNotIn('id: "s01-mvp0-p01"', roadmap)
+            self.assertNotIn('lanes:', roadmap)
+            stage_state = project / ".wily" / "stages" / "s01-mvp0" / "stage.yaml"
+            self.assertTrue(stage_state.is_file())
+            stage_text = stage_state.read_text(encoding="utf-8")
+            self.assertIn('id: "s01-mvp0-p01"', stage_text)
+            self.assertIn('lanes:', stage_text)
+            self.assertIn('write_scope: ["src/server"]', stage_text)
+            self.assertTrue((project / ".wily" / "stages" / "s01-mvp0" / "phases" / "s01-mvp0-p01" / "phase.md").is_file())
+
+    def test_decompose_stage_from_json_records_user_authored_decomposition(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.write_stage_roadmap(project)
+            proposal = project / "decomposition.json"
+            proposal.write_text(
+                json.dumps(
+                    [
+                        {
+                            "id": "s01-custom",
+                            "title": "Custom user-authored phase",
+                            "status": "pending",
+                            "depends_on": [],
+                            "lanes": [
+                                {
+                                    "id": "api-lane",
+                                    "title": "API work",
+                                    "write_scope": ["src/api"],
+                                }
+                            ],
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = self.run_wily(project, "decompose-stage", "s01-mvp0", "--from-json", str(proposal))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Decomposed stage s01-mvp0", result.stdout)
+            roadmap = (project / ".wily" / "roadmap.yaml").read_text(encoding="utf-8")
+            self.assertNotIn('id: "s01-custom"', roadmap)
+            self.assertNotIn('id: "api-lane"', roadmap)
+            stage_text = (project / ".wily" / "stages" / "s01-mvp0" / "stage.yaml").read_text(encoding="utf-8")
+            self.assertIn('id: "s01-custom"', stage_text)
+            self.assertIn('title: "Custom user-authored phase"', stage_text)
+            self.assertIn('id: "api-lane"', stage_text)
+            self.assertIn('write_scope: ["src/api"]', stage_text)
+
+    def test_status_reads_decomposed_phase_counts_from_stage_local_state(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.write_stage_roadmap(project)
+            run = self.run_wily(project, "decompose-stage", "s01-mvp0", "--apply-fixture")
+            self.assertEqual(run.returncode, 0, run.stderr)
+
+            result = self.run_wily(project, "status")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            out = strip_ansi(result.stdout)
+            self.assertIn("MVP 0 loop", out)
+            self.assertIn("2 phases", out)
+
+    def test_complete_stage_local_child_phase_updates_stage_state(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            state = self.create_state(project)
+            session = state / "sessions" / "2026-05-15-000000-phase-p02-attempt-1"
+            session.mkdir(parents=True)
+            (session / "status.yaml").write_text('phase: "p02"\nattempt: 1\nstatus: "started"\n', encoding="utf-8")
+            stage_dir = state / "stages" / "s01"
+            stage_dir.mkdir(parents=True)
+            (stage_dir / "stage.yaml").write_text(
+                "\n".join(
+                    [
+                        'stage_id: "s01"',
+                        'execution_mode: "decomposed"',
+                        'decomposition_status: "applied"',
+                        'phases:',
+                        '  - id: "p01"',
+                        '    title: "Done child"',
+                        '    status: "done"',
+                        '    depends_on: []',
+                        '  - id: "p02"',
+                        '    title: "Current child"',
+                        '    status: "in_progress"',
+                        '    depends_on: ["p01"]',
+                        '    current_session: "sessions/2026-05-15-000000-phase-p02-attempt-1"',
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (state / "roadmap.yaml").write_text(
+                "\n".join(
+                    [
+                        'roadmap_version: 2',
+                        'stages:',
+                        '  - id: "s01"',
+                        '    title: "Parent stage"',
+                        '    path: "stages/s01"',
+                        '    status: "in_progress"',
+                        '    depends_on: []',
+                        '    execution_mode: "decomposed"',
+                        '    decomposition_status: "applied"',
+                        '    current_session: "sessions/2026-05-15-000000-phase-p02-attempt-1"',
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = self.run_wily(project, "complete", "p02")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Completed phase p02", result.stdout)
+            self.assertIn('status: "done"', (stage_dir / "stage.yaml").read_text(encoding="utf-8"))
+            self.assertIn('status: "done"', (state / "roadmap.yaml").read_text(encoding="utf-8"))
+            self.assertIn('status: "verified"', (session / "status.yaml").read_text(encoding="utf-8"))
 
     def test_run_creates_custom_workflow_skillset_request_without_bundled_runner(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

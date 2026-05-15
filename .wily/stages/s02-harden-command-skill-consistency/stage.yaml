@@ -1,0 +1,11 @@
+stage_id: "s02"
+execution_mode: "decomposed"
+decomposition_status: "applied"
+phases:
+  - id: "02"
+    title: "Harden command skill consistency"
+    path: "phases/02-harden-command-skill-consistency"
+    status: "done"
+    depends_on: []
+    parallel_group: null
+    current_session: "sessions/2026-05-11-114923-phase-02-attempt-1"

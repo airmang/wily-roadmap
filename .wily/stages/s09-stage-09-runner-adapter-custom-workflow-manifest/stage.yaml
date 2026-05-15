@@ -1,0 +1,75 @@
+stage_id: "s09"
+execution_mode: "decomposed"
+decomposition_status: "applied"
+phases:
+  - id: "09-1"
+    title: "Runner adapter 계약과 Custom Workflow manifest 정의"
+    path: "phases/09-1-runner-adapter-contract"
+    status: "done"
+    depends_on: []
+    parallel_group: "09"
+    source_spec: "docs/superpowers/specs/2026-05-14-wily-bundled-runner-architecture.md"
+    runner: ""
+    preferred: "manual"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-164208-phase-09-1-attempt-1"
+
+  - id: "09-2"
+    title: "Custom Workflow bundled runner 파일 구성"
+    path: "phases/09-2-bundle-custom-workflow-runner"
+    status: "done"
+    depends_on: ["09-1"]
+    parallel_group: "09"
+    source_spec: "docs/superpowers/specs/2026-05-14-wily-bundled-runner-architecture.md"
+    runner: ""
+    preferred: "manual"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-164931-phase-09-2-attempt-1"
+
+  - id: "09-3"
+    title: "wily-run 명령과 skill 추가"
+    path: "phases/09-3-wily-run-command-skill"
+    status: "done"
+    depends_on: ["09-1"]
+    parallel_group: "09"
+    source_spec: "docs/superpowers/specs/2026-05-14-wily-bundled-runner-architecture.md"
+    runner: ""
+    preferred: "manual"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-164934-phase-09-3-attempt-1"
+
+  - id: "09-4"
+    title: "Runner dispatch helper 구현"
+    path: "phases/09-4-runner-dispatch-helper"
+    status: "done"
+    depends_on: ["09-2", "09-3"]
+    parallel_group: null
+    source_spec: "docs/superpowers/specs/2026-05-14-wily-bundled-runner-architecture.md"
+    runner: ""
+    preferred: "custom-workflow"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-170132-phase-09-4-attempt-1"
+
+  - id: "09-5"
+    title: "Runner artifact archive와 review handoff 연결"
+    path: "phases/09-5-runner-artifact-archive-review"
+    status: "done"
+    depends_on: ["09-4"]
+    parallel_group: null
+    source_spec: "docs/superpowers/specs/2026-05-14-wily-bundled-runner-architecture.md"
+    runner: ""
+    preferred: "custom-workflow"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-171611-phase-09-5-attempt-1"
+
+  - id: "09-6"
+    title: "Optional runner hooks와 watch progress 후속 통합"
+    path: "phases/09-6-optional-runner-hooks-watch-progress"
+    status: "done"
+    depends_on: ["09-5"]
+    parallel_group: null
+    source_spec: "docs/superpowers/specs/2026-05-14-wily-bundled-runner-architecture.md"
+    runner: ""
+    preferred: "custom-workflow"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-173015-phase-09-6-attempt-1"

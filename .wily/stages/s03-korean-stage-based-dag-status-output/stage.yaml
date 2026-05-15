@@ -1,0 +1,11 @@
+stage_id: "s03"
+execution_mode: "decomposed"
+decomposition_status: "applied"
+phases:
+  - id: "03"
+    title: "Korean stage-based DAG status output"
+    path: "phases/03-korean-stage-dag-status-output"
+    status: "done"
+    depends_on: []
+    parallel_group: null
+    current_session: "sessions/2026-05-11-125059-phase-03-attempt-1"

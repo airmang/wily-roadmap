@@ -1,0 +1,11 @@
+stage_id: "s07"
+execution_mode: "decomposed"
+decomposition_status: "applied"
+phases:
+  - id: "07-1"
+    title: "GitHub Issues 선택적 연동 계약 정의"
+    path: "phases/07-1-github-issues-linkage-contract"
+    status: "done"
+    depends_on: []
+    parallel_group: "07"
+    current_session: "sessions/2026-05-13-095737-phase-07-1-attempt-1"

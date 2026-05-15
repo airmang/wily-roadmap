@@ -1,0 +1,14 @@
+stage_id: "s11"
+execution_mode: "decomposed"
+decomposition_status: "applied"
+phases:
+  - id: "11-1"
+    title: "Custom Workflow bundled runner 제거와 참조 전용 회귀"
+    path: "phases/11-1-custom-workflow-reference-only"
+    status: "done"
+    depends_on: []
+    parallel_group: "11"
+    runner: ""
+    preferred: "manual"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-224704-phase-11-1-attempt-1"
