@@ -13,6 +13,8 @@ __pycache__/
 !.wily/decisions.md
 !.wily/phases/
 !.wily/phases/**
+!.wily/stages/
+!.wily/stages/**
 !.wily/revisions/
 !.wily/revisions/**
 .wily/sessions/

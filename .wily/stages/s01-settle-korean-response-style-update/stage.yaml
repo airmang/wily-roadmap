@@ -1,0 +1,10 @@
+stage_id: "s01"
+execution_mode: "decomposed"
+decomposition_status: "applied"
+phases:
+  - id: "01"
+    title: "Settle Korean response-style update"
+    path: "phases/01-settle-korean-response-style"
+    status: "done"
+    depends_on: []
+    parallel_group: null

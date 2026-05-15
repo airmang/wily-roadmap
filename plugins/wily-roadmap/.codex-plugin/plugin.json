@@ -28,11 +28,12 @@
       "Write"
     ],
     "defaultPrompt": [
-      "$wily-init: create a roadmap for this repo",
+      "$wily-init: create a Stage-first roadmap for this repo",
       "$wily-status: show current roadmap state",
       "$wily-watch: watch roadmap state in a tmux pane",
       "$wily-issues: inspect optional GitHub issue linkage",
       "$wily-next: show the next ready phase",
+      "$wily-decompose-stage <stage-id>: explicitly split a Stage into Phases and parallel lanes",
       "$wily-run <phase-id>: route a phase through Custom Workflow Skillset",
       "$wily-update: check or apply Wily plugin updates"
     ],

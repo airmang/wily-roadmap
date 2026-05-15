@@ -1,0 +1,26 @@
+stage_id: "s10"
+execution_mode: "decomposed"
+decomposition_status: "applied"
+phases:
+  - id: "10-1"
+    title: "Zip bootstrap에서 GitHub self-update 경로 제공"
+    path: "phases/10-1-wily-self-update"
+    status: "done"
+    depends_on: []
+    parallel_group: "10"
+    source_spec: "docs/superpowers/specs/2026-05-14-wily-self-update-design.md"
+    runner: ""
+    preferred: "custom-workflow"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-215005-phase-10-1-attempt-1"
+
+  - id: "10-2"
+    title: "Codex app 환경의 wily-watch 전략 확정"
+    path: "phases/10-2-codex-app-watch-strategy"
+    status: "done"
+    depends_on: ["10-1"]
+    parallel_group: "10"
+    runner: ""
+    preferred: "manual"
+    autonomy_mode: "goal_scoped"
+    current_session: "sessions/2026-05-14-220323-phase-10-2-attempt-1"

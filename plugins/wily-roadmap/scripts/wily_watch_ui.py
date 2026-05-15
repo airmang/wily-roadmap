@@ -107,8 +107,11 @@ def _load(root: Path) -> _RoadmapView:
         return _RoadmapView(root=root, has_state=state_dir.exists(), roadmap=None)
 
     roadmap = wily_state_summary.parse_roadmap(wily_state_summary.read_text(roadmap_path))
-    phases = roadmap.get("phases") or []
-    ready = wily_state_summary.executable_phases(phases)
+    stages = roadmap.get("stages") or []
+    if stages:
+        stages = wily_state_summary.enrich_stages_with_local_state(root, stages)
+    phases = stages if stages else roadmap.get("phases") or []
+    ready = wily_state_summary.executable_stages(stages) if stages else wily_state_summary.executable_phases(phases)
     return _RoadmapView(
         root=root,
         has_state=True,
@@ -411,6 +414,13 @@ def _node_line(
     assignment_detail = _phase_assignment_detail(phase)
     if assignment_detail:
         detail_parts.append(assignment_detail)
+    child_phases = phase.get("phases") or []
+    if child_phases:
+        phase_word = "phase" if len(child_phases) == 1 else "phases"
+        lane_count = sum(len(child.get("lanes") or []) for child in child_phases if isinstance(child, dict))
+        detail_parts.append(f"{len(child_phases)} {phase_word}")
+        if lane_count:
+            detail_parts.append(f"{lane_count} lanes")
     if runner_detail:
         detail_parts.append(runner_detail)
     detail_text = f"   {'   '.join(detail_parts)}" if detail_parts else ""
@@ -466,6 +476,9 @@ def _flat_lines2(
                 )
             )
             kinds.append("done" if phase.get("status") == "done" else "node")
+            child_lines, child_kinds = _child_phase_lines(phase, width=width, ascii_=ascii_)
+            lines.extend(child_lines)
+            kinds.extend(child_kinds)
 
     return lines, kinds
 
@@ -523,6 +536,9 @@ def _graph_lines2(
                 )
             )
             kinds.append("done" if phase.get("status") == "done" else "node")
+            child_lines, child_kinds = _child_phase_lines(phase, width=width, ascii_=ascii_)
+            lines.extend(child_lines)
+            kinds.extend(child_kinds)
         previous_wide = stage_wide
 
     return lines, kinds
@@ -533,12 +549,43 @@ def _graph_lines(phases: list[Phase], ready_ids: set[str], *, width: int, ascii_
     return lines
 
 
-def _summary_line(done_count: int, stage_count: int, ascii_: bool) -> Line:
+def _summary_line(done_count: int, stage_count: int, ascii_: bool, *, unit: str = "phase") -> Line:
     glyphs = GLYPHS_ASCII if ascii_ else GLYPHS
     rails = RAIL_ASCII if ascii_ else RAIL
+    if unit == "stage":
+        stage_word = "stage" if done_count == 1 else "stages"
+        return [(f" {glyphs['done']} {done_count} {stage_word} done {rails['fold']}", "green dim")]
     phase_word = "phase" if done_count == 1 else "phases"
     stage_word = "stage" if stage_count == 1 else "stages"
     return [(f" {glyphs['done']} {done_count} {phase_word} done across {stage_count} {stage_word} {rails['fold']}", "green dim")]
+
+
+def _child_phase_lines(stage: Phase, *, width: int, ascii_: bool) -> tuple[list[Line], list[str]]:
+    children = stage.get("phases") or []
+    if not children or not isinstance(children, list):
+        return [], []
+    by_id = _phase_index(children)
+    ready_ids = {str(phase.get("id", "?")) for phase in wily_state_summary.executable_phases(children)}
+    id_width = _id_width(children)
+    prefix = "   " if ascii_ else "   "
+    lines: list[Line] = []
+    kinds: list[str] = []
+    for child in children:
+        if not isinstance(child, dict):
+            continue
+        lines.append(
+            _node_line(
+                child,
+                ready_ids,
+                by_id,
+                prefix=prefix,
+                id_width=id_width,
+                width=width,
+                ascii_=ascii_,
+            )
+        )
+        kinds.append("child-done" if child.get("status") == "done" else "child-node")
+    return lines, kinds
 
 
 def _future_stage_summary_line(num: int, stage: list[Phase], width: int, ascii_: bool) -> Line:
@@ -549,7 +596,13 @@ def _future_stage_summary_line(num: int, stage: list[Phase], width: int, ascii_:
     return _crop_line([(text, "dim")], width)
 
 
-def _collapse_leading_done(lines: list[Line], kinds: list[str], *, ascii_: bool) -> tuple[list[Line], list[str]]:
+def _collapse_leading_done(
+    lines: list[Line],
+    kinds: list[str],
+    *,
+    ascii_: bool,
+    stage_mode: bool = False,
+) -> tuple[list[Line], list[str]]:
     if not lines or not kinds or len(lines) != len(kinds):
         return lines, kinds
 
@@ -563,16 +616,17 @@ def _collapse_leading_done(lines: list[Line], kinds: list[str], *, ascii_: bool)
                 next_header += 1
 
             stage_kinds = kinds[index + 1 : next_header]
-            if not stage_kinds or any(kind != "done" for kind in stage_kinds):
+            done_kinds = {"done", "child-done"} if stage_mode else {"done"}
+            if not stage_kinds or any(kind not in done_kinds for kind in stage_kinds):
                 break
 
-            done_count += len(stage_kinds)
+            done_count += 1 if stage_mode else len(stage_kinds)
             stage_count += 1
             index = next_header
 
         if done_count < 2:
             return lines, kinds
-        return [_summary_line(done_count, stage_count, ascii_)] + lines[index:], ["done"] + kinds[index:]
+        return [_summary_line(done_count, stage_count, ascii_, unit="stage" if stage_mode else "phase")] + lines[index:], ["done"] + kinds[index:]
 
     index = 0
     done_count = 0
@@ -586,6 +640,8 @@ def _collapse_leading_done(lines: list[Line], kinds: list[str], *, ascii_: bool)
                 stage_count += 1
             previous_was_done = True
             index += 1
+        elif stage_mode and kind == "child-done" and done_count > 0:
+            index += 1
         elif kind in {"link", "merge"} and done_count > 0:
             previous_was_done = False
             index += 1
@@ -594,7 +650,7 @@ def _collapse_leading_done(lines: list[Line], kinds: list[str], *, ascii_: bool)
 
     if done_count < 2:
         return lines, kinds
-    return [_summary_line(done_count, stage_count, ascii_)] + lines[index:], ["done"] + kinds[index:]
+    return [_summary_line(done_count, stage_count, ascii_, unit="stage" if stage_mode else "phase")] + lines[index:], ["done"] + kinds[index:]
 
 
 def _preserve_unfinished_lines(lines: list[Line], kinds: list[str]) -> tuple[list[Line], list[str]]:
@@ -603,7 +659,7 @@ def _preserve_unfinished_lines(lines: list[Line], kinds: list[str]) -> tuple[lis
     kept_lines = [lines[0]]
     kept_kinds = [kinds[0]]
     for line, kind in zip(lines[1:], kinds[1:]):
-        if kind == "node":
+        if kind in {"node", "child-node"}:
             kept_lines.append(line)
             kept_kinds.append(kind)
     return kept_lines, kept_kinds
@@ -728,7 +784,7 @@ def _body_lines(
         lines, kinds = _flat_lines2(view.phases, view.ready_ids, width=width, ascii_=ascii_, root=view.root)
 
     if not expand_done and max_rows is not None and len(lines) > max_rows:
-        lines, kinds = _collapse_leading_done(lines, kinds, ascii_=ascii_)
+        lines, kinds = _collapse_leading_done(lines, kinds, ascii_=ascii_, stage_mode=bool((view.roadmap or {}).get("stages")))
 
     if not expand_done and max_rows is not None and len(lines) > max_rows:
         if max_rows == 1:

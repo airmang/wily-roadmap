@@ -1,12 +1,11 @@
 # Wily Status
 
-Roadmap version 11 adds a follow-up phase for `$wily-watch` mouse interaction behavior.
+Roadmap version 14 migrates this repository to Stage-first state.
 
 Current baseline:
-- 26 phases are complete through 12-1.
-- Wily now uses reference-only Custom Workflow guidance and keeps the Codex app side-terminal watch strategy.
-- `$wily-watch` interactive mode now uses left-click-only stage folding and mouse-wheel scrolling for expanded completed-stage content.
+- 14 top-level Stages now live in `.wily/roadmap.yaml`.
+- Legacy phase details are preserved as child Phase entries in `.wily/stages/<stage-id>/stage.yaml`.
+- Existing `.wily/phases/**` files remain in place for historical context and handoff references.
 
 Next action:
-- No pending roadmap phase remains.
-- Commit the implementation changes and shared `.wily` state when ready to share this completion.
+- Continue Stage s14 / child Phase 14-2 with the smartphone bottom-pane layout implementation.

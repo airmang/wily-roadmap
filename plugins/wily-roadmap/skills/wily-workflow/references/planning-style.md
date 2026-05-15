@@ -2,39 +2,46 @@
 
 ## Plan Levels
 
-Wily has two plan levels:
+Wily has three plan levels:
 
-- Roadmap Plan: Wily-owned project orchestration across all phases.
-- Phase Implementation Plan: optional detailed execution plan for one phase, often produced by an external planner.
+- Roadmap Plan: Wily-owned project orchestration across all Stages.
+- Stage Plan: optional Stage-local decomposition into Phases and lanes under `.wily/stages/<stage-id>/stage.yaml`.
+- Phase Implementation Plan: optional detailed execution plan for one Phase, often produced by an external planner.
 
-Keep Wily focused on the Roadmap Plan. Use planner adapters only when detailed phase implementation planning is worth the extra workflow overhead.
+Keep Wily focused on the Roadmap Plan. Use `$wily-decompose-stage` only when a Stage owner explicitly wants internal Phases or lanes.
 
 ## Roadmap Format
 
-Keep the machine-readable roadmap in `.wily/roadmap.yaml` and the human-readable phase details in `.wily/phases/`.
+Keep the machine-readable roadmap in `.wily/roadmap.yaml` and the human-readable Stage details in `.wily/stages/`. Existing phase-only roadmaps remain supported as legacy input.
 
 Example roadmap:
 
 ```yaml
 roadmap_version: 1
 goal: "Build the project to release-ready quality"
-phases:
-  - id: "01"
+stages:
+  - id: "s01-audit"
     title: "Current implementation audit"
-    path: "phases/01-current-implementation-audit"
+    path: "stages/s01-audit"
     status: "done"
     depends_on: []
-    parallel_group: null
+    owner: "shared"
+    write_scope: ["docs", "src"]
+    execution_mode: "direct"
+    decomposition_status: "none"
 
-  - id: "04-1"
+  - id: "s02-settings"
     title: "Settings screen"
-    path: "phases/04-1-settings-screen"
+    path: "stages/s02-settings"
     status: "ready"
-    depends_on: ["03"]
-    parallel_group: "04"
+    depends_on: ["s01-audit"]
+    owner: "wily"
+    write_scope: ["src/settings"]
+    execution_mode: "direct"
+    decomposition_status: "none"
 ```
 
-Supported phase statuses:
+Supported Stage and Phase statuses:
 
 ```text
 pending
@@ -48,12 +55,31 @@ superseded
 
 Status output may translate these markers for the user, but roadmap files should keep the English status values above.
 
-## Phase Folder Format
+## Stage Folder Format
 
-Each phase should have:
+Each Stage should have:
 
 ```text
-.wily/phases/<phase-id>-<slug>/
+.wily/stages/<stage-id>-<slug>/
+  stage.md
+  prompt.md
+  verification.md
+  handoff.md
+  notes.md
+  stage.yaml
+  phases/
+```
+
+`stage.md` describes purpose, dependencies, owner, `write_scope`, expected starting state, expected output, likely touched files, and known risks.
+
+`stage.yaml` stores Stage-local child Phases and lanes after explicit decomposition. Keep these details out of `.wily/roadmap.yaml` to reduce collaboration conflicts.
+
+## Phase Folder Format
+
+When a Stage is decomposed, each child Phase should have:
+
+```text
+.wily/stages/<stage-id>-<slug>/phases/<phase-id>-<slug>/
   phase.md
   planner.md
   prompt.md
@@ -62,8 +88,6 @@ Each phase should have:
   plan.md
   notes.md
 ```
-
-`phase.md` describes purpose, dependencies, parallel group, expected starting state, expected output, likely touched files, and known risks.
 
 `planner.md` recommends how to create the detailed implementation plan when one is needed. The first recommendation line may use an external planner name, for example:
 
@@ -83,30 +107,38 @@ Recommended planner: superpowers:writing-plans
 
 ## Phase Quality
 
-Each phase should:
+Each Stage should:
 
-- be executable in one focused agent session,
+- be executable directly by one owner unless explicitly decomposed,
 - have a clear behavioral outcome,
-- list dependencies and parallel eligibility,
+- list dependencies, owner, and `write_scope`,
 - include expected files or modules,
 - include focused verification,
-- include a planner recommendation only when detailed implementation planning is expected,
 - avoid unrelated refactors,
 - avoid mixing planning changes with implementation changes.
 
 ## Parallel Work
 
-Use parent-style IDs for related work that can run after the same dependency:
+Use Stage DAG dependencies and `write_scope` for top-level parallel work:
 
-```text
-04-1
-04-2
-04-3
+```yaml
+stages:
+  - id: "s02-api"
+    depends_on: ["s01-foundation"]
+    owner: "wily"
+    write_scope: ["src/server/api"]
+
+  - id: "s03-ui"
+    depends_on: ["s01-foundation"]
+    owner: "right"
+    write_scope: ["src/client/ui"]
 ```
 
-Use `parallel_group: "04"` in `roadmap.yaml` to make that relationship explicit. Do not rely on folder names alone for execution order.
+Ready Stages with non-overlapping `write_scope` are candidates for parallel assignment. If `write_scope` overlaps or is unclear, create an integration Stage or keep the work sequential.
 
-`$wily-status` shows the `Wily Roadmap` pane once. The pane keeps parallel phases near each other by stage, uses phase glyphs for status, and shows dependency hints such as `needs` instead of a prose-only summary. `$wily-watch` uses the same renderer continuously in a tmux pane.
+Stage-local lanes may use `write_scope` too, but those lanes are for a Stage owner to route through subagents after `$wily-decompose-stage`.
+
+`$wily-status` shows the `Wily Roadmap` pane once. The pane keeps ready Stages visible, uses glyphs for status, and shows dependency hints such as `needs` instead of a prose-only summary. `$wily-watch` uses the same renderer continuously in a tmux pane.
 
 ## Replanning Style
 
