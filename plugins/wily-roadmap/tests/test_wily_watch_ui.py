@@ -737,43 +737,47 @@ class RenderWatchTest(unittest.TestCase):
             self.assertIn("@claude", out)
             self.assertIn("task draft release notes", out)
 
+    STAGE_MODE_YAML = "\n".join([
+        'roadmap_version: 13',
+        'stages:',
+        '  - id: "s13"',
+        '    title: "Parser hardening"',
+        '    status: "done"',
+        '    depends_on: []',
+        '    path: "stages/s13"',
+        '  - id: "s14"',
+        '    title: "Stage and mobile watch"',
+        '    status: "in_progress"',
+        '    depends_on: ["s13"]',
+        '    path: "stages/s14"',
+        '    execution_mode: "decomposed"',
+        '    decomposition_status: "applied"',
+    ])
+    STAGE14_STATE = "\n".join([
+        'stage_id: "s14"',
+        'execution_mode: "decomposed"',
+        'decomposition_status: "applied"',
+        'phases:',
+        '  - id: "14-1"',
+        '    title: "Stage와 Phase 계층 분리"',
+        '    status: "done"',
+        '    depends_on: []',
+        '  - id: "14-2"',
+        '    title: "스마트폰 하단 watch 레이아웃"',
+        '    status: "in_progress"',
+        '    depends_on: ["14-1"]',
+    ])
+
+    def _make_stage_mode_project(self, project: Path) -> None:
+        self._make(project, self.STAGE_MODE_YAML)
+        stage_dir = project / ".wily" / "stages" / "s14"
+        stage_dir.mkdir(parents=True, exist_ok=True)
+        (stage_dir / "stage.yaml").write_text(self.STAGE14_STATE, encoding="utf-8")
+
     def test_render_stage_local_child_phases_under_active_stage(self) -> None:
-        body = "\n".join([
-            'roadmap_version: 13',
-            'stages:',
-            '  - id: "s13"',
-            '    title: "Parser hardening"',
-            '    status: "done"',
-            '    depends_on: []',
-            '    path: "stages/s13"',
-            '  - id: "s14"',
-            '    title: "Stage and mobile watch"',
-            '    status: "in_progress"',
-            '    depends_on: ["s13"]',
-            '    path: "stages/s14"',
-            '    execution_mode: "decomposed"',
-            '    decomposition_status: "applied"',
-        ])
-        stage_state = "\n".join([
-            'stage_id: "s14"',
-            'execution_mode: "decomposed"',
-            'decomposition_status: "applied"',
-            'phases:',
-            '  - id: "14-1"',
-            '    title: "Stage와 Phase 계층 분리"',
-            '    status: "done"',
-            '    depends_on: []',
-            '  - id: "14-2"',
-            '    title: "스마트폰 하단 watch 레이아웃"',
-            '    status: "in_progress"',
-            '    depends_on: ["14-1"]',
-        ])
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp)
-            self._make(project, body)
-            stage_dir = project / ".wily" / "stages" / "s14"
-            stage_dir.mkdir(parents=True, exist_ok=True)
-            (stage_dir / "stage.yaml").write_text(stage_state, encoding="utf-8")
+            self._make_stage_mode_project(project)
 
             out = wily_watch_ui.render_watch(project, interval=2.0, rich=False, size=(100, 14))
 
@@ -781,6 +785,54 @@ class RenderWatchTest(unittest.TestCase):
             self.assertIn("Stage and mobile watch", out)
             self.assertIn("14-1", out)
             self.assertIn("Stage와 Phase 계층 분리", out)
+            self.assertIn("14-2", out)
+            self.assertIn("스마트폰 하단 watch 레이아웃", out)
+
+    def test_stage_mode_drops_topological_stage_header(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self._make_stage_mode_project(project)
+
+            out = wily_watch_ui.render_watch(
+                project, interval=2.0, rich=False, size=(110, 40), expand_done=True
+            )
+            body_lines = [line for line in out.splitlines() if line.strip()]
+            for line in body_lines:
+                self.assertNotRegex(line, r"^\s*Stage \d+\s*[-─]")
+
+    def test_stage_mode_child_phase_rows_use_rail_prefix(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self._make_stage_mode_project(project)
+
+            out = wily_watch_ui.render_watch(
+                project, interval=2.0, rich=False, size=(110, 40), expand_done=True
+            )
+            lines = out.splitlines()
+            self.assertTrue(any(line.lstrip().startswith("+- ") and "14-1" in line for line in lines))
+            self.assertTrue(any(line.lstrip().startswith("\\- ") and "14-2" in line for line in lines))
+
+    def test_stage_mode_stage_row_shows_phase_progress_and_frontier(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self._make_stage_mode_project(project)
+
+            out = wily_watch_ui.render_watch(
+                project, interval=2.0, rich=False, size=(140, 40), expand_done=True
+            )
+            stage_line = next(line for line in out.splitlines() if " s14 " in line)
+            self.assertIn("1/2 phases", stage_line)
+            self.assertIn("14-2 in_progress", stage_line)
+
+    def test_compact_mode_keeps_frontier_phase_under_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self._make_stage_mode_project(project)
+
+            out = wily_watch_ui.render_watch(
+                project, interval=2.0, rich=False, size=(110, 8), expand_done=False
+            )
+            self.assertIn("s14", out)
             self.assertIn("14-2", out)
             self.assertIn("스마트폰 하단 watch 레이아웃", out)
 

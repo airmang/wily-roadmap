@@ -56,6 +56,8 @@ RAIL = {
     "ro": "▏",
     "dep": "⟂",
     "refresh": "⟳",
+    "child_mid": "├─",
+    "child_end": "└─",
 }
 RAIL_ASCII = {
     "link": "|",
@@ -68,6 +70,8 @@ RAIL_ASCII = {
     "ro": "]",
     "dep": "needs",
     "refresh": "~",
+    "child_mid": "+-",
+    "child_end": "\\-",
 }
 CHROME_ROWS = 5
 MIN_WIDTH_ONELINE = 24
@@ -82,6 +86,7 @@ class _RoadmapView:
     phases: list[Phase] = field(default_factory=list)
     ready: list[Phase] = field(default_factory=list)
     by_id: dict[str, Phase] = field(default_factory=dict)
+    is_stage_mode: bool = False
 
     @property
     def version(self) -> Any:
@@ -108,10 +113,11 @@ def _load(root: Path) -> _RoadmapView:
 
     roadmap = wily_state_summary.parse_roadmap(wily_state_summary.read_text(roadmap_path))
     stages = roadmap.get("stages") or []
-    if stages:
+    is_stage_mode = bool(stages)
+    if is_stage_mode:
         stages = wily_state_summary.enrich_stages_with_local_state(root, stages)
-    phases = stages if stages else roadmap.get("phases") or []
-    ready = wily_state_summary.executable_stages(stages) if stages else wily_state_summary.executable_phases(phases)
+    phases = stages if is_stage_mode else roadmap.get("phases") or []
+    ready = wily_state_summary.executable_stages(stages) if is_stage_mode else wily_state_summary.executable_phases(phases)
     return _RoadmapView(
         root=root,
         has_state=True,
@@ -119,6 +125,7 @@ def _load(root: Path) -> _RoadmapView:
         phases=phases,
         ready=ready,
         by_id=_phase_index(phases),
+        is_stage_mode=is_stage_mode,
     )
 
 
@@ -411,16 +418,12 @@ def _node_line(
     if unmet:
         marker = dependency_marker or "needs"
         detail_parts.append(f"{marker} " + " ".join(unmet))
+    child_phases = phase.get("phases") or []
+    if child_phases:
+        detail_parts.extend(_stage_phase_detail_parts(child_phases))
     assignment_detail = _phase_assignment_detail(phase)
     if assignment_detail:
         detail_parts.append(assignment_detail)
-    child_phases = phase.get("phases") or []
-    if child_phases:
-        phase_word = "phase" if len(child_phases) == 1 else "phases"
-        lane_count = sum(len(child.get("lanes") or []) for child in child_phases if isinstance(child, dict))
-        detail_parts.append(f"{len(child_phases)} {phase_word}")
-        if lane_count:
-            detail_parts.append(f"{lane_count} lanes")
     if runner_detail:
         detail_parts.append(runner_detail)
     detail_text = f"   {'   '.join(detail_parts)}" if detail_parts else ""
@@ -453,6 +456,7 @@ def _flat_lines2(
     width: int,
     ascii_: bool,
     root: Path | None = None,
+    stage_mode: bool = False,
 ) -> tuple[list[Line], list[str]]:
     by_id = _phase_index(phases)
     id_width = _id_width(phases)
@@ -460,8 +464,9 @@ def _flat_lines2(
     kinds: list[str] = []
 
     for num, stage in enumerate(_ordered_stages(phases), start=1):
-        lines.append(_stage_header(num, len(stage), width, ascii_))
-        kinds.append("header")
+        if not stage_mode:
+            lines.append(_stage_header(num, len(stage), width, ascii_))
+            kinds.append("header")
         for phase in stage:
             lines.append(
                 _node_line(
@@ -495,6 +500,7 @@ def _graph_lines2(
     width: int,
     ascii_: bool,
     root: Path | None = None,
+    stage_mode: bool = False,
 ) -> tuple[list[Line], list[str]]:
     rails = RAIL_ASCII if ascii_ else RAIL
     by_id = _phase_index(phases)
@@ -560,19 +566,63 @@ def _summary_line(done_count: int, stage_count: int, ascii_: bool, *, unit: str 
     return [(f" {glyphs['done']} {done_count} {phase_word} done across {stage_count} {stage_word} {rails['fold']}", "green dim")]
 
 
+def _stage_phase_detail_parts(child_phases: list[Any]) -> list[str]:
+    parts: list[str] = []
+    valid_children = [child for child in child_phases if isinstance(child, dict)]
+    total = len(valid_children)
+    if total == 0:
+        return parts
+
+    done = sum(1 for child in valid_children if child.get("status") == "done")
+    phase_word = "phase" if total == 1 else "phases"
+    parts.append(f"{done}/{total} {phase_word}")
+
+    frontier = _frontier_child_phase(valid_children)
+    if frontier is not None:
+        frontier_id = str(frontier.get("id", "?"))
+        frontier_status = str(frontier.get("status") or "pending")
+        parts.append(f"{frontier_id} {frontier_status}")
+
+    lane_count = sum(len(child.get("lanes") or []) for child in valid_children)
+    if lane_count:
+        parts.append(f"{lane_count} lanes")
+    return parts
+
+
+def _frontier_child_phase(children: list[Phase]) -> Phase | None:
+    for status in ("in_progress", "needs_review", "blocked"):
+        for child in children:
+            if child.get("status") == status:
+                return child
+    ready_ids = {str(phase.get("id", "?")) for phase in wily_state_summary.executable_phases(children)}
+    for child in children:
+        if str(child.get("id", "?")) in ready_ids:
+            return child
+    for child in children:
+        if child.get("status") != "done":
+            return child
+    return None
+
+
+def _child_prefix(rails: dict[str, str], *, last: bool) -> str:
+    glyph = rails["child_end"] if last else rails["child_mid"]
+    return f"   {glyph} "
+
+
 def _child_phase_lines(stage: Phase, *, width: int, ascii_: bool) -> tuple[list[Line], list[str]]:
     children = stage.get("phases") or []
     if not children or not isinstance(children, list):
         return [], []
-    by_id = _phase_index(children)
-    ready_ids = {str(phase.get("id", "?")) for phase in wily_state_summary.executable_phases(children)}
-    id_width = _id_width(children)
-    prefix = "   " if ascii_ else "   "
+    rails = RAIL_ASCII if ascii_ else RAIL
+    valid_children = [child for child in children if isinstance(child, dict)]
+    by_id = _phase_index(valid_children)
+    ready_ids = {str(phase.get("id", "?")) for phase in wily_state_summary.executable_phases(valid_children)}
+    id_width = _id_width(valid_children)
     lines: list[Line] = []
     kinds: list[str] = []
-    for child in children:
-        if not isinstance(child, dict):
-            continue
+    for index, child in enumerate(valid_children):
+        last = index == len(valid_children) - 1
+        prefix = _child_prefix(rails, last=last)
         lines.append(
             _node_line(
                 child,
@@ -684,14 +734,17 @@ def _trim_frontier_compact_lines(lines: list[Line], kinds: list[str], max_rows: 
     if max_rows <= 0:
         return []
 
-    frontier_indexes = [index for index, kind in enumerate(kinds) if kind in {"frontier-header", "frontier-node"}]
+    frontier_kinds = {"frontier-header", "frontier-node", "frontier-child"}
+    frontier_indexes = [index for index, kind in enumerate(kinds) if kind in frontier_kinds]
     if not frontier_indexes:
         return lines[:max_rows]
 
     frontier_lines = [lines[index] for index in frontier_indexes]
     if len(frontier_lines) >= max_rows:
         if max_rows == 1:
-            node_indexes = [index for index in frontier_indexes if kinds[index] == "frontier-node"]
+            node_indexes = [
+                index for index in frontier_indexes if kinds[index] in {"frontier-node", "frontier-child"}
+            ]
             return [lines[node_indexes[0]]] if node_indexes else [frontier_lines[0]]
         return frontier_lines[:max_rows]
 
@@ -729,14 +782,21 @@ def _compact_frontier_lines(
     lines: list[Line] = []
     kinds: list[str] = []
     done_prefix = stages[:frontier_index]
-    done_count = sum(len(stage) for stage in done_prefix if all(phase.get("status") == "done" for phase in stage))
+    done_stages_done = [stage for stage in done_prefix if all(phase.get("status") == "done" for phase in stage)]
+    if view.is_stage_mode:
+        done_count = len(done_stages_done)
+        summary_unit = "stage"
+    else:
+        done_count = sum(len(stage) for stage in done_stages_done)
+        summary_unit = "phase"
     if done_count:
-        lines.append(_summary_line(done_count, len(done_prefix), ascii_))
+        lines.append(_summary_line(done_count, len(done_prefix), ascii_, unit=summary_unit))
         kinds.append("done")
 
     frontier = stages[frontier_index]
-    lines.append(_stage_header(frontier_index + 1, len(frontier), width, ascii_))
-    kinds.append("frontier-header")
+    if not view.is_stage_mode:
+        lines.append(_stage_header(frontier_index + 1, len(frontier), width, ascii_))
+        kinds.append("frontier-header")
     for phase in frontier:
         lines.append(
             _node_line(
@@ -751,12 +811,44 @@ def _compact_frontier_lines(
             )
         )
         kinds.append("frontier-node")
+        if view.is_stage_mode:
+            child_lines, child_kinds = _frontier_child_lines(phase, width=width, ascii_=ascii_)
+            lines.extend(child_lines)
+            kinds.extend(child_kinds)
 
     for num, stage in enumerate(stages[frontier_index + 1 :], start=frontier_index + 2):
         lines.append(_future_stage_summary_line(num, stage, width, ascii_))
         kinds.append("future-summary")
 
     return _trim_frontier_compact_lines(lines, kinds, max_rows)
+
+
+def _frontier_child_lines(stage: Phase, *, width: int, ascii_: bool) -> tuple[list[Line], list[str]]:
+    children = stage.get("phases") or []
+    if not children or not isinstance(children, list):
+        return [], []
+    valid_children = [child for child in children if isinstance(child, dict)]
+    if not valid_children:
+        return [], []
+    frontier = _frontier_child_phase(valid_children)
+    if frontier is None:
+        return [], []
+
+    rails = RAIL_ASCII if ascii_ else RAIL
+    by_id = _phase_index(valid_children)
+    ready_ids = {str(phase.get("id", "?")) for phase in wily_state_summary.executable_phases(valid_children)}
+    id_width = _id_width(valid_children)
+    is_last = frontier is valid_children[-1]
+    line = _node_line(
+        frontier,
+        ready_ids,
+        by_id,
+        prefix=_child_prefix(rails, last=is_last),
+        id_width=id_width,
+        width=width,
+        ascii_=ascii_,
+    )
+    return [line], ["frontier-child"]
 
 
 def _one_line(view: _RoadmapView, root: Path, ascii_: bool) -> str:
@@ -779,12 +871,26 @@ def _body_lines(
         return [[(" (no phases yet)", "dim")]]
 
     if _pipeline_renderable(view.phases) and width >= MIN_WIDTH_RAIL:
-        lines, kinds = _graph_lines2(view.phases, view.ready_ids, width=width, ascii_=ascii_, root=view.root)
+        lines, kinds = _graph_lines2(
+            view.phases,
+            view.ready_ids,
+            width=width,
+            ascii_=ascii_,
+            root=view.root,
+            stage_mode=view.is_stage_mode,
+        )
     else:
-        lines, kinds = _flat_lines2(view.phases, view.ready_ids, width=width, ascii_=ascii_, root=view.root)
+        lines, kinds = _flat_lines2(
+            view.phases,
+            view.ready_ids,
+            width=width,
+            ascii_=ascii_,
+            root=view.root,
+            stage_mode=view.is_stage_mode,
+        )
 
     if not expand_done and max_rows is not None and len(lines) > max_rows:
-        lines, kinds = _collapse_leading_done(lines, kinds, ascii_=ascii_, stage_mode=bool((view.roadmap or {}).get("stages")))
+        lines, kinds = _collapse_leading_done(lines, kinds, ascii_=ascii_, stage_mode=view.is_stage_mode)
 
     if not expand_done and max_rows is not None and len(lines) > max_rows:
         if max_rows == 1:
