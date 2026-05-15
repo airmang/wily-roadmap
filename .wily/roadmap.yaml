@@ -127,4 +127,4 @@ stages:
     owner: "codex"
     task: "prepare and implement a separate lightweight Wily Board web dashboard from docs/wily-board-plan.md"
     current_session: "sessions/2026-05-15-150637-phase-15-2-attempt-2"
-    blocker: "Live Wily Board is deployed at https://rnwlab.duckdns.org and healthz passes, but GitHub OAuth App and GitHub App credentials are still missing; preflight stops at GITHUB_OAUTH_CLIENT_ID"
+    blocker: "Live Wily Board is deployed at https://rnwlab.duckdns.org and healthz passes. GitHub OAuth client ID/secret are configured, but GitHub App credentials are still missing; preflight stops at GITHUB_APP_ID."

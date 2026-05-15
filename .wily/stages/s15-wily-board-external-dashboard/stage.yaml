@@ -92,4 +92,4 @@ phases:
     preferred: "manual"
     autonomy_mode: "goal_scoped"
     current_session: "sessions/2026-05-15-150609-phase-15-7-attempt-1"
-    blocker: "Live Wily Board is deployed at https://rnwlab.duckdns.org and healthz passes, but GitHub OAuth App and GitHub App credentials are still missing; preflight stops at GITHUB_OAUTH_CLIENT_ID"
+    blocker: "Live Wily Board is deployed at https://rnwlab.duckdns.org and healthz passes. GitHub OAuth client ID/secret are configured, but GitHub App credentials are still missing; preflight stops at GITHUB_APP_ID."
