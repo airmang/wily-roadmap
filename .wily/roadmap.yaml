@@ -1,4 +1,4 @@
-roadmap_version: 14
+roadmap_version: 16
 roadmap_schema: "stage-v1"
 goal: "wily roadmap 플러그인을 다듬는 중이야."
 stages:
@@ -110,10 +110,21 @@ stages:
   - id: "s14"
     title: "Stage 14: Stage와 Phase 계층 분리 및 Stage 분해 skill 추가 / 스마트폰 Codex 앱용 하단 가로 watch pane 레이아웃"
     path: "stages/s14-stage-14-stage-phase-stage-skill-codex-watch-pan"
-    status: "in_progress"
+    status: "done"
     depends_on: ["s13"]
     execution_mode: "decomposed"
     decomposition_status: "applied"
     owner: "codex"
-    current_session: "sessions/2026-05-15-091003-phase-14-2-attempt-1"
-    task: "open watch as a bottom horizontal pane on smartphone Codex app and render a width-first layout"
+    task: "stage/phase decomposition completed; smartphone bottom watch layout canceled"
+
+  - id: "s15"
+    title: "Wily Board external dashboard implementation"
+    path: "stages/s15-wily-board-external-dashboard"
+    status: "blocked"
+    depends_on: ["s14"]
+    execution_mode: "decomposed"
+    decomposition_status: "applied"
+    owner: "codex"
+    task: "prepare and implement a separate lightweight Wily Board web dashboard from docs/wily-board-plan.md"
+    current_session: "sessions/2026-05-15-150637-phase-15-2-attempt-2"
+    blocker: "Azure SSH 20.17.177.129:22 refused connection; cannot bootstrap or deploy until SSH access is restored"

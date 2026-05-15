@@ -18,11 +18,11 @@ phases:
   - id: "14-2"
     title: "스마트폰 Codex 앱용 하단 가로 watch pane 레이아웃"
     path: "phases/14-2-smartphone-bottom-watch-layout"
-    status: "in_progress"
+    status: "superseded"
     depends_on: []
     parallel_group: "14"
     owner: "codex"
-    task: "open watch as a bottom horizontal pane on smartphone Codex app and render a width-first layout"
+    task: "canceled by user; do not implement smartphone bottom watch layout"
     runner: ""
     preferred: "manual"
     autonomy_mode: "goal_scoped"

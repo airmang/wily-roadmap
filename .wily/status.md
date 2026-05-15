@@ -1,11 +1,14 @@
 # Wily Status
 
-Roadmap version 14 migrates this repository to Stage-first state.
+Roadmap version 16 has Stage s15 in a blocked state.
 
 Current baseline:
-- 14 top-level Stages now live in `.wily/roadmap.yaml`.
-- Legacy phase details are preserved as child Phase entries in `.wily/stages/<stage-id>/stage.yaml`.
-- Existing `.wily/phases/**` files remain in place for historical context and handoff references.
+- `R-W-LAB/wily-board` exists as a private repository and has the local FastAPI/SQLite/htmx implementation pushed.
+- Child Phases 15-1, 15-3, 15-4, 15-5, and 15-6 are implemented and verified locally.
+- Child Phase 15-2 is blocked because `ssh airman@20.17.177.129` returns `Connection refused` on port 22.
+- Child Phase 15-7 is blocked until live deployment credentials exist: GitHub OAuth App and GitHub App credentials.
+- Stage s14 is done; child Phase 14-2 remains superseded by user request.
 
 Next action:
-- Continue Stage s14 / child Phase 14-2 with the smartphone bottom-pane layout implementation.
+- Restore SSH access to `20.17.177.129:22` or provide the correct SSH host/port/user, then retry Phase 15-2 deployment.
+- Provide GitHub OAuth App and GitHub App credentials before live onboarding and PR-writing verification.
