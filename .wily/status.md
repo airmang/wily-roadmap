@@ -4,15 +4,15 @@ Roadmap version 16 has Stage s15 in a blocked state.
 
 Current baseline:
 - `R-W-LAB/wily-board` exists as a private repository and has the local FastAPI/SQLite/htmx implementation pushed.
-- Child Phases 15-1, 15-3, 15-4, 15-5, and 15-6 are implemented and verified locally.
+- Child Phases 15-1 through 15-6 are implemented. Phase 15-2 is now deployed on the Azure VM via SSH port 5679.
+- Live board health is up: `https://rnwlab.duckdns.org/healthz` returns `{"ok":true}` and `/` redirects to `/auth/github/start`.
 - `R-W-LAB/wily-board` now includes `docs/OPERATIONS.md` and `deploy/preflight.sh` covering deploy, credentials, service health, logs, and remaining blockers.
-- Child Phase 15-2 is blocked because `ssh airman@20.17.177.129` returns `Connection refused` on port 22. The host is reachable on ports 80 and 443.
-- Child Phase 15-7 merged workflow PRs for all four initial repositories and configured `WILY_BOARD_URL` plus `WILY_BOARD_SECRET` secrets, then blocked until Azure SSH access and remaining live credentials exist.
+- Child Phase 15-7 merged workflow PRs for all four initial repositories and configured `WILY_BOARD_URL` plus `WILY_BOARD_SECRET` secrets.
+- Stage s15 remains blocked because live GitHub OAuth App and GitHub App credentials are still missing; server preflight currently stops at `GITHUB_OAUTH_CLIENT_ID`.
 - Stage s14 is done; child Phase 14-2 remains superseded by user request.
 
 Next action:
-- Restore SSH access to `20.17.177.129:22` or provide the correct SSH host/port/user. The current evidence points to SSH service/port/firewall/NSG configuration, not a dead host.
-- Provide GitHub OAuth App and GitHub App credentials before live onboarding and PR-writing verification.
+- Provide GitHub OAuth App and GitHub App credentials before live login, manual backfill, and PR-writing verification.
 - Workflow PRs are merged on default branches:
   - `R-W-LAB/wily-roadmap#2`
   - `R-W-LAB/Digit#4`

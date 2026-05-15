@@ -18,7 +18,7 @@ phases:
   - id: "15-2"
     title: "Azure box bootstrap artifacts"
     path: "phases/15-2-azure-box-bootstrap"
-    status: "blocked"
+    status: "done"
     depends_on: ["15-1"]
     parallel_group: "15"
     owner: "codex"
@@ -27,7 +27,6 @@ phases:
     preferred: "manual"
     autonomy_mode: "goal_scoped"
     current_session: "sessions/2026-05-15-150637-phase-15-2-attempt-2"
-    blocker: "Azure SSH 20.17.177.129:22 refused connection; cannot bootstrap or deploy until SSH access is restored"
 
   - id: "15-3"
     title: "FastAPI auth and SQLite skeleton"
@@ -93,4 +92,4 @@ phases:
     preferred: "manual"
     autonomy_mode: "goal_scoped"
     current_session: "sessions/2026-05-15-150609-phase-15-7-attempt-1"
-    blocker: "Workflow PRs are merged and secrets are configured; waiting for Azure SSH access plus GitHub OAuth App and GitHub App credentials before live backfill and PR-writing verification"
+    blocker: "Live Wily Board is deployed at https://rnwlab.duckdns.org and healthz passes, but GitHub OAuth App and GitHub App credentials are still missing; preflight stops at GITHUB_OAUTH_CLIENT_ID"
