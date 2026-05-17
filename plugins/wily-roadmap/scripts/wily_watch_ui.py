@@ -183,6 +183,45 @@ def _active_live_bridge_warning(view: _RoadmapView) -> Line | None:
     return [(" ! Board bridge not connected - run 'wily board check'", "yellow")]
 
 
+def _read_board_last_emit_cache(root: Path) -> dict[str, Any]:
+    try:
+        payload = json.loads(
+            (root / ".wily" / "local" / "board-last-emit.json").read_text(encoding="utf-8")
+        )
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _board_bridge_last_emit_line(view: _RoadmapView) -> Line | None:
+    cache = _read_board_last_emit_cache(view.root)
+    success = cache.get("last_success") if isinstance(cache, dict) else None
+    failure = cache.get("last_failure") if isinstance(cache, dict) else None
+    success_at = _parse_live_time(success.get("at")) if isinstance(success, dict) else None
+    failure_at = _parse_live_time(failure.get("at")) if isinstance(failure, dict) else None
+    if success_at is None and failure_at is None:
+        return None
+    latest_is_failure = failure_at is not None and (
+        success_at is None or failure_at >= success_at
+    )
+    if latest_is_failure:
+        entry = failure
+        prefix = " ! Board bridge: failed"
+        color = "yellow"
+        detail = f" ({entry.get('reason', '?')})"
+    else:
+        entry = success
+        prefix = " * Board bridge: ok"
+        color = "dim"
+        detail = ""
+    return [
+        (
+            f"{prefix} - {entry.get('event', '?')} at {entry.get('at', '?')}{detail}",
+            color,
+        )
+    ]
+
+
 def _parse_live_time(value: Any) -> datetime | None:
     if not value:
         return None
@@ -1422,6 +1461,9 @@ def render_watch(
     warning = _active_live_bridge_warning(view)
     if warning is not None:
         body = [_crop_line(warning, cols), *body]
+    last_emit = _board_bridge_last_emit_line(view)
+    if last_emit is not None:
+        body = [_crop_line(last_emit, cols), *body]
     lines = [
         _header_line(version=view.version, interval=interval, width=cols, ascii_=ascii_),
         _progress_line(done=view.done, total=view.total, width=cols, ascii_=ascii_),

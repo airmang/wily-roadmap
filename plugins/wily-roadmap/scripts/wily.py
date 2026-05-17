@@ -136,6 +136,44 @@ def board_live_signature(secret: str, body: bytes) -> str:
 BoardLiveEventResult = tuple[bool, str]
 
 
+def board_last_emit_path(root: Path) -> Path:
+    return state_dir(root) / "local" / "board-last-emit.json"
+
+
+def _record_board_emit_result(
+    root: Path, event: str, ok: bool, reason: str = ""
+) -> None:
+    try:
+        path = board_last_emit_path(root)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(payload, dict):
+                payload = {}
+        except (OSError, json.JSONDecodeError):
+            payload = {}
+        entry = {"at": utc_now_z(), "event": event}
+        if ok:
+            payload["last_success"] = entry
+        else:
+            payload["last_failure"] = {**entry, "reason": reason}
+        path.write_text(
+            json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+    except OSError:
+        pass
+
+
+def read_board_last_emit(root: Path) -> dict[str, Any]:
+    try:
+        payload = json.loads(
+            board_last_emit_path(root).read_text(encoding="utf-8")
+        )
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
 def emit_board_live_event(
     root: Path,
     phase: Phase,
@@ -183,13 +221,16 @@ def emit_board_live_event(
     )
     try:
         with urllib.request.urlopen(request, timeout=2):
+            _record_board_emit_result(root, event, True)
             return True, ""
     except urllib.error.HTTPError as exc:
-        return False, f"HTTP {exc.code}"
+        reason = f"HTTP {exc.code}"
     except urllib.error.URLError as exc:
-        return False, f"network error: {exc.reason}"
+        reason = f"network error: {exc.reason}"
     except OSError as exc:
-        return False, f"network error: {exc}"
+        reason = f"network error: {exc}"
+    _record_board_emit_result(root, event, False, reason)
+    return False, reason
 
 
 def _surface_emit_failure(event: str, result: BoardLiveEventResult | None) -> None:
@@ -2333,6 +2374,18 @@ def command_board(root: Path, args: list[str]) -> int:
         print("endpoint: not probed (config missing)")
     else:
         print("endpoint: not probed")
+
+    cache = read_board_last_emit(root)
+    success = cache.get("last_success") if isinstance(cache, dict) else None
+    failure = cache.get("last_failure") if isinstance(cache, dict) else None
+    if isinstance(success, dict) and success.get("at"):
+        print(
+            f"last bridge success: {success.get('event', '?')} at {success['at']}"
+        )
+    if isinstance(failure, dict) and failure.get("at"):
+        print(
+            f"last bridge failure: {failure.get('event', '?')} at {failure['at']} ({failure.get('reason', '?')})"
+        )
     return 0 if ok else 1
 
 

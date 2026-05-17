@@ -743,6 +743,51 @@ class RenderWatchTest(unittest.TestCase):
             self.assertIn("editing bridge", out)
             self.assertIn("adapter tests", out)
 
+    def test_render_shows_board_bridge_last_emit_when_cache_present(self) -> None:
+        body = "\n".join([
+            'roadmap_version: 4',
+            'phases:',
+            '  - id: "01"',
+            '    title: "Active phase"',
+            '    status: "in_progress"',
+            '    depends_on: []',
+        ])
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self._make(project, body)
+            cache_dir = project / ".wily" / "local"
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            (cache_dir / "board-last-emit.json").write_text(
+                "\n".join(
+                    [
+                        "{",
+                        '  "last_failure": {',
+                        '    "at": "2026-05-17T15:00:00Z",',
+                        '    "event": "worked",',
+                        '    "reason": "HTTP 502"',
+                        '  }',
+                        "}",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            with patch.dict(
+                os.environ,
+                {
+                    "WILY_BOARD_URL": "https://board.example",
+                    "WILY_BOARD_SECRET": "secret",
+                    "WILY_BOARD_REPO": "R-W-LAB/wily-roadmap",
+                    "WILY_BOARD_ACTOR": "airmang",
+                },
+                clear=True,
+            ):
+                out = wily_watch_ui.render_watch(project, interval=2.0, rich=False, size=(110, 14))
+
+            self.assertIn("Board bridge", out)
+            self.assertIn("HTTP 502", out)
+            self.assertIn("worked", out)
+
     def test_render_warns_when_active_work_has_no_board_live_config(self) -> None:
         body = "\n".join([
             'roadmap_version: 4',

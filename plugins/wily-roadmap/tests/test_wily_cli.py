@@ -2537,6 +2537,103 @@ class WilyCliTest(unittest.TestCase):
             self.assertIn("endpoint: not probed", combined)
             probe.assert_not_called()
 
+    def test_record_board_emit_result_writes_success_entry(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            (project / ".wily").mkdir()
+
+            wily._record_board_emit_result(project, "start", True)
+
+            cache = json.loads(
+                (project / ".wily" / "local" / "board-last-emit.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(cache["last_success"]["event"], "start")
+            self.assertIn("at", cache["last_success"])
+            self.assertNotIn("last_failure", cache)
+
+    def test_record_board_emit_result_writes_failure_entry_preserving_success(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            (project / ".wily").mkdir()
+
+            wily._record_board_emit_result(project, "start", True)
+            wily._record_board_emit_result(project, "worked", False, "HTTP 502")
+
+            cache = json.loads(
+                (project / ".wily" / "local" / "board-last-emit.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(cache["last_success"]["event"], "start")
+            self.assertEqual(cache["last_failure"]["event"], "worked")
+            self.assertEqual(cache["last_failure"]["reason"], "HTTP 502")
+
+    def test_emit_board_live_event_records_result_to_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            (project / ".wily").mkdir()
+            values = {
+                "WILY_BOARD_URL": "https://board.example",
+                "WILY_BOARD_SECRET": "secret",
+                "WILY_BOARD_REPO": "R-W-LAB/wily-roadmap",
+                "WILY_BOARD_ACTOR": "airmang",
+            }
+            response = MagicMock()
+            response.status = 200
+            response.__enter__ = MagicMock(return_value=response)
+            response.__exit__ = MagicMock(return_value=None)
+
+            phase = {"id": "01", "item_id": "01", "item_type": "phase", "phase_id": "01"}
+
+            with patch.dict(os.environ, values, clear=True), patch(
+                "urllib.request.urlopen", return_value=response
+            ):
+                ok, err = wily.emit_board_live_event(project, phase, "start", "claimed")
+
+            self.assertTrue(ok)
+            cache = json.loads(
+                (project / ".wily" / "local" / "board-last-emit.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(cache["last_success"]["event"], "start")
+
+    def test_board_check_prints_last_emit_when_cache_present(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            state = project / ".wily"
+            state.mkdir()
+            (state / "board.json").write_text(
+                json.dumps(
+                    {
+                        "url": "https://board.local",
+                        "secret": "secret",
+                        "repo": "R-W-LAB/wily-roadmap",
+                        "actor": "airmang",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            hooks_path = project / "hooks.json"
+            self.assertEqual(
+                wily.command_hooks(project, ["install", "--target", "codex", "--path", str(hooks_path)]),
+                0,
+            )
+            wily._record_board_emit_result(project, "worked", False, "HTTP 502")
+            stdout = io.StringIO()
+
+            with patch.dict(os.environ, {}, clear=True), patch("sys.stdout", stdout):
+                result = wily.command_board(
+                    project, ["check", "--hooks-path", str(hooks_path)]
+                )
+
+            self.assertEqual(result, 0)
+            self.assertIn("last bridge failure", stdout.getvalue())
+            self.assertIn("HTTP 502", stdout.getvalue())
+            self.assertIn("worked", stdout.getvalue())
+
     def test_start_writes_live_active_registry_without_board_config(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp)
