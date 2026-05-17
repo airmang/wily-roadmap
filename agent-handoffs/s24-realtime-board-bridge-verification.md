@@ -93,3 +93,37 @@
 - Evidence: `Next phase: none`
 
 Production smoke was not run. It remains approval-gated because it requires production URL/secret and may involve live remote events or deployment/restart boundaries.
+
+### Fresh final verification after checkpoint validator hardening
+
+- Command: `uv run pytest tests/test_live_events.py::test_live_event_accepts_signed_checkpoint_overlay_without_changing_durable_state tests/test_live_events.py::test_live_event_rejects_malformed_checkpoint_overlay -q`
+- Exit: 0
+- Evidence: `2 passed in 0.17s`
+
+- Command: `uv run pytest tests/test_live_events.py tests/test_api_routes.py tests/test_web_routes.py -q`
+- Exit: 0
+- Evidence: `41 passed, 30 warnings in 0.70s`
+
+- Command: `python3 -m unittest discover plugins/wily-roadmap/tests`
+- Exit: 0
+- Evidence: `Ran 212 tests in 6.876s - OK (skipped=2)`
+
+- Command: `uv run pytest -q`
+- Exit: 0
+- Evidence: `82 passed, 31 warnings in 1.81s`
+
+- Command: `npm run lint`
+- Exit: 0
+- Evidence: ESLint completed with exit 0.
+
+- Command: `npm run build`
+- Exit: 0
+- Evidence: Next.js production build compiled successfully, type checks passed, and routes generated.
+
+- Command: `python3 plugins/wily-roadmap/scripts/wily.py status`
+- Exit: 0
+- Evidence: Roadmap v26 reports 24/24, 100%.
+
+- Command: `python3 plugins/wily-roadmap/scripts/wily.py next`
+- Exit: 0
+- Evidence: `Next phase: none`

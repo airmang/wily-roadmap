@@ -91,45 +91,6 @@ Result:
 
 Next step: Checkpoint 3, implement Board checkpoint overlay persistence/API/SSE/UI parity.
 
-## 2026-05-17T02:00:29Z - Checkpoint overlay validation and final verification refreshed
-
-Files changed:
-
-- `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`
-- `.wily/stages/s24-s21-realtime-board-bridge-e2e/stage.yaml` via Wily lifecycle updates
-
-Implemented:
-
-- Added signed checkpoint overlay live event coverage.
-- Added malformed checkpoint rejection coverage.
-- Added Board live event validation for checkpoint payload shape: current checkpoint id, object-shaped next/progress/verification, and list-shaped recent events.
-
-Commands:
-
-```text
-uv run pytest tests/test_live_events.py::test_live_event_accepts_signed_checkpoint_overlay_without_changing_durable_state tests/test_live_events.py::test_live_event_rejects_malformed_checkpoint_overlay -q
-uv run pytest tests/test_live_events.py tests/test_api_routes.py tests/test_web_routes.py -q
-python3 -m unittest discover plugins/wily-roadmap/tests
-uv run pytest -q
-npm run lint
-npm run build
-python3 plugins/wily-roadmap/scripts/wily.py status
-python3 plugins/wily-roadmap/scripts/wily.py next
-```
-
-Result:
-
-- Checkpoint overlay red/green verified: malformed checkpoint failed before validator change, then both tests passed.
-- Board targeted tests: 41 passed, 30 warnings.
-- Wily tests: 212 tests OK, 2 skipped.
-- Board full tests: 82 passed, 31 warnings.
-- Frontend lint and build passed.
-- Wily status: 24/24, 100%.
-- Wily next: none.
-
-Next step: no local implementation checkpoint remains. Production smoke remains approval-gated.
-
 ## 2026-05-17T01:48:49Z - Checkpoint 3 complete
 
 Files changed:
@@ -193,3 +154,42 @@ Result:
 - Wily next: none.
 
 Production smoke remains approval-gated; no production secret, deploy, restart, push, or remote event was run.
+
+## 2026-05-17T02:00:29Z - Checkpoint overlay validation and final verification refreshed
+
+Files changed:
+
+- `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`
+- `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`
+- `.wily/stages/s24-s21-realtime-board-bridge-e2e/stage.yaml` via Wily lifecycle updates
+
+Implemented:
+
+- Added signed checkpoint overlay live event coverage.
+- Added malformed checkpoint rejection coverage.
+- Added Board live event validation for checkpoint payload shape: current checkpoint id, object-shaped next/progress/verification, and list-shaped recent events.
+
+Commands:
+
+```text
+uv run pytest tests/test_live_events.py::test_live_event_accepts_signed_checkpoint_overlay_without_changing_durable_state tests/test_live_events.py::test_live_event_rejects_malformed_checkpoint_overlay -q
+uv run pytest tests/test_live_events.py tests/test_api_routes.py tests/test_web_routes.py -q
+python3 -m unittest discover plugins/wily-roadmap/tests
+uv run pytest -q
+npm run lint
+npm run build
+python3 plugins/wily-roadmap/scripts/wily.py status
+python3 plugins/wily-roadmap/scripts/wily.py next
+```
+
+Result:
+
+- Checkpoint overlay red/green verified: malformed checkpoint failed before validator change, then both tests passed.
+- Board targeted tests: 41 passed, 30 warnings.
+- Wily tests: 212 tests OK, 2 skipped.
+- Board full tests: 82 passed, 31 warnings.
+- Frontend lint and build passed.
+- Wily status: 24/24, 100%.
+- Wily next: none.
+
+Next step: no local implementation checkpoint remains. Production smoke remains approval-gated.
