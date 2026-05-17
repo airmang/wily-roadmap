@@ -77,3 +77,18 @@ Auto-resolved under active /goal: Superpowers review/approval gates -> converted
 - Status board update: CP05 RUNNING.
 - Next step: commit and push `main`.
 - Blockers / risks: pre-existing unstaged `.wily` and unrelated untracked files remain in the working tree.
+
+## 2026-05-17T20:30:00+09:00 - CP05/CP06 completion
+
+- Files changed: committed task-scoped plugin, tests, and handoff files. Installed plugin cache updated from `plugins/wily-roadmap/`.
+- Commands run:
+  - `git commit -m "docs: define Wily Board reflection contract"`
+  - `git push origin main`
+  - `rsync -a --delete --exclude='.venv-watch/' --exclude='__pycache__/' --exclude='.pytest_cache/' plugins/wily-roadmap/ /Users/wilycastle/.codex/plugins/cache/wily-castle/wily-roadmap/0.1.0/`
+  - `diff -qr --exclude='.venv-watch' --exclude='__pycache__' --exclude='.pytest_cache' plugins/wily-roadmap /Users/wilycastle/.codex/plugins/cache/wily-castle/wily-roadmap/0.1.0`
+  - cache `rg` check for Board reflection phrases.
+- Result: commit `785bbb5` pushed to `origin/main`; installed cache matches the plugin source tree for compared files.
+- Evidence file updates: `agent-handoffs/wily-board-sync-contract-verification.md`.
+- Status board update: DONE.
+- Next step: none.
+- Blockers / risks: pre-existing `.wily` and unrelated untracked files remain unstaged and untouched.

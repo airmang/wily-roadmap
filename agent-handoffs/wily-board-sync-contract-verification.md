@@ -112,3 +112,27 @@ git diff --check
 Result: all exit 0.
 
 Secret scan: matched only test placeholder values such as `"secret"`, redaction tests, and policy text mentioning secrets; no real secret values were found.
+
+## 2026-05-17T20:30:00+09:00 - Push And Cache Evidence
+
+Commit:
+
+```text
+785bbb5 docs: define Wily Board reflection contract
+```
+
+Push output:
+
+```text
+To https://github.com/R-W-LAB/wily-roadmap.git
+   b95d2f6..785bbb5  main -> main
+```
+
+Installed plugin cache:
+
+```bash
+rsync -a --delete --exclude='.venv-watch/' --exclude='__pycache__/' --exclude='.pytest_cache/' plugins/wily-roadmap/ /Users/wilycastle/.codex/plugins/cache/wily-castle/wily-roadmap/0.1.0/
+diff -qr --exclude='.venv-watch' --exclude='__pycache__' --exclude='.pytest_cache' plugins/wily-roadmap /Users/wilycastle/.codex/plugins/cache/wily-castle/wily-roadmap/0.1.0
+```
+
+Result: exit 0 with no diff output.
