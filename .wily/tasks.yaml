@@ -1,12 +1,12 @@
 {
   "schema": "wily-v3",
-  "project_title": "wily-roadmap v3: Project + flat goal-sized Task manager for local-first agent workflow",
+  "project_title": "wily-roadmap v3: 로컬 우선 에이전트 작업을 위한 프로젝트 및 태스크 관리자",
   "tasks": [
     {
       "id": "T01",
-      "title": "Stabilize v3 in this repo",
-      "intent": "v3 redesign is applied to this repository; future work uses v3 commands only",
-      "acceptance": "wily watch shows the project; tasks.yaml/actors.yaml are present; v2 archive is preserved",
+      "title": "이 저장소의 Wily v3 안정화",
+      "intent": "이 저장소에 v3 재설계를 적용하고, 이후 작업은 v3 명령만 사용한다.",
+      "acceptance": "wily watch가 프로젝트를 보여준다. tasks.yaml과 actors.yaml이 존재한다. v2 아카이브가 보존되어 있다.",
       "scope": [
         "plugins/wily-roadmap/scripts/wily/*",
         "plugins/wily-roadmap/skills/*",
@@ -23,7 +23,7 @@
     },
     {
       "id": "T02",
-      "title": "Implement next-gen watch UI with responsive layout, status grouping, actor activity panel, and checkpoint timeline",
+      "title": "반응형 레이아웃과 상태 그룹, 작업자 활동, 체크포인트 타임라인을 갖춘 차세대 watch UI 구현",
       "intent": "",
       "acceptance": "",
       "scope": [],
@@ -34,6 +34,49 @@
       "claim_sha": "fc95e4b296e998742252094ed88213eac34aaba6",
       "claim_at": "2026-05-18T13:55:29Z",
       "done_at": "2026-05-18T14:08:48Z",
+      "blocker": null
+    },
+    {
+      "id": "T03",
+      "title": "wily-replan 자연어 요청을 태스크 추가로 라우팅",
+      "intent": "사용자가 -replan 뒤에 자연어 작업 요청을 주면 구현하지 않고 Roadmap Task를 추가하거나 수정하도록 스킬 계약을 명확히 한다.",
+      "acceptance": "wily-replan 스킬과 명령 문서가 자연어 작업 요청을 Task 추가/수정으로 처리하고 구현을 금지한다고 명시한다. 표면 테스트가 이 계약을 검증한다.",
+      "scope": [
+        "plugins/wily-roadmap/skills/wily-replan/SKILL.md",
+        "plugins/wily-roadmap/commands/replan.md",
+        "plugins/wily-roadmap/tests/v3/test_v3_surface.py"
+      ],
+      "depends_on": [],
+      "status": "done",
+      "assignee": "wily",
+      "actor": "wily",
+      "claim_sha": "c114abd1909a6e4124d3c3e07b40ee1e824188f2",
+      "claim_at": "2026-05-18T14:29:46Z",
+      "done_at": "2026-05-18T14:30:08Z",
+      "blocker": null
+    },
+    {
+      "id": "T04",
+      "title": "고급 병렬 작업 모델과 watch 시각화 및 한글 UI 지침 추가",
+      "intent": "wily-watch가 단순 ready 목록을 넘어서 병렬 lane, 우선순위, 작업자 수용량, scope 충돌 가능성을 반영해 동시에 진행 가능한 작업을 시각적으로 제안하고, 플러그인 지침에 한글 UI 작성 기준을 명시한다.",
+      "acceptance": "태스크 모델이 선택적 병렬 메타데이터를 지원한다. watch 출력이 병렬 착수 가능 lane, 의존 대기, scope 충돌 경고, 작업자별 진행 여력을 구분해 표시한다. 기존 tasks.yaml과 하위 호환된다. 한글 UI 작성 지침이 관련 skill 또는 command 문서에 추가된다. 테스트가 스키마 하위 호환성, 병렬 분류, 충돌 표시, 한글 문구 계약을 검증한다.",
+      "scope": [
+        "plugins/wily-roadmap/scripts/wily/models.py",
+        "plugins/wily-roadmap/scripts/wily/config.py",
+        "plugins/wily-roadmap/scripts/wily/ui/watch_render.py",
+        "plugins/wily-roadmap/scripts/wily/ui/watch_activity.py",
+        "plugins/wily-roadmap/skills/wily-watch/SKILL.md",
+        "plugins/wily-roadmap/commands/watch.md",
+        "plugins/wily-roadmap/tests/v3/test_v3_core.py",
+        "plugins/wily-roadmap/tests/v3/test_v3_surface.py"
+      ],
+      "depends_on": [],
+      "status": "done",
+      "assignee": "wily",
+      "actor": "wily",
+      "claim_sha": "c114abd1909a6e4124d3c3e07b40ee1e824188f2",
+      "claim_at": "2026-05-18T14:43:10Z",
+      "done_at": "2026-05-18T14:55:08Z",
       "blocker": null
     }
   ]

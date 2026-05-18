@@ -14,34 +14,45 @@ def build_activity_lines(
 ) -> list[tuple[str, str]]:
     lines: list[tuple[str, str]] = []
     rule = "-" if ascii_mode else "─"
-    header = "ACTIVITY"
+    header = "활동"
     lines.append((header, "bold"))
     lines.append((rule * width, "dim"))
     if not actors:
-        lines.append(("No actors defined.", "dim"))
+        lines.append(("작업자가 정의되지 않았습니다.", "dim"))
         return lines
-    task_map = {task.id: task for task in tasks}
     for actor in actors:
-        current_task = None
+        current_tasks = []
         for task in tasks:
             if task.actor == actor.id and task.status == TaskStatus.IN_PROGRESS:
-                current_task = task
-                break
+                current_tasks.append(task)
         last_done = None
         for task in tasks:
             if task.actor == actor.id and task.status == TaskStatus.DONE and task.done_at:
                 if last_done is None or (task.done_at and task.done_at > last_done.done_at):
                     last_done = task
         lines.append((actor.id, "bold"))
-        if current_task:
+        if current_tasks:
+            current_task = current_tasks[0]
             cp = cp_summaries.get(current_task.id)
             cp_text = f" {cp.current_cp}" if cp and cp.current_cp else ""
-            lines.append((f"  current: {current_task.id}{cp_text}", "cyan"))
+            more = f" 외 {len(current_tasks) - 1}" if len(current_tasks) > 1 else ""
+            lines.append((f"  현재: {current_task.id}{cp_text}{more}", "cyan"))
         else:
-            lines.append(("  current: —", "dim"))
+            lines.append(("  현재: —", "dim"))
+        capacity = max(actor.capacity, 1)
+        used = len(current_tasks)
+        capacity_style = "red" if used > capacity else "yellow" if used == capacity else "green"
+        lines.append((f"  여력: {used}/{capacity}", capacity_style))
+        hints = [
+            task.capacity_hint
+            for task in tasks
+            if task.assignee == actor.id and task.status == TaskStatus.READY and task.capacity_hint
+        ]
+        if hints:
+            lines.append((f"  추천 여력: {max(hints)}", "dim"))
         if last_done:
-            lines.append((f"  last done: {last_done.id}", "green dim"))
+            lines.append((f"  최근 완료: {last_done.id}", "green dim"))
         else:
-            lines.append(("  last done: —", "dim"))
+            lines.append(("  최근 완료: —", "dim"))
         lines.append(("", ""))
     return lines

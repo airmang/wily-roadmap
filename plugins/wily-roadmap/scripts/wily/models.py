@@ -23,6 +23,9 @@ class Task:
     acceptance_file: str | None = None
     scope: list[str] = field(default_factory=list)
     depends_on: list[str] = field(default_factory=list)
+    parallel_lane: str | None = None
+    priority: int | None = None
+    capacity_hint: int | None = None
     status: TaskStatus = TaskStatus.READY
     assignee: str | None = None
     actor: str | None = None
@@ -49,6 +52,12 @@ class Task:
         }
         if self.acceptance_file:
             data["acceptance_file"] = self.acceptance_file
+        if self.parallel_lane:
+            data["parallel_lane"] = self.parallel_lane
+        if self.priority is not None:
+            data["priority"] = self.priority
+        if self.capacity_hint is not None:
+            data["capacity_hint"] = self.capacity_hint
         return data
 
     @classmethod
@@ -61,6 +70,9 @@ class Task:
             acceptance_file=data.get("acceptance_file"),
             scope=list(data.get("scope") or []),
             depends_on=list(data.get("depends_on") or []),
+            parallel_lane=str(data["parallel_lane"]) if data.get("parallel_lane") else None,
+            priority=_optional_int(data.get("priority")),
+            capacity_hint=_optional_int(data.get("capacity_hint")),
             status=TaskStatus(data.get("status") or "ready"),
             assignee=data.get("assignee"),
             actor=data.get("actor"),
@@ -77,6 +89,7 @@ class Actor:
     display: str
     git_author_emails: list[str] = field(default_factory=list)
     git_author_names: list[str] = field(default_factory=list)
+    capacity: int = 1
 
     def matches(self, *, email: str = "", name: str = "") -> bool:
         if email and email.lower() in {e.lower() for e in self.git_author_emails}:
@@ -86,11 +99,14 @@ class Actor:
         return False
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        data: dict[str, Any] = {
             "display": self.display,
             "git_author_emails": list(self.git_author_emails),
             "git_author_names": list(self.git_author_names),
         }
+        if self.capacity != 1:
+            data["capacity"] = self.capacity
+        return data
 
     @classmethod
     def from_dict(cls, id_: str, data: dict[str, Any]) -> "Actor":
@@ -99,4 +115,11 @@ class Actor:
             display=str(data.get("display") or id_),
             git_author_emails=list(data.get("git_author_emails") or []),
             git_author_names=list(data.get("git_author_names") or []),
+            capacity=max(_optional_int(data.get("capacity")) or 1, 1),
         )
+
+
+def _optional_int(value: Any) -> int | None:
+    if value is None or value == "":
+        return None
+    return int(value)

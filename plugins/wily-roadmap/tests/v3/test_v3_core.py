@@ -69,6 +69,40 @@ class CoreModelTest(unittest.TestCase):
             self.assertEqual((summary.total, summary.done), (1, 1))
             self.assertEqual(summary.cp_names, ["plan"])
 
+    def test_parallel_metadata_round_trips_without_breaking_legacy_tasks(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".wily").mkdir()
+            paths = WilyPaths(root)
+            save_actors(paths, [Actor(id="wily", display="Wily", capacity=2)])
+            save_tasks(
+                paths,
+                "demo",
+                [
+                    Task(id="T01", title="Legacy"),
+                    Task(
+                        id="T02",
+                        title="Parallel",
+                        parallel_lane="frontend",
+                        priority=1,
+                        capacity_hint=2,
+                    ),
+                ],
+            )
+
+            _, tasks = load_tasks(paths)
+            actors = load_actors(paths)
+
+            self.assertIsNone(tasks[0].parallel_lane)
+            self.assertIsNone(tasks[0].priority)
+            self.assertIsNone(tasks[0].capacity_hint)
+            self.assertEqual(tasks[1].parallel_lane, "frontend")
+            self.assertEqual(tasks[1].priority, 1)
+            self.assertEqual(tasks[1].capacity_hint, 2)
+            self.assertEqual(actors[0].capacity, 2)
+            self.assertNotIn("parallel_lane", tasks[0].to_dict())
+            self.assertNotIn("capacity", Actor(id="solo", display="Solo").to_dict())
+
     def test_transitions_and_dependency_errors(self) -> None:
         task = Task(id="T01", title="x")
         claimed = apply_claim(task, actor="wily", sha="abc", at="now")
@@ -106,9 +140,9 @@ class CoreModelTest(unittest.TestCase):
         self.assertIn("Wily Roadmap v3", output)
         self.assertIn("▕", output)
         self.assertIn("▏", output)
-        self.assertIn("── IN PROGRESS ──", output)
-        self.assertIn("── READY ──", output)
-        self.assertIn("── DONE ──", output)
+        self.assertIn("── 진행 중 ──", output)
+        self.assertIn("── 병렬 가능 ──", output)
+        self.assertIn("── 완료 ──", output)
         self.assertIn("◐", output)
         self.assertIn("▶", output)
         self.assertIn("●", output)
@@ -132,9 +166,10 @@ class CoreModelTest(unittest.TestCase):
             ui="ascii",
         )
         self.assertIn("Wily Roadmap v3", output)
+        self.assertIn("모드 단독", output)
         self.assertIn("\\- ~ T01", output)
-        self.assertIn("cp [#--] 1/3 cp current:verify", output)
-        self.assertIn("blocker: waiting for review", output)
+        self.assertIn("체크포인트 [#--] 1/3 현재:verify", output)
+        self.assertIn("차단 사유: waiting for review", output)
 
     def test_watch_renderer_groups_tasks_by_status(self) -> None:
         output = render_watch(
@@ -150,12 +185,12 @@ class CoreModelTest(unittest.TestCase):
             mode="solo",
             ui="ascii",
         )
-        self.assertIn("-- BLOCKED --", output)
-        self.assertIn("-- READY --", output)
-        self.assertIn("-- DONE --", output)
-        blocked_pos = output.index("-- BLOCKED --")
-        ready_pos = output.index("-- READY --")
-        done_pos = output.index("-- DONE --")
+        self.assertIn("-- 차단 --", output)
+        self.assertIn("-- 병렬 가능 --", output)
+        self.assertIn("-- 완료 --", output)
+        blocked_pos = output.index("-- 차단 --")
+        ready_pos = output.index("-- 병렬 가능 --")
+        done_pos = output.index("-- 완료 --")
         self.assertLess(blocked_pos, ready_pos)
         self.assertLess(ready_pos, done_pos)
 
@@ -172,7 +207,118 @@ class CoreModelTest(unittest.TestCase):
             mode="solo",
             ui="ascii",
         )
-        self.assertIn("waiting for: T01 (in_progress)", output)
+        self.assertIn("대기 중: T01 (진행 중)", output)
+
+    def test_watch_renderer_shows_parallel_lanes_capacity_and_scope_conflicts(self) -> None:
+        output = render_watch(
+            project_title="Demo",
+            tasks=[
+                Task(id="T01", title="Active", status=TaskStatus.IN_PROGRESS, actor="wily", scope=["src/ui.py"]),
+                Task(
+                    id="T02",
+                    title="Ready lane",
+                    status=TaskStatus.READY,
+                    assignee="wily",
+                    scope=["src/api.py"],
+                    parallel_lane="backend",
+                    priority=1,
+                ),
+                Task(
+                    id="T03",
+                    title="Conflicting lane",
+                    status=TaskStatus.READY,
+                    assignee="wily",
+                    scope=["src/ui.py"],
+                    parallel_lane="frontend",
+                    priority=2,
+                    capacity_hint=2,
+                ),
+                Task(
+                    id="T04",
+                    title="Waiting lane",
+                    status=TaskStatus.READY,
+                    assignee="right",
+                    depends_on=["T01"],
+                    parallel_lane="docs",
+                ),
+            ],
+            actors=[Actor(id="wily", display="Wily", capacity=2), Actor(id="right", display="Right")],
+            observed_commits=[],
+            cp_summaries={},
+            mode="collab",
+            ui="ascii",
+        )
+
+        self.assertIn("-- 병렬 가능 --", output)
+        self.assertIn("-- 의존 대기 --", output)
+        self.assertIn("병렬: 레인 backend · 우선순위 1", output)
+        self.assertIn("작업자 여력: wily 1/2", output)
+        self.assertIn("충돌 가능: T01 (scope 겹침)", output)
+        self.assertIn("대기 중: T01 (진행 중)", output)
+
+    def test_watch_renderer_treats_missing_dependencies_as_waiting(self) -> None:
+        output = render_watch(
+            project_title="Demo",
+            tasks=[
+                Task(
+                    id="T01",
+                    title="Missing dependency",
+                    status=TaskStatus.READY,
+                    assignee="wily",
+                    depends_on=["T99"],
+                    parallel_lane="backend",
+                ),
+            ],
+            actors=[Actor(id="wily", display="Wily")],
+            observed_commits=[],
+            cp_summaries={},
+            mode="solo",
+            ui="ascii",
+        )
+
+        self.assertIn("-- 의존 대기 --", output)
+        self.assertNotIn("-- 병렬 가능 --", output)
+        self.assertIn("대기 중: T99 (누락)", output)
+
+    def test_watch_renderer_does_not_treat_capacity_hint_as_actor_capacity(self) -> None:
+        output = render_watch(
+            project_title="Demo",
+            tasks=[
+                Task(id="T01", title="Active", status=TaskStatus.IN_PROGRESS, actor="wily"),
+                Task(
+                    id="T02",
+                    title="High hint",
+                    status=TaskStatus.READY,
+                    assignee="wily",
+                    parallel_lane="backend",
+                    capacity_hint=3,
+                ),
+            ],
+            actors=[Actor(id="wily", display="Wily", capacity=1)],
+            observed_commits=[],
+            cp_summaries={},
+            mode="solo",
+            ui="ascii",
+        )
+
+        self.assertIn("병렬: 레인 backend · 필요 여력 3", output)
+        self.assertIn("작업자 여력: wily 1/1 (여력 없음)", output)
+        self.assertNotIn("작업자 여력: wily 1/3", output)
+
+    def test_watch_activity_panel_shows_actor_capacity(self) -> None:
+        lines = build_activity_lines(
+            actors=[Actor(id="wily", display="Wily", capacity=2)],
+            tasks=[
+                Task(id="T01", title="First", status=TaskStatus.IN_PROGRESS, actor="wily"),
+                Task(id="T02", title="Second", status=TaskStatus.READY, assignee="wily", capacity_hint=3),
+            ],
+            cp_summaries={},
+            ascii_mode=True,
+            width=30,
+        )
+        text = "\n".join(t for t, _s in lines)
+        self.assertIn("여력: 1/2", text)
+        self.assertIn("추천 여력: 3", text)
 
     def test_watch_layout_config_responsive_breakpoints(self) -> None:
         compact = WatchLayoutConfig(width=72, ascii_mode=True, compact=True)
@@ -201,10 +347,10 @@ class CoreModelTest(unittest.TestCase):
             width=30,
         )
         text = "\n".join(t for t, _s in lines)
-        self.assertIn("ACTIVITY", text)
+        self.assertIn("활동", text)
         self.assertIn("wily", text)
-        self.assertIn("current: T02 verify", text)
-        self.assertIn("last done: T01", text)
+        self.assertIn("현재: T02 verify", text)
+        self.assertIn("최근 완료: T01", text)
 
     def test_watch_status_args_strip_new_flags(self) -> None:
         stripped = watch_cmd.status_args_from_watch_args(

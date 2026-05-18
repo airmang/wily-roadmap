@@ -5,6 +5,7 @@ __pycache__/
 .playwright-mcp/
 .crack/
 .worktrees/
+.superpowers/
 
 # Wily collaboration state. Share durable roadmap state through Git, but keep
 # personal execution attempts local unless a later archive policy opts in.

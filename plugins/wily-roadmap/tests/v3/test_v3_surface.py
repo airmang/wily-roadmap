@@ -38,6 +38,28 @@ class V3SurfaceTest(unittest.TestCase):
         for token in ("wily claim", "wily go", "custom-workflow-skillset:plan-goal-runner", "wily done"):
             self.assertIn(token, execute)
 
+    def test_replan_skill_routes_natural_language_work_to_task_addition(self) -> None:
+        replan = (ROOT / "skills" / "wily-replan" / "SKILL.md").read_text(encoding="utf-8")
+        command = (ROOT / "commands" / "replan.md").read_text(encoding="utf-8")
+
+        for text in (replan, command):
+            with self.subTest(path="replan-contract"):
+                self.assertIn("natural-language work request", text)
+                self.assertIn("create or revise a Roadmap Task", text)
+                self.assertIn("Do not implement the requested work", text)
+                self.assertIn("stop after the task draft is committed", text)
+
+    def test_watch_skill_documents_korean_ui_and_parallel_guidance(self) -> None:
+        watch = (ROOT / "skills" / "wily-watch" / "SKILL.md").read_text(encoding="utf-8")
+        command = (ROOT / "commands" / "watch.md").read_text(encoding="utf-8")
+
+        for text in (watch, command):
+            with self.subTest(path="watch-guidance"):
+                self.assertIn("Korean UI", text)
+                self.assertIn("병렬 가능", text)
+                self.assertIn("scope conflict", text)
+                self.assertIn("작업자 여력", text)
+
     def test_v2_runtime_files_are_removed(self) -> None:
         removed = {
             ROOT / "scripts" / "wily_state_summary.py",
