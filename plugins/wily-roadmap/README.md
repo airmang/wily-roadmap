@@ -32,6 +32,9 @@ Wily v3 stores durable project state under `.wily/`:
 - `tasks/<id>/result.md`
 - `archive/` for legacy snapshots
 
+`wily init commit` also creates or updates concise Wily guidance in root
+`AGENTS.md` and `CLAUDE.md`, preserving existing project-specific instructions.
+
 ## Custom Workflow
 
 `wily go <id>` prints goal text for

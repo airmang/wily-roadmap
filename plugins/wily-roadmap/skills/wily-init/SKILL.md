@@ -5,7 +5,7 @@ description: Use when the user types $wily-init or asks to start the Wily v3 int
 
 # Wily Init
 
-Start or continue the Wily v3 interview and write `.wily/project.md`, `.wily/tasks.yaml`, and `.wily/actors.yaml`.
+Start or continue the Wily v3 interview and write `.wily/project.md`, `.wily/tasks.yaml`, `.wily/actors.yaml`, plus concise repo-local Wily guidance in `AGENTS.md` and `CLAUDE.md`.
 
 ## Internal Command
 
@@ -16,6 +16,7 @@ python3 <plugin-root>/scripts/wily.py init [--new|--adopt|answer|back|revise|sho
 ## Behavior
 
 - State-changing: stores interview draft in `.wily/init/draft.yaml`.
+- `commit` creates or updates only the Wily-managed sections in root `AGENTS.md` and `CLAUDE.md`; existing project guidance is preserved.
 - `adopt-legacy` archives old v2 `.wily/` children under `.wily/archive/`.
 
 ## Response Style

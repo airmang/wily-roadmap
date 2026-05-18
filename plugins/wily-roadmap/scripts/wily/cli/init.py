@@ -258,8 +258,10 @@ def _commit(paths: WilyPaths, root: Path) -> int:
     save_tasks(paths, title, tasks)
     save_actors(paths, actors)
     _write_project(paths, draft)
+    _write_agent_instruction_files(root)
     discard_draft(paths)
     _common.emit_text(f"init committed: {len(tasks)} task(s), {len(actors)} actor(s)")
+    _common.emit_text("agent instructions updated: AGENTS.md, CLAUDE.md")
     return _common.EXIT_OK
 
 
@@ -325,3 +327,48 @@ def _write_project(paths: WilyPaths, draft: Draft) -> None:
         if draft.answers.get(key):
             lines.extend([f"## {label}", draft.answers[key], ""])
     paths.project_md.write_text("\n".join(lines), encoding="utf-8")
+
+
+AGENT_INSTRUCTION_SECTIONS = """## Wily Roadmap
+
+- Treat `.wily/` as the local project/task ledger.
+- Prefer `wily next`, `wily claim <id>`, `wily go <id>`, `wily done <id>`, and `wily watch` for Wily-managed work.
+- When using Custom Workflow, sync checkpoint status back with `wily cp <id> import-status agent-handoffs/<slug>-status.md`.
+- Keep remote or destructive actions approval-first.
+
+## Agent Behavior
+
+- State assumptions when requirements are ambiguous.
+- Choose the simplest implementation that satisfies the task.
+- Keep edits surgical; do not refactor unrelated code.
+- Define success with tests or concrete verification before calling work done.
+"""
+
+
+def _write_agent_instruction_files(root: Path) -> None:
+    for name in ("AGENTS.md", "CLAUDE.md"):
+        _upsert_agent_instruction_sections(root / name)
+
+
+def _upsert_agent_instruction_sections(path: Path) -> None:
+    existing = path.read_text(encoding="utf-8") if path.exists() else ""
+    cleaned = _remove_markdown_section(existing, "Wily Roadmap")
+    cleaned = _remove_markdown_section(cleaned, "Agent Behavior").strip()
+    parts = [part for part in (cleaned, AGENT_INSTRUCTION_SECTIONS.strip()) if part]
+    path.write_text("\n\n".join(parts) + "\n", encoding="utf-8")
+
+
+def _remove_markdown_section(text: str, title: str) -> str:
+    lines = text.splitlines()
+    output: list[str] = []
+    index = 0
+    target = f"## {title}"
+    while index < len(lines):
+        if lines[index].strip() == target:
+            index += 1
+            while index < len(lines) and not lines[index].startswith("## "):
+                index += 1
+            continue
+        output.append(lines[index])
+        index += 1
+    return "\n".join(output)

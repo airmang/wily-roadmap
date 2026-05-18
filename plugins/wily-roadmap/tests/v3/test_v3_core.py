@@ -542,6 +542,51 @@ class CoreModelTest(unittest.TestCase):
 
 
 class CliLifecycleTest(unittest.TestCase):
+    def test_init_commit_upserts_concise_agent_instruction_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _git_repo(root)
+            agents = root / "AGENTS.md"
+            agents.write_text(
+                "\n".join(
+                    [
+                        "# Project Agent Guide",
+                        "",
+                        "Keep this project-specific rule.",
+                        "",
+                        "## Wily Roadmap",
+                        "",
+                        "old Wily text",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            commands = [
+                ["init", "--new"],
+                ["init", "answer", "Demo Project"],
+                ["init", "answer", "Wily"],
+                ["init", "answer", "tasks done"],
+                ["init", "answer", "no board"],
+                ["init", "answer", "wily Wily, emails=wily@example.com"],
+                ["init", "add-task", "First task"],
+                ["init", "commit"],
+            ]
+            for args in commands:
+                result = subprocess.run([sys.executable, str(SCRIPT), *args], cwd=root, capture_output=True, text=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+
+            agents_text = agents.read_text(encoding="utf-8")
+            claude_text = (root / "CLAUDE.md").read_text(encoding="utf-8")
+            for text in (agents_text, claude_text):
+                self.assertIn("## Wily Roadmap", text)
+                self.assertIn("Treat `.wily/` as the local project/task ledger.", text)
+                self.assertIn("wily cp <id> import-status agent-handoffs/<slug>-status.md", text)
+                self.assertIn("## Agent Behavior", text)
+                self.assertIn("Keep edits surgical; do not refactor unrelated code.", text)
+                self.assertNotIn("old Wily text", text)
+            self.assertIn("Keep this project-specific rule.", agents_text)
+
     def test_init_claim_go_done_status_flow(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
