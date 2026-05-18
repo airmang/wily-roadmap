@@ -20,6 +20,7 @@ from wily.observation import observation_base  # noqa: E402
 from wily.paths import WilyPaths, WilyRootNotFound, find_wily_root  # noqa: E402
 from wily.progress import CpEvent, append_event, cp_summary, init_progress  # noqa: E402
 from wily.transitions import DependencyError, TransitionError, apply_claim, apply_done, check_dependencies  # noqa: E402
+from wily.ui.watch_render import render_watch  # noqa: E402
 
 
 def _git_repo(path: Path) -> None:
@@ -69,6 +70,26 @@ class CoreModelTest(unittest.TestCase):
             self.assertEqual(find_wily_root(child), root.resolve())
             with self.assertRaises(WilyRootNotFound):
                 find_wily_root(root.parent)
+
+    def test_watch_renderer_keeps_rich_pipeline_shape(self) -> None:
+        output = render_watch(
+            project_title="Demo",
+            tasks=[
+                Task(id="T01", title="First", status=TaskStatus.DONE, assignee="wily"),
+                Task(id="T02", title="Second", status=TaskStatus.IN_PROGRESS, assignee="right"),
+                Task(id="T03", title="Third", status=TaskStatus.READY, assignee="wily"),
+            ],
+            actors=[Actor(id="wily", display="Wily", git_author_emails=["wily@example.com"])],
+            observed_commits=[],
+            cp_summaries={},
+            mode="shared",
+        )
+        self.assertIn("Wily Roadmap v3", output)
+        self.assertIn("▕", output)
+        self.assertIn("▏", output)
+        self.assertIn("├─", output)
+        self.assertIn("└─", output)
+        self.assertIn("▶", output)
 
 
 class CliLifecycleTest(unittest.TestCase):

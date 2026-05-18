@@ -10,13 +10,14 @@ Print one Wily v3 project snapshot, or JSON for agent/automation use.
 ## Internal Command
 
 ```bash
-python3 <plugin-root>/scripts/wily.py status [--json]
+python3 <plugin-root>/scripts/wily.py status [--json] [--ui auto|rich|ascii]
 ```
 
 ## Behavior
 
 - Read-only: does not mutate `.wily/`.
 - Exit codes: 0 all done, 1 active work remains, 2 blocked task exists.
+- Non-JSON output uses the same Rich-capable renderer as `wily watch`.
 
 ## Response Style
 

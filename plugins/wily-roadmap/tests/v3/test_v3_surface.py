@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 import unittest
 from pathlib import Path
 
@@ -15,7 +17,7 @@ class V3SurfaceTest(unittest.TestCase):
     def test_plugin_manifest_exposes_v3_only(self) -> None:
         data = json.loads((ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
         self.assertEqual(data["skills"], "./skills/")
-        self.assertEqual(data["version"], "3.0.0")
+        self.assertEqual(data["version"], "3.0.1")
         self.assertNotIn("board", json.dumps(data).lower())
         self.assertNotIn("stage", json.dumps(data).lower())
 
@@ -27,7 +29,7 @@ class V3SurfaceTest(unittest.TestCase):
         data = json.loads(MARKETPLACE.read_text(encoding="utf-8"))
         plugin = data["plugins"][0]
         self.assertEqual(plugin["source"]["path"], "./plugins/wily-roadmap")
-        self.assertEqual(plugin["version"], "3.0.0")
+        self.assertEqual(plugin["version"], "3.0.1")
 
     def test_skill_directories_are_exactly_v3(self) -> None:
         dirs = {path.name for path in (ROOT / "skills").iterdir() if path.is_dir()}
@@ -56,6 +58,18 @@ class V3SurfaceTest(unittest.TestCase):
         self.assertIn("~/.codex/hooks.json", readme)
         self.assertIn(".github/workflows/wily-" + "board-sync.yml", readme)
         self.assertIn("~/.wily/board.json", readme)
+
+    def test_claude_user_prompt_hook_compat_script_allows_prompt(self) -> None:
+        script = ROOT.parents[1] / "scripts" / "user_prompt_submit_goal_classifier.py"
+        self.assertTrue(script.exists())
+        result = subprocess.run(
+            [sys.executable, str(script)],
+            input='{"prompt":"v3 smoke"}',
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, "")
 
 
 if __name__ == "__main__":

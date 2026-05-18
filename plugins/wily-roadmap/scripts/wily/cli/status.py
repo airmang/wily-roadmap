@@ -15,6 +15,9 @@ from . import _common
 
 def main(args: list[str]) -> int:
     as_json = "--json" in args
+    ui = _ui_mode(args)
+    if ui is None:
+        return _common.EXIT_USAGE
     try:
         root = find_wily_root(Path.cwd())
     except WilyRootNotFound as exc:
@@ -49,6 +52,7 @@ def main(args: list[str]) -> int:
                 observed_commits=observed,
                 cp_summaries=summaries,
                 mode=mode,
+                ui=ui,
             )
         )
     if any(task.status == TaskStatus.BLOCKED for task in tasks):
@@ -56,3 +60,17 @@ def main(args: list[str]) -> int:
     if any(task.status in {TaskStatus.READY, TaskStatus.IN_PROGRESS} for task in tasks):
         return 1
     return 0
+
+
+def _ui_mode(args: list[str]) -> str | None:
+    if "--ui" not in args:
+        return "auto"
+    index = args.index("--ui")
+    if index + 1 >= len(args):
+        _common.emit_error("--ui requires one of: auto, rich, ascii")
+        return None
+    mode = args[index + 1]
+    if mode not in {"auto", "rich", "ascii"}:
+        _common.emit_error("--ui requires one of: auto, rich, ascii")
+        return None
+    return mode

@@ -10,13 +10,15 @@ Render a live task snapshot, including actor lane, blocker text, and cp progress
 ## Internal Command
 
 ```bash
-python3 <plugin-root>/scripts/wily.py watch [--once|--interval N]
+python3 <plugin-root>/scripts/wily.py watch [--once|--interval N] [--ui auto|rich|ascii]
 ```
 
 ## Behavior
 
 - Read-only: does not mutate `.wily/`.
 - `--once` prints one snapshot and exits.
+- `--ui auto` uses Rich styling when available, including repo-local
+  `.venv-watch`; `--ui ascii` forces plain ASCII.
 
 ## Response Style
 
