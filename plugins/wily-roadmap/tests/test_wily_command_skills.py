@@ -21,6 +21,7 @@ COMMANDS = {
     "wily-replan": "scripts/wily.py replan",
     "wily-run": "scripts/wily.py run",
     "wily-land": "scripts/wily.py land",
+    "wily-clean": "scripts/wily.py clean",
     "wily-decompose-stage": "scripts/wily.py decompose-stage",
     "wily-update": "scripts/wily.py update",
 }
@@ -34,6 +35,7 @@ MUTATING_COMMANDS = {
     "wily-replan",
     "wily-run",
     "wily-land",
+    "wily-clean",
     "wily-decompose-stage",
     "wily-update",
 }
@@ -80,7 +82,7 @@ class WilyCommandSkillsTest(unittest.TestCase):
                 self.assertIn(QUIET_RESPONSE_PHRASE, text)
 
     def test_command_skills_define_boundaries(self) -> None:
-        mutating = {"wily-init", "wily-start", "wily-complete", "wily-block", "wily-retry", "wily-replan", "wily-land"}
+        mutating = {"wily-init", "wily-start", "wily-complete", "wily-block", "wily-retry", "wily-replan", "wily-land", "wily-clean"}
         readonly = {"wily-status", "wily-watch", "wily-next"}
         for command in mutating:
             with self.subTest(command=command):
@@ -224,6 +226,17 @@ class WilyCommandSkillsTest(unittest.TestCase):
         self.assertIn("Run the `wily-land` skill", command)
         self.assertIn("--direct", command)
         self.assertIn("--pr", command)
+
+    def test_clean_command_documents_safe_local_cleanup_boundary(self) -> None:
+        skill = self.skill_text("wily-clean")
+        command = (ROOT / "commands" / "clean.md").read_text(encoding="utf-8")
+
+        self.assertIn("scripts/wily.py clean", skill)
+        self.assertIn("dry-run", skill)
+        self.assertIn(".wily/local/board.json", skill)
+        self.assertIn(".wily/sessions/**", skill)
+        self.assertIn("Run the `wily-clean` skill", command)
+        self.assertIn("--yes", command)
 
     def test_readme_documents_repo_local_zsh_launcher(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")

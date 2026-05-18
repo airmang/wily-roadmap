@@ -11,6 +11,8 @@ Use `$wily-land <stage-id>/<phase-id>` after `$wily-complete` has marked a Phase
 
 This is state-changing repository work. It can commit, push, and land completed work. It verifies the selected Phase is already `done`, commits current repository changes when present, pushes the current branch, then either lands directly onto the base branch or creates a PR.
 
+Before committing, the helper prints the staged path list from `git diff --cached --name-status` so the user can see what will be included in the land commit.
+
 ## Internal Command
 
 ```bash

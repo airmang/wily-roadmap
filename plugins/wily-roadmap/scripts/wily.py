@@ -3625,6 +3625,22 @@ def cleanup_land_artifacts(root: Path, item: Phase) -> int:
     return removed
 
 
+def print_land_commit_paths(root: Path) -> int:
+    diff = git_run(root, ["diff", "--cached", "--name-status"])
+    if diff.returncode != 0:
+        print("Unable to list commit paths.", file=sys.stderr)
+        if diff.stderr.strip():
+            print(diff.stderr.strip(), file=sys.stderr)
+        return diff.returncode
+    paths = [line for line in diff.stdout.splitlines() if line.strip()]
+    if not paths:
+        return 0
+    print("Commit paths:")
+    for line in paths:
+        print(line)
+    return 0
+
+
 def command_land(root: Path, args: list[str]) -> int:
     if not args:
         print(command_land_usage(), file=sys.stderr)
@@ -3698,6 +3714,9 @@ def command_land(root: Path, args: list[str]) -> int:
             print(status.stderr.strip(), file=sys.stderr)
         return status.returncode
     if status.stdout.strip():
+        listed = print_land_commit_paths(git_root)
+        if listed != 0:
+            return listed
         commit = git_step(git_root, ["commit", "-m", message], "Commit")
         if commit.returncode != 0:
             return commit.returncode
@@ -3770,6 +3789,110 @@ def command_land(root: Path, args: list[str]) -> int:
     print(f"Pushed base: {base}")
     if cleaned:
         print(f"Cleaned local live artifacts: {cleaned}")
+    return 0
+
+
+def command_clean_usage() -> str:
+    return "Usage: wily.py clean [--yes]"
+
+
+def cleanable_artifact_paths(root: Path) -> list[Path]:
+    candidates: list[Path] = []
+    live_dir = root / ".wily" / "local" / "live"
+    if live_dir.is_dir():
+        candidates.extend(path for path in live_dir.rglob("*") if path.is_file())
+    board_emit = root / ".wily" / "local" / "board-last-emit.json"
+    if board_emit.exists():
+        candidates.append(board_emit)
+    for dirname in (".playwright-mcp", ".pytest_cache"):
+        path = root / dirname
+        if path.exists():
+            candidates.append(path)
+    for path in root.rglob("__pycache__"):
+        if path.is_dir() and ".git" not in path.parts:
+            candidates.append(path)
+    for path in root.rglob("*.pyc"):
+        if path.is_file() and ".git" not in path.parts:
+            candidates.append(path)
+    unique: dict[str, Path] = {}
+    root_resolved = root.resolve()
+    covered_dirs = {
+        path.resolve()
+        for path in candidates
+        if path.is_dir()
+    }
+    for path in candidates:
+        try:
+            resolved = path.resolve()
+            resolved.relative_to(root_resolved)
+        except ValueError:
+            continue
+        if path.is_file() and any(parent in covered_dirs for parent in resolved.parents):
+            continue
+        unique[resolved.as_posix()] = path
+    return sorted(unique.values(), key=lambda value: relative_display_path(root, value))
+
+
+def relative_display_path(root: Path, path: Path) -> str:
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def remove_cleanable_artifact(path: Path) -> bool:
+    try:
+        if path.is_dir():
+            shutil.rmtree(path)
+            return True
+        if path.exists():
+            path.unlink()
+            return True
+    except OSError:
+        return False
+    return False
+
+
+def command_clean(root: Path, args: list[str]) -> int:
+    yes = False
+    for arg in args:
+        if arg == "--yes":
+            yes = True
+            continue
+        if arg == "--dry-run":
+            continue
+        print(f"Unknown clean option: {arg}", file=sys.stderr)
+        print(command_clean_usage(), file=sys.stderr)
+        return 2
+
+    candidates = cleanable_artifact_paths(root)
+    if not candidates:
+        print("No cleanable artifacts found.")
+        return 0
+
+    if not yes:
+        print("Cleanable artifacts:")
+        for path in candidates:
+            print(f"- {relative_display_path(root, path)}")
+        print("Dry run only. Run wily clean --yes to remove these artifacts.")
+        return 0
+
+    removed: list[Path] = []
+    failed: list[Path] = []
+    for path in candidates:
+        if remove_cleanable_artifact(path):
+            removed.append(path)
+        else:
+            failed.append(path)
+    if removed:
+        print("Removed cleanable artifacts:")
+        for path in removed:
+            print(f"- {relative_display_path(root, path)}")
+    if failed:
+        print("Failed to remove cleanable artifacts:", file=sys.stderr)
+        for path in failed:
+            print(f"- {relative_display_path(root, path)}", file=sys.stderr)
+        return 1
     return 0
 
 
@@ -3997,6 +4120,7 @@ def usage() -> str:
             "  migrate-state --to wily-roadmap-v2 (--dry-run|--apply|--prune-legacy)",
             "  run <stage-id>/<phase-id> [--runner <id>] [--autonomy <mode>] [--dry-run]",
             "  land <stage-id>/<phase-id> [--base branch] [--direct|--pr]",
+            "  clean [--yes]",
             "  update [--check|--migrate|--yes]",
             "  watch",
         ]
@@ -4051,6 +4175,8 @@ def main(argv: list[str] | None = None) -> int:
         return command_run(root, args)
     if command == "land":
         return command_land(root, args)
+    if command == "clean":
+        return command_clean(root, args)
     if command == "update":
         return command_update(root, args)
     if command == "watch":

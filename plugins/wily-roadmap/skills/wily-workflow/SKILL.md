@@ -61,7 +61,7 @@ For deterministic local state operations, use the helper script:
 python3 <plugin-root>/scripts/wily.py <command>
 ```
 
-The script handles repeatable filesystem work such as `init`, `status`, `next`, `start`, `complete`, `land`, `block`, `retry`, `replan`, and one-shot `watch` rendering. The active agent still owns interpretation, user approval, phase design, planner selection, implementation, and verification.
+The script handles repeatable filesystem work such as `init`, `status`, `next`, `start`, `complete`, `land`, `clean`, `block`, `retry`, `replan`, and one-shot `watch` rendering. The active agent still owns interpretation, user approval, phase design, planner selection, implementation, and verification.
 
 `$wily-init` scans the repository. If the user already provided a final goal, combine that goal with the scan. If not, summarize the current implementation first, then ask for the intended final outcome before creating a roadmap. New roadmaps should use top-level `stages:` with `depends_on`, `owner`, and `write_scope` so ready Stages can be assigned safely in parallel.
 
@@ -84,6 +84,8 @@ The script handles repeatable filesystem work such as `init`, `status`, `next`, 
 `$wily-complete <id>` marks a phase `done` after verification evidence and review requirements are satisfied.
 
 `$wily-land <id>` is the explicit post-completion Git handoff. It commits current repository changes, pushes the current branch, and either fast-forward lands the branch onto the base branch or opens a PR. Keep this separate from `$wily-complete`.
+
+`$wily-clean` inspects safe local temporary artifacts. It is dry-run by default and deletes only a narrow allowlist when `--yes` is explicitly used.
 
 `$wily-block <id>` records a blocker in roadmap state and the current session.
 

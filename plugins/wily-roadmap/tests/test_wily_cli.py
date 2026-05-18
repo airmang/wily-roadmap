@@ -3587,6 +3587,9 @@ class WilyCliTest(unittest.TestCase):
             result = self.run_wily(project, "land", "01")
 
             self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Commit paths:", result.stdout)
+            self.assertIn("A\tapp.txt", result.stdout)
+            self.assertIn("M\t.wily/roadmap.yaml", result.stdout)
             self.assertIn("Committed:", result.stdout)
             self.assertIn("Pushed branch: phase-01", result.stdout)
             self.assertIn("Landed on main", result.stdout)
@@ -3600,6 +3603,77 @@ class WilyCliTest(unittest.TestCase):
                 "app.txt",
                 self.assert_git_ok(project, "ls-tree", "--name-only", "origin/main").stdout,
             )
+
+    def test_clean_dry_run_lists_cleanable_artifacts_without_deleting(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.create_state(project)
+            cleanable = [
+                project / ".wily" / "local" / "live" / "session.json",
+                project / ".wily" / "local" / "board-last-emit.json",
+                project / ".playwright-mcp" / "state.json",
+                project / ".pytest_cache" / "README.md",
+                project / "pkg" / "__pycache__" / "mod.cpython-314.pyc",
+            ]
+            for path in cleanable:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("temporary\n", encoding="utf-8")
+            preserved = [
+                project / ".wily" / "local" / "board.json",
+                project / ".wily" / "sessions" / "attempt" / "status.yaml",
+            ]
+            for path in preserved:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("keep\n", encoding="utf-8")
+
+            result = self.run_wily(project, "clean")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Cleanable artifacts:", result.stdout)
+            self.assertIn(".wily/local/live/session.json", result.stdout)
+            self.assertIn(".wily/local/board-last-emit.json", result.stdout)
+            self.assertIn(".playwright-mcp", result.stdout)
+            self.assertIn(".pytest_cache", result.stdout)
+            self.assertIn("pkg/__pycache__", result.stdout)
+            self.assertIn("Run wily clean --yes", result.stdout)
+            for path in cleanable + preserved:
+                self.assertTrue(path.exists(), f"{path} should not be deleted by dry-run")
+
+    def test_clean_yes_removes_only_cleanable_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            self.create_state(project)
+            cleanable = [
+                project / ".wily" / "local" / "live" / "session.json",
+                project / ".wily" / "local" / "board-last-emit.json",
+                project / ".playwright-mcp" / "state.json",
+                project / ".pytest_cache" / "README.md",
+                project / "pkg" / "__pycache__" / "mod.cpython-314.pyc",
+            ]
+            for path in cleanable:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("temporary\n", encoding="utf-8")
+            preserved = [
+                project / ".wily" / "local" / "board.json",
+                project / ".wily" / "sessions" / "attempt" / "status.yaml",
+                project / "agent-handoffs" / "handoff.md",
+                project / "src" / "app.py",
+            ]
+            for path in preserved:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("keep\n", encoding="utf-8")
+
+            result = self.run_wily(project, "clean", "--yes")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Removed cleanable artifacts:", result.stdout)
+            self.assertFalse((project / ".wily" / "local" / "live" / "session.json").exists())
+            self.assertFalse((project / ".wily" / "local" / "board-last-emit.json").exists())
+            self.assertFalse((project / ".playwright-mcp").exists())
+            self.assertFalse((project / ".pytest_cache").exists())
+            self.assertFalse((project / "pkg" / "__pycache__").exists())
+            for path in preserved:
+                self.assertTrue(path.exists(), f"{path} should be preserved")
 
     def test_block_marks_phase_blocked_and_records_reason(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
