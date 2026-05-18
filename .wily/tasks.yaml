@@ -13,12 +13,12 @@
         ".wily/*"
       ],
       "depends_on": [],
-      "status": "ready",
+      "status": "done",
       "assignee": "wily",
       "actor": null,
       "claim_sha": null,
       "claim_at": null,
-      "done_at": null,
+      "done_at": "2026-05-18T13:42:41Z",
       "blocker": null
     }
   ]

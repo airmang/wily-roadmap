@@ -56,7 +56,7 @@ def build_rows(
             full, empty = ("#", "-") if ascii_mode else ("█", "░")
             left, right = ("[", "]") if ascii_mode else ("▕", "▏")
             blocks = full * cp.done + empty * max(cp.total - cp.done, 0)
-            current = f" cp:{cp.current_cp}" if cp.current_cp else ""
+            current = f" current:{cp.current_cp}" if cp.current_cp else ""
             gauge = f"{left}{blocks}{right} {cp.done}/{cp.total} cp{current}"
         glyph, status_label, style = meta[task.status]
         rows.append(

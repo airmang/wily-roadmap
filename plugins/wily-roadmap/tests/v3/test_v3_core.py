@@ -6,19 +6,21 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr
+from io import StringIO
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "wily.py"
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from wily.cli import block as block_cmd, next as next_cmd, replan as replan_cmd  # noqa: E402
+from wily.cli import block as block_cmd, next as next_cmd, replan as replan_cmd, watch as watch_cmd  # noqa: E402
 from wily.cli import init as init_cmd  # noqa: E402
 from wily.config import load_actors, load_tasks, save_actors, save_tasks  # noqa: E402
 from wily.models import Actor, Task, TaskStatus  # noqa: E402
 from wily.observation import observation_base  # noqa: E402
 from wily.paths import WilyPaths, WilyRootNotFound, find_wily_root  # noqa: E402
-from wily.progress import CpEvent, append_event, cp_summary, init_progress  # noqa: E402
+from wily.progress import CpEvent, CpSummary, append_event, cp_summary, init_progress  # noqa: E402
 from wily.transitions import DependencyError, TransitionError, apply_claim, apply_done, check_dependencies  # noqa: E402
 from wily.ui.watch_render import render_watch  # noqa: E402
 
@@ -91,6 +93,82 @@ class CoreModelTest(unittest.TestCase):
         self.assertIn("└─", output)
         self.assertIn("▶", output)
 
+    def test_watch_renderer_shows_task_detail_rows_in_ascii(self) -> None:
+        output = render_watch(
+            project_title="Demo",
+            tasks=[
+                Task(
+                    id="T01",
+                    title="First",
+                    status=TaskStatus.IN_PROGRESS,
+                    assignee="wily",
+                    blocker="waiting for review",
+                ),
+            ],
+            actors=[],
+            observed_commits=[],
+            cp_summaries={"T01": CpSummary(total=3, done=1, in_progress=1, current_cp="verify")},
+            mode="solo",
+            ui="ascii",
+        )
+        self.assertIn("Wily Roadmap v3", output)
+        self.assertIn("\\- ~ T01", output)
+        self.assertIn("cp [#--] 1/3 cp current:verify", output)
+        self.assertIn("blocker: waiting for review", output)
+
+    def test_watch_launch_mode_selects_tmux_pane_by_default(self) -> None:
+        self.assertEqual(
+            watch_cmd.watch_launch_mode(
+                ["--interval", "1"],
+                in_tmux=True,
+                stdin_tty=True,
+                stdout_tty=True,
+            ),
+            "pane",
+        )
+        self.assertEqual(
+            watch_cmd.watch_launch_mode(["--here"], in_tmux=True, stdin_tty=True, stdout_tty=True),
+            "here",
+        )
+        self.assertEqual(
+            watch_cmd.watch_launch_mode([], in_tmux=False, stdin_tty=True, stdout_tty=True),
+            "here",
+        )
+        self.assertEqual(
+            watch_cmd.watch_launch_mode([], in_tmux=False, stdin_tty=False, stdout_tty=False),
+            "needs_interactive_terminal",
+        )
+
+    def test_tmux_watch_command_opens_horizontal_split_on_current_pane(self) -> None:
+        root = Path("/tmp/demo repo")
+        command = watch_cmd.tmux_watch_command(
+            root,
+            ["--interval", "1.5", "--ui", "ascii"],
+            script=Path("/tmp/wily.py"),
+            python="python3",
+            current_pane="%7",
+        )
+        self.assertEqual(command[:4], ["tmux", "split-window", "-t", "%7"])
+        self.assertEqual(command[4], "-h")
+        inner = command[5]
+        self.assertIn("cd '/tmp/demo repo'", inner)
+        self.assertIn("python3 /tmp/wily.py watch --here --ui ascii --interval 1.5", inner)
+
+    def test_watch_status_args_strip_watch_only_flags(self) -> None:
+        self.assertEqual(
+            watch_cmd.status_args_from_watch_args(
+                ["--here", "--interval", "1", "--ui", "ascii", "--dry-run-pane", "--no-interactive"]
+            ),
+            ["--ui", "ascii"],
+        )
+
+    def test_watch_rejects_invalid_ui_before_launching_pane(self) -> None:
+        stderr = StringIO()
+        with redirect_stderr(stderr):
+            self.assertIsNone(watch_cmd.watch_ui(["--ui", "wide"]))
+            self.assertIsNone(watch_cmd.watch_ui(["--ui"]))
+        self.assertEqual(stderr.getvalue().count("--ui requires"), 2)
+
 
 class CliLifecycleTest(unittest.TestCase):
     def test_init_claim_go_done_status_flow(self) -> None:
@@ -128,6 +206,15 @@ class CliLifecycleTest(unittest.TestCase):
             payload = json.loads(status.stdout)
             self.assertEqual(payload["tasks"][0]["status"], "done")
             self.assertTrue((root / ".wily" / "tasks" / "T01" / "result.md").exists())
+            watch = subprocess.run(
+                [sys.executable, str(SCRIPT), "watch", "--once", "--ui", "ascii"],
+                cwd=root,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(watch.returncode, 0)
+            self.assertIn("Wily Roadmap v3", watch.stdout)
+            self.assertIn("\\- * T01", watch.stdout)
 
     def test_removed_v2_command_exits_usage(self) -> None:
         result = subprocess.run([sys.executable, str(SCRIPT), "run", "T01"], capture_output=True, text=True)
