@@ -59,7 +59,7 @@ class V3SurfaceTest(unittest.TestCase):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
         self.assertIn("$wily-agent", prompt)
-        for token in ("wily agent install", "wily agent configure", "wily agent start", "wily agent status", "wily agent check"):
+        for token in ("wily agent login", "wily agent install", "wily agent start", "wily agent status", "wily agent check"):
             self.assertIn(token, readme)
 
     def test_replan_skill_routes_natural_language_work_to_task_addition(self) -> None:

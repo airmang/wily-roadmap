@@ -23,10 +23,20 @@ class AgentConfig:
     repo: str = ""
     actor: str = ""
     secret: str = ""
-    heartbeat_interval: int = 30
+    token: str = ""
+    machine_id: str = ""
+    heartbeat_interval: int = 5
 
     @property
     def configured(self) -> bool:
+        return self.snapshot_configured or self.live_configured
+
+    @property
+    def snapshot_configured(self) -> bool:
+        return bool(self.board_url and self.token)
+
+    @property
+    def live_configured(self) -> bool:
         return bool(self.board_url and self.repo and self.actor and self.secret)
 
     def public_dict(self) -> dict[str, Any]:
@@ -35,6 +45,8 @@ class AgentConfig:
             "repo": self.repo,
             "actor": self.actor,
             "secret_configured": bool(self.secret),
+            "token_configured": bool(self.token),
+            "machine_id": self.machine_id,
             "heartbeat_interval": self.heartbeat_interval,
             "configured": self.configured,
         }
@@ -57,7 +69,9 @@ def load_config(path: Path) -> AgentConfig:
         repo=os.environ.get("WILY_BOARD_REPO", ""),
         actor=os.environ.get("WILY_BOARD_ACTOR", ""),
         secret=os.environ.get("WILY_BOARD_SECRET", ""),
-        heartbeat_interval=_int_env("WILY_AGENT_HEARTBEAT_INTERVAL", 30),
+        token=os.environ.get("WILY_AGENT_TOKEN", ""),
+        machine_id=os.environ.get("WILY_AGENT_MACHINE_ID", ""),
+        heartbeat_interval=_int_env("WILY_AGENT_HEARTBEAT_INTERVAL", 5),
     )
     if not path.exists():
         return env_config
@@ -67,13 +81,23 @@ def load_config(path: Path) -> AgentConfig:
         repo=str(data.get("repo") or env_config.repo),
         actor=str(data.get("actor") or env_config.actor),
         secret=str(data.get("secret") or env_config.secret),
+        token=str(data.get("token") or env_config.token),
+        machine_id=str(data.get("machine_id") or env_config.machine_id),
         heartbeat_interval=int(data.get("heartbeat_interval") or env_config.heartbeat_interval),
     )
 
 
 def save_config(path: Path, config: AgentConfig) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(config.public_dict() | {"secret": config.secret}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(
+            config.public_dict() | {"secret": config.secret, "token": config.token},
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     try:
         path.chmod(0o600)
     except OSError:

@@ -45,3 +45,13 @@ def register_repo(path: Path, repo: str, registry_path: Path) -> RegisteredRepo:
     merged.append(entry)
     save_registry(registry_path, merged)
     return entry
+
+
+def unregister_repo(path: Path, registry_path: Path) -> bool:
+    root = path.resolve()
+    current = load_registry(registry_path)
+    kept = [item for item in current if item.path.resolve() != root]
+    if len(kept) == len(current):
+        return False
+    save_registry(registry_path, kept)
+    return True

@@ -106,6 +106,59 @@ class CoreModelTest(unittest.TestCase):
             self.assertEqual(len(result), 1)
             self.assertEqual(result[0]["reason"], "not configured")
 
+    def test_agent_builds_board_v3_snapshot_payload_from_local_wily_state(self) -> None:
+        from wily.agent.snapshot import build_snapshot_payload, snapshot_sha
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _git_repo(root)
+            subprocess.run(["git", "remote", "add", "origin", "git@github.com:R-W-LAB/demo.git"], cwd=root, check=True)
+            paths = WilyPaths(root)
+            paths.wily_dir.mkdir()
+            paths.project_md.write_text("# Demo Project\n\nLocal project notes.\n", encoding="utf-8")
+            save_actors(paths, [Actor(id="wily", display="Wily", git_author_emails=["wily@example.com"], capacity=2)])
+            save_tasks(
+                paths,
+                "Demo Project",
+                [
+                    Task(
+                        id="T01",
+                        title="First task",
+                        intent="Ship the first thing",
+                        acceptance="It works",
+                        scope=["plugins/**"],
+                        status=TaskStatus.IN_PROGRESS,
+                        actor="wily",
+                        parallel_lane="agent",
+                        priority=1,
+                        capacity_hint=2,
+                    )
+                ],
+            )
+            init_progress(paths, "T01")
+            append_event(paths, "T01", CpEvent(ts="2026-05-19T00:00:00Z", actor="wily", cp="plan", event="start"))
+            append_event(paths, "T01", CpEvent(ts="2026-05-19T00:01:00Z", actor="wily", cp="plan", event="done"))
+            paths.result_md("T01").parent.mkdir(parents=True, exist_ok=True)
+            paths.result_md("T01").write_text("# Result\n\nDone locally.\n", encoding="utf-8")
+
+            payload = build_snapshot_payload(root, repo="R-W-LAB/demo", actor="wily")
+
+            self.assertEqual(payload["repo"], "R-W-LAB/demo")
+            self.assertTrue(payload["remote_url"].endswith("R-W-LAB/demo.git"))
+            self.assertEqual(payload["title"], "Demo Project")
+            self.assertEqual(payload["mode_hint"], "solo")
+            self.assertEqual(payload["local_path"], str(root.resolve()))
+            self.assertEqual(payload["tasks"][0]["id"], "T01")
+            self.assertEqual(payload["actors"]["wily"]["display"], "Wily")
+            self.assertEqual(payload["actors"]["wily"]["capacity"], 2)
+            self.assertEqual(payload["task_progress"]["T01"]["done"], 1)
+            self.assertEqual(payload["task_progress"]["T01"]["total"], 1)
+            self.assertEqual(payload["cp_events"]["T01"][0]["cp"], "plan")
+            self.assertIn("Done locally.", payload["task_results"]["T01"])
+            self.assertIn("Local project notes.", payload["project_md"])
+            self.assertEqual(payload["snapshot_sha"], snapshot_sha(payload))
+            self.assertTrue(payload["observed_commits"])
+
     def test_paths_config_and_progress_round_trip(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -914,7 +967,7 @@ class CliLifecycleTest(unittest.TestCase):
         result = subprocess.run([sys.executable, str(SCRIPT), "agent", "--help"], capture_output=True, text=True)
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        for token in ("install", "configure", "start", "stop", "status", "check"):
+        for token in ("login", "install", "configure", "register", "unregister", "start", "stop", "status", "check", "run"):
             self.assertIn(token, result.stdout)
 
     def test_agent_check_is_best_effort_without_configured_daemon(self) -> None:

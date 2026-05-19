@@ -1,19 +1,21 @@
 # wily-agent
 
-Use `wily agent` to install and manage the bundled `wily-agent` heartbeat daemon.
+Use `wily agent` to install and manage the bundled Wily Board v3 sync daemon.
 
 Common commands:
 
 ```bash
 wily agent check
-wily agent configure --url https://board.example --repo OWNER/REPO --actor wily --secret "$WILY_BOARD_SECRET"
+wily agent login <one-time-code> --url https://board.example --actor wily
 wily agent register --repo OWNER/REPO
 wily agent install
 wily agent start
 wily agent status
 wily agent stop
-wily agent dev --once --offline-ok
+wily agent run --once --offline-ok
+wily agent unregister
 ```
 
-The daemon is local-first and best-effort. Missing config, Board downtime, or
-signature errors must not fail normal Wily task commands.
+The daemon is local-first and best-effort. It publishes Board v3 snapshots and
+heartbeats when logged in. Missing config, Board downtime, invalid tokens, or
+legacy signature errors must not fail normal Wily task commands.

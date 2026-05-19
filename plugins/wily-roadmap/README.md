@@ -44,15 +44,16 @@ runners directly.
 
 ## Wily Agent
 
-The plugin includes a bundled `wily-agent` daemon for optional local heartbeat
-events. It watches registered `.wily` repositories and sends signed best-effort
-live events to Wily Board when local config is present.
+The plugin includes the official bundled `wily-agent` daemon for Wily Board v3.
+It watches registered `.wily` repositories, builds local-first task snapshots,
+and sends best-effort snapshot and heartbeat events to Wily Board when local
+config is present.
 
 Typical onboarding:
 
 ```bash
 wily agent check
-wily agent configure --url https://board.example --repo OWNER/REPO --actor wily --secret "$WILY_BOARD_SECRET"
+wily agent login <one-time-code> --url https://board.example --actor wily
 wily agent register --repo OWNER/REPO
 wily agent install
 wily agent start
@@ -62,12 +63,14 @@ wily agent status
 For foreground smoke tests or development:
 
 ```bash
-wily agent dev --once --offline-ok
+wily agent run --once --offline-ok
 ```
 
-`wily agent stop` stops the macOS launchd daemon. Missing agent config, Board
-downtime, and invalid secrets are best-effort agent failures; normal Wily task
-commands continue to use local `.wily/` state.
+`wily agent stop` stops the macOS launchd daemon. `wily agent configure --secret`
+remains available for legacy signed `/api/live/events` compatibility, but the
+Board v3 path uses the token from `wily agent login`. Missing agent config,
+Board downtime, and invalid tokens are best-effort agent failures; normal Wily
+task commands continue to use local `.wily/` state.
 
 ## Safety
 

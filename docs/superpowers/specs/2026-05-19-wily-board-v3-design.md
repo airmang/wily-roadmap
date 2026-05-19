@@ -1,11 +1,11 @@
 # Wily Board v3 — Design Spec
 
-- 작성일: 2026-05-19 (rev 2 — watch parity 보강)
+- 작성일: 2026-05-19 (rev 3 — roadmap-bundled agent ownership)
 - 작성: Wily 박사 + Claude (R-W-LAB)
 - 출처 브레인스토밍: 본 세션
 - 대체 대상: `docs/wily-board-plan.md`, `docs/wily-board-ui-spec.md` (v2 가정), `agent-handoffs/board-live-*`, `agent-handoffs/s21~s31 board-*`
-- 구현 위치: 별도 레포 `wily-board` (이 레포 외부)
-- 본 레포(`wily-roadmap`)는 board 코드를 포함하지 않으며 v3 non-goal "wily-board 연동은 하지 않는다"를 그대로 보존한다.
+- 구현 위치: 서버/UI는 별도 레포 `wily-board`, 공식 로컬 에이전트는 `wily-roadmap` 플러그인 번들.
+- 본 레포(`wily-roadmap`)는 Board 서버/UI/DB 구현을 포함하지 않는다. 단, `.wily` 스키마와 CLI lifecycle을 가장 잘 아는 `wily-agent` 클라이언트/daemon은 `wily-roadmap` 플러그인이 소유한다.
 
 ## 0. Watch parity 원칙
 
@@ -40,7 +40,7 @@
 - Wily 또는 Right이 자기 머신에서 `wily claim/done/replan` 등을 실행하면, 상대편 브라우저의 해당 프로젝트 카드가 15초 이내에 자동 갱신된다.
 - 등록된 모든 로컬 wily v3 프로젝트는 한 번의 로그인으로 "내" 탭에서 보인다.
 - `actors.yaml` 액터가 둘 이상이고 mode가 shared/collab인 프로젝트는 "협업" 탭에 자동으로 노출되며 상대의 현재 task와 활성 여부(presence)가 보인다.
-- wily v3 CLI 동작은 board의 유·무와 무관하게 동일하다. CLI 코드에는 board 관련 코드/훅이 없다.
+- wily v3 CLI 동작은 board의 유·무와 무관하게 동일하다. Board 동기화는 `wily agent` daemon의 best-effort 경로이며, 일반 `wily claim/go/cp/done` 명령 성공 여부를 바꾸지 않는다.
 
 ## 3. Non-goals / 제약
 
@@ -91,7 +91,7 @@
 
 | 요소 | 책임 |
 |---|---|
-| **wily-agent (daemon)** | 사용자 머신에서 systemd user service로 상시 실행. 등록된 `.wily/` 디렉터리에 fsnotify watch. 변경 발생 시 즉시 풀 스냅샷을 서버에 POST. fsnotify 누락 대비로 60초마다 강제 push (서버는 동일 sha면 noop). 5초 주기 heartbeat. 추가로 등록된 프로젝트 루트에서 `git log` (최근 7일·100건 cap)을 읽어 `observed_commits`를 동봉. |
+| **wily-agent (daemon)** | `wily-roadmap` 플러그인에 번들된 로컬 daemon. 등록된 `.wily` 레포의 task/actor/progress/result/project/git snapshot을 만들어 `/agent/snapshot`으로 POST하고, presence는 `/agent/heartbeat`로 보낸다. macOS 설치는 플러그인의 launchd 경로를 우선 사용한다. 파일 watch/debounce와 fallback push는 agent 내부 책임이며, Board 서버는 수신 계약만 책임진다. |
 | **FastAPI 서버** | `/agent/*` 수집 API, `/sse` 브라우저 스트림, `/web/*` 페이지·파셜, `/auth/github/*` OAuth. SQLite가 단일 진실 원천. |
 | **SSE 브로커** | 로그인 세션마다 채널. 사용자가 보는 프로젝트의 update·presence 이벤트만 전송. |
 | **htmx 프론트** | 빌드 단계 없음. SSE 수신 시 영향받은 카드 파셜만 out-of-band swap. |
@@ -490,32 +490,27 @@ wily-board/
           static/     pico.min.css · app.css · app.js
     parsers/
       wily_state.py
-  agent/
-    pyproject.toml
-    wily_agent/
-      __init__.py · cli.py · daemon.py · client.py · registry.py · snapshot.py
-    install/systemd-user/wily-agent.service
   deploy/
     Caddyfile · wily-board.service · install.sh · backup.sh
   tests/
-    test_parser.py · test_agent_snapshot.py · test_sse_broker.py
+    test_parser.py · test_agent_routes.py · test_sse_broker.py
     test_auth_allowlist.py · test_merge_policy.py · test_card_render.py
   docs/
     deploy.md · agent-setup.md · data-model.md
 ```
 
-- 서버와 에이전트는 같은 레포, 두 개의 PyPI 패키지 (`wily-board-server`, `wily-agent`).
-- `app/parsers/wily_state.py`는 에이전트도 import한다. `agent/snapshot.py`는 이를 얇게 감싸 페이로드를 만든다.
-- `wily-roadmap` 레포는 board/agent 코드를 포함하지 않는다.
+- `wily-board`는 서버/API/cache/UI만 포함한다. 별도 `wily-board/agent` 패키지는 만들지 않는다.
+- 공식 agent 구현은 `wily-roadmap/plugins/wily-roadmap/scripts/wily/agent/`에 둔다.
+- `wily-roadmap` agent는 Board API 계약에 맞는 payload를 생성한다. Board는 payload를 검증/저장/렌더링하지만 `.wily` 파일 포맷 세부 지식을 agent보다 더 많이 갖지 않는다.
 
 ## 11. 배포
 
 - 서버: 기존 Azure VM 그대로. `git pull && systemctl restart wily-board`. 첫 설치는 `deploy/install.sh`.
 - 에이전트:
-  - 사용자 머신에서 `pipx install wily-agent` 또는 `pip install --user wily-agent`
-  - 웹에서 "Add machine" → 일회용 코드 → 머신에서 `wily-agent login <code>`
-  - `wily-agent register <path>`를 등록할 프로젝트마다 실행
-  - `systemctl --user enable --now wily-agent`
+  - Codex plugin marketplace에서 `wily-roadmap` 플러그인을 설치/업데이트한다.
+  - 웹에서 "Add machine" → 일회용 코드 → 머신에서 `wily agent login <code> --url <board-url> --actor <actor>`를 실행한다.
+  - 등록할 프로젝트마다 해당 레포에서 `wily agent register --repo OWNER/REPO`를 실행한다.
+  - macOS에서는 `wily agent install && wily agent start`가 launchd daemon을 설치/시작한다.
 - 백업: SQLite 파일 매일 새벽 archive (v2 정책 유지).
 
 ## 12. v2에서 가져오는 것 / 버리는 것
@@ -527,7 +522,7 @@ wily-board/
 | 스택 | FastAPI · Pico.css · htmx · Jinja2 · systemd · SQLite | SSE broker, agent 통신 |
 | DB 스키마 | 폐기 (Stage/Phase 전부) | 본 문서 §6 스키마 신규 |
 | 쓰기 모듈 | PR-writer · toggle 라우트 **삭제** | 없음 (읽기 전용) |
-| Sync | GitHub webhook 핸들러 **삭제** | `/agent/*` 신규 |
+| Sync | GitHub webhook 핸들러는 호환 경로로 유지 가능 | 공식 신규 경로는 `wily-roadmap` 번들 agent → `/agent/*` |
 | UI | base 템플릿, 다크모드 토글 | 본 문서 §9 카드/탭 신규 |
 
 ## 13. 테스트 전략

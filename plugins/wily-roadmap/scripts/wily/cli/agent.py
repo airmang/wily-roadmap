@@ -6,28 +6,33 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+import socket
 from typing import Any
 
 from . import _common
+from wily.agent.client import register_agent
 from wily.agent.config import AgentConfig, default_paths, load_config, save_config
 from wily.agent.daemon import run_loop
 from wily.agent.launchd import LABEL, foreground_command, launchd_plist
-from wily.agent.registry import load_registry, register_repo
+from wily.agent.registry import load_registry, register_repo, unregister_repo
 from wily.paths import find_wily_root
 
 
-DESCRIPTION = "install and manage the bundled heartbeat daemon"
-USAGE = "usage: wily agent <install|configure|register|start|stop|status|check|dev> [args]"
+DESCRIPTION = "install and manage the bundled Board sync daemon"
+USAGE = "usage: wily agent <login|install|configure|register|unregister|start|stop|status|check|run|dev> [args]"
 HELP = "\n".join(
     [
         "Commands:",
+        "  login      exchange a Board one-time code for a machine token",
         "  install    write the macOS launchd plist",
         "  configure  write local Board connection config",
         "  register   add this .wily repo to the local registry",
+        "  unregister remove this .wily repo from the local registry",
         "  start      launch the launchd daemon",
         "  stop       stop the launchd daemon",
         "  status     print install/config/daemon status",
         "  check      best-effort smoke check",
+        "  run        run foreground daemon loop",
         "  dev        run foreground daemon loop",
     ]
 )
@@ -38,12 +43,16 @@ def main(args: list[str]) -> int:
         print_help()
         return _common.EXIT_OK if args else _common.EXIT_USAGE
     command, rest = args[0], args[1:]
+    if command == "login":
+        return _login(rest)
     if command == "install":
         return _install(rest)
     if command == "configure":
         return _configure(rest)
     if command == "register":
         return _register(rest)
+    if command == "unregister":
+        return _unregister(rest)
     if command == "start":
         return _launchctl("bootstrap", rest)
     if command == "stop":
@@ -52,7 +61,7 @@ def main(args: list[str]) -> int:
         return _status(rest)
     if command == "check":
         return _check(rest)
-    if command == "dev":
+    if command in {"run", "dev"}:
         return _dev(rest)
     _common.emit_error(f"unknown agent command: {command!r}")
     _common.emit_error(USAGE)
@@ -94,10 +103,41 @@ def _configure(args: list[str]) -> int:
         repo=values.get("--repo", existing.repo),
         actor=values.get("--actor", existing.actor),
         secret=values.get("--secret", existing.secret),
+        token=values.get("--token", existing.token),
+        machine_id=values.get("--machine-id", existing.machine_id),
         heartbeat_interval=int(values.get("--interval", str(existing.heartbeat_interval))),
     )
     save_config(paths.config_path, config)
     _common.emit_json(config.public_dict()) if "--json" in args else _common.emit_text(f"wily-agent config written: {paths.config_path}")
+    return _common.EXIT_OK
+
+
+def _login(args: list[str]) -> int:
+    values = _flag_values(args)
+    code = values.get("--code") or (args[0] if args and not args[0].startswith("--") else "")
+    board_url = values.get("--url") or values.get("--board-url") or ""
+    actor = values.get("--actor") or ""
+    if not code or not board_url or not actor:
+        _common.emit_error("usage: wily agent login <code> --url <board-url> --actor <actor>")
+        return _common.EXIT_USAGE
+    machine_name = values.get("--machine") or socket.gethostname()
+    result = register_agent(board_url=board_url, code=code, actor=actor, machine_name=machine_name)
+    if not result.get("token"):
+        _common.emit_error(str(result.get("reason") or result))
+        return _common.EXIT_FAILURE
+    paths = default_paths()
+    existing = load_config(paths.config_path)
+    config = AgentConfig(
+        board_url=board_url,
+        repo=existing.repo,
+        actor=actor,
+        secret=existing.secret,
+        token=str(result["token"]),
+        machine_id=str(result.get("machine_id") or existing.machine_id),
+        heartbeat_interval=existing.heartbeat_interval,
+    )
+    save_config(paths.config_path, config)
+    _common.emit_json(config.public_dict()) if "--json" in args else _common.emit_text(f"wily-agent logged in: {config.machine_id}")
     return _common.EXIT_OK
 
 
@@ -110,6 +150,16 @@ def _register(args: list[str]) -> int:
     entry = register_repo(root, repo, paths.registry_path)
     payload = {"registered": entry.to_dict(), "registry": str(paths.registry_path)}
     _common.emit_json(payload) if "--json" in args else _common.emit_text(f"wily-agent registered: {entry.path}")
+    return _common.EXIT_OK
+
+
+def _unregister(args: list[str]) -> int:
+    values = _flag_values(args)
+    paths = default_paths()
+    root = Path(values.get("--path", find_wily_root(Path.cwd())))
+    removed = unregister_repo(root, paths.registry_path)
+    payload = {"removed": removed, "path": str(root.resolve()), "registry": str(paths.registry_path)}
+    _common.emit_json(payload) if "--json" in args else _common.emit_text(f"wily-agent unregistered: {root.resolve()}" if removed else f"wily-agent not registered: {root.resolve()}")
     return _common.EXIT_OK
 
 
