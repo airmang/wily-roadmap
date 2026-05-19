@@ -17,7 +17,7 @@ Result: exit 0, `PASS: execution package contract is complete.`
 Working directory:
 
 ```text
-/Users/wilycastle/Code/projects/wily-board
+/Users/wilycastle/Code/projects/wily-plugin/wily-board
 ```
 
 Command:

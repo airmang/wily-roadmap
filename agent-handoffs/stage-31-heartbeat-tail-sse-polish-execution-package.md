@@ -48,7 +48,7 @@ Non-goals:
 - Do not broaden Board behavior beyond Stage 31 acceptance criteria.
 
 Assumptions:
-- `/Users/wilycastle/Code/projects/wily-board` is the intended sibling repo.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board` is the intended sibling repo.
 - Process-local dedup is acceptable and does not need multi-worker persistence.
 - Frontend manual SSE behavior is verified through lint/build plus backend API route tests unless a browser smoke is practical.
 
@@ -70,18 +70,18 @@ Assumptions:
 - Expected touchpoints:
   - `plugins/wily-roadmap/scripts/wily.py`
   - `plugins/wily-roadmap/tests/test_wily_cli.py`
-  - `/Users/wilycastle/Code/projects/wily-board/app/config.py`
-  - `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`
-  - `/Users/wilycastle/Code/projects/wily-board/app/sync/signature.py`
-  - `/Users/wilycastle/Code/projects/wily-board/app/sync/webhook.py`
-  - `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`
-  - `/Users/wilycastle/Code/projects/wily-board/tests/test_config.py`
-  - `/Users/wilycastle/Code/projects/wily-board/tests/test_signature.py`
-  - `/Users/wilycastle/Code/projects/wily-board/tests/test_webhook.py`
-  - `/Users/wilycastle/Code/projects/wily-board/docs/OPERATIONS.md`
-  - `/Users/wilycastle/Code/projects/wily-board/frontend/components/live-refresh.tsx`
-  - `/Users/wilycastle/Code/projects/wily-board/frontend/app/api/sse/live/route.ts`
-  - `/Users/wilycastle/Code/projects/wily-board/tests/test_api_routes.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/config.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/events.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/sync/signature.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/sync/webhook.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_live_events.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_config.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_signature.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_webhook.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/OPERATIONS.md`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/live-refresh.tsx`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/api/sse/live/route.ts`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_api_routes.py`
 - Must not edit:
   - `.agents/plugins/marketplace.json` except if needed to preserve existing marketplace metadata.
   - `plugins/wily-roadmap/.codex-plugin/plugin.json` except if explicitly required; not expected.
@@ -250,15 +250,15 @@ Agent: implementation worker.
 Mode: implementation_disjoint.
 Timebox: 45 minutes.
 Allowed files:
-- `/Users/wilycastle/Code/projects/wily-board/app/config.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/sync/signature.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/sync/webhook.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_config.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_signature.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_webhook.py`
-- `/Users/wilycastle/Code/projects/wily-board/docs/OPERATIONS.md`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/config.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/events.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/sync/signature.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/sync/webhook.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_live_events.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_config.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_signature.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_webhook.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/OPERATIONS.md`
 Must not edit:
 - Board frontend files.
 Task:
@@ -274,9 +274,9 @@ Agent: implementation worker.
 Mode: implementation_disjoint.
 Timebox: 30 minutes.
 Allowed files:
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/live-refresh.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/app/api/sse/live/route.ts`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_api_routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/live-refresh.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/api/sse/live/route.ts`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_api_routes.py`
 Must not edit:
 - Board backend live ingestion, config, signature, or webhook files.
 Task:

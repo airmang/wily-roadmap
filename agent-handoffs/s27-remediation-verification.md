@@ -2,7 +2,7 @@
 
 ## Baseline Evidence
 
-- Board canonical route file absent: `/Users/wilycastle/Code/projects/wily-board/frontend/app/repos/[owner]/[name]/stages/[stage_id]/phases/[phase_id]/page.tsx`.
+- Board canonical route file absent: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/repos/[owner]/[name]/stages/[stage_id]/phases/[phase_id]/page.tsx`.
 - Prior S27 package requires that route in `agent-handoffs/s27-refactor-execution-package.md`.
 - `./plugins/wily-roadmap/wily status` showed `25/27 - 93%` after S27 migration, with s25/s26 superseded and s27 done.
 - `plugins/wily-roadmap/skills/wily-run/SKILL.md`, `plugins/wily-roadmap/commands/retry.md`, and `plugins/wily-roadmap/skills/wily-retry/SKILL.md` still expose primary `<phase-id>` language.
@@ -63,7 +63,7 @@
 - Roadmap final unittest suite: `python3 -m unittest plugins/wily-roadmap/tests/test_wily_state_summary.py plugins/wily-roadmap/tests/test_wily_watch_ui.py plugins/wily-roadmap/tests/test_wily_command_skills.py plugins/wily-roadmap/tests/test_wily_cli.py` -> 256 tests OK, 2 skipped.
 - Roadmap current-state smoke: `./plugins/wily-roadmap/wily status` and `./plugins/wily-roadmap/wily watch --once --ui ascii` -> `27/27 - 100%`; `./plugins/wily-roadmap/wily next` -> `Next phase: none`.
 - Active usage scan: `rg` found no active command/skill/script primary `$wily-* <phase-id>`, `argument-hint: '<phase-id>`, or `live-worked [item-id]` surfaces.
-- Board final backend verification: `cd /Users/wilycastle/Code/projects/wily-board && uv run pytest` -> 95 passed, 38 warnings.
+- Board final backend verification: `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest` -> 95 passed, 38 warnings.
 - Board final frontend verification: `npm run lint` -> pass; `npm run build` -> pass and route table includes `/repos/[owner]/[name]/stages/[stage_id]/phases/[phase_id]`.
 - Board canonical route smoke: `curl` against `/repos/R-W-LAB/wily-roadmap/stages/s02/phases/p01` returned `HTTP/1.1 200 OK` and rendered `R-W-LAB/wily-roadmap · s02/p01`, `Canonical route smoke`, and `Render the tuple-safe phase detail route.`
 - Diff hygiene: `git diff --check` passed in Wily Roadmap and Wily Board.

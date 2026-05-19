@@ -21,20 +21,20 @@ Work checkpoint-by-checkpoint. After each checkpoint:
 3. append progress, evidence, and remaining work to the progress log,
 4. continue unless a narrow hard-stop condition is triggered.
 
-Done only when all Plan 2 acceptance criteria are satisfied and final verification passes: cd /Users/wilycastle/Code/projects/wily-board && uv run pytest -v; cd /Users/wilycastle/Code/projects/wily-board/agent && uv run pytest -v; uv run ruff check .; cd /Users/wilycastle/Code/projects/wily-board && uv run ruff check .
+Done only when all Plan 2 acceptance criteria are satisfied and final verification passes: cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest -v; cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/agent && uv run pytest -v; uv run ruff check .; cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run ruff check .
 ```
 
 ## Source Request / Handoff
 
 User requested Custom Workflow goal execution for:
 
-`/Users/wilycastle/Code/projects/wily-roadmap/.claude/worktrees/wily-board-plans-2-3/docs/superpowers/plans/2026-05-19-wily-board-2-agent.md`
+`/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.claude/worktrees/wily-board-plans-2-3/docs/superpowers/plans/2026-05-19-wily-board-2-agent.md`
 
 The plan title is "Wily Board v3 - Plan 2: wily-agent Daemon".
 
 ## Inline Requirements
 
-Outcome: ship `wily-agent`, a separate Python package under `/Users/wilycastle/Code/projects/wily-board/agent`, with CLI login/register/unregister/status/run, token and registry persistence, `.wily` snapshot building, HTTP client, daemon push loop, heartbeat, E2E server round trip, systemd template, and docs.
+Outcome: ship `wily-agent`, a separate Python package under `/Users/wilycastle/Code/projects/wily-plugin/wily-board/agent`, with CLI login/register/unregister/status/run, token and registry persistence, `.wily` snapshot building, HTTP client, daemon push loop, heartbeat, E2E server round trip, systemd template, and docs.
 
 In scope:
 - Create the `agent/` package and tests.
@@ -48,7 +48,7 @@ Non-goals:
 - No hooks, MCP servers, or app integrations.
 
 Assumptions:
-- `/Users/wilycastle/Code/projects/wily-board` is the Plan 1 server repo.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board` is the Plan 1 server repo.
 - The Plan 2 file in `.claude/worktrees/wily-board-plans-2-3` is authoritative even though it is not present in the main plans directory.
 - Existing dirty files in `wily-roadmap` are user-owned and must be preserved.
 
@@ -65,14 +65,14 @@ Assumptions:
 ## File / Ownership Boundaries
 
 - Expected touchpoints:
-  - `/Users/wilycastle/Code/projects/wily-board/agent/**`
-  - `/Users/wilycastle/Code/projects/wily-board/app/parsers/wily_state.py`
-  - `/Users/wilycastle/Code/projects/wily-board/app/api/agent.py`
-  - `/Users/wilycastle/Code/projects/wily-board/tests/contracts/agent_v1.json`
-  - `/Users/wilycastle/Code/projects/wily-board/tests/test_parsers_wily_state.py`
-  - `/Users/wilycastle/Code/projects/wily-board/tests/test_api_agent_snapshot.py`
-  - `/Users/wilycastle/Code/projects/wily-board/README.md`
-  - `/Users/wilycastle/Code/projects/wily-roadmap/agent-handoffs/wily-board-2-agent-*.md`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/agent/**`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/parsers/wily_state.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/agent.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/contracts/agent_v1.json`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_parsers_wily_state.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_api_agent_snapshot.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/README.md`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/agent-handoffs/wily-board-2-agent-*.md`
 - Must not edit:
   - `plugins/wily-roadmap/**`
   - unrelated `wily-roadmap` dirty files
@@ -139,10 +139,10 @@ Reason: Plan tasks are ordered and many later tasks depend on earlier modules. U
 
 ## Verification Plan
 
-- Server baseline and contract: `cd /Users/wilycastle/Code/projects/wily-board && uv run pytest -v`
-- Agent package: `cd /Users/wilycastle/Code/projects/wily-board/agent && uv run pytest -v`
-- Agent lint: `cd /Users/wilycastle/Code/projects/wily-board/agent && uv run ruff check .`
-- Server lint: `cd /Users/wilycastle/Code/projects/wily-board && uv run ruff check .`
+- Server baseline and contract: `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest -v`
+- Agent package: `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/agent && uv run pytest -v`
+- Agent lint: `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/agent && uv run ruff check .`
+- Server lint: `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run ruff check .`
 
 ## Rollback / Stop Conditions
 

@@ -1,11 +1,27 @@
 .DS_Store
+.env
+.env.*
+!.env.example
+*.log
+*.pem
+*.sqlite
+*.sqlite-*
 __pycache__/
 *.pyc
 .pytest_cache/
+.ruff_cache/
 .playwright-mcp/
 .crack/
 .worktrees/
+.claude/
 .superpowers/
+.venv*/
+build/
+dist/
+*.egg-info/
+node_modules/
+.next/
+coverage/
 
 # Wily collaboration state. Share durable roadmap state through Git, but keep
 # personal execution attempts local unless a later archive policy opts in.

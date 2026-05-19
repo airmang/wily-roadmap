@@ -13,12 +13,12 @@
 ## Task 1: Repo Visibility Fields And Config Contract
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/config.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/db/schema.sql`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/main.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_config.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_db.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/config.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/schema.sql`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/main.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_config.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_db.py`
 
 - [ ] Write failing tests for `PERSONAL_REPOS=owner/name:login` parsing.
 - [ ] Write failing tests proving new repos default to `shared` and optional `visible_to` persists.
@@ -30,10 +30,10 @@
 ## Task 2: Login-Scoped Filtering And Access Control
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/routes.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_db.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_web_routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_db.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_web_routes.py`
 
 - [ ] Write failing DB tests for shared visibility and personal visibility by login.
 - [ ] Write failing route tests proving `Julirsia` cannot see or directly open `airmang` personal repos.
@@ -45,9 +45,9 @@
 ## Task 3: Simple Shared And Mine Filters
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/routes.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/templates/board.html`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_web_routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/board.html`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_web_routes.py`
 
 - [ ] Write failing route tests for `filter=all`, `filter=shared`, and `filter=mine`.
 - [ ] Keep existing owner filters only if they do not conflict with the simpler shared/mine model.
@@ -58,8 +58,8 @@
 ## Task 4: Personal Repo Onboarding Docs And Verification
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/docs/OPERATIONS.md`
-- Modify: `/Users/wilycastle/Code/projects/wily-roadmap/.wily/status.md`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/OPERATIONS.md`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.wily/status.md`
 
 - [ ] Document `PERSONAL_REPOS` setup and examples.
 - [ ] Run smoke proving `airmang` sees shared + personal.

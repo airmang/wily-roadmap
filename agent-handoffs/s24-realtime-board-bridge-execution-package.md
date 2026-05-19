@@ -23,7 +23,7 @@ Work checkpoint-by-checkpoint. After each checkpoint:
 
 Do not broaden scope beyond the execution package. Stop only for hard destructive shell commands, payment/purchase actions, credential or secret exfiltration, edits outside the execution package, explicit user-forbidden actions, production secret use, production live event emission, production deploy/restart, push to GitHub, or if the same verification failure repeats twice without new evidence.
 
-Done only when all local acceptance criteria are satisfied and final verification passes: python3 -m unittest plugins.wily-roadmap.tests.test_wily_cli.WilyCliTest plugins.wily-roadmap.tests.test_wily_watch_ui.RenderWatchTest; cd /Users/wilycastle/Code/projects/wily-board && uv run pytest; python3 plugins/wily-roadmap/scripts/wily.py status; python3 plugins/wily-roadmap/scripts/wily.py next.
+Done only when all local acceptance criteria are satisfied and final verification passes: python3 -m unittest plugins.wily-roadmap.tests.test_wily_cli.WilyCliTest plugins.wily-roadmap.tests.test_wily_watch_ui.RenderWatchTest; cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest; python3 plugins/wily-roadmap/scripts/wily.py status; python3 plugins/wily-roadmap/scripts/wily.py next.
 ```
 
 ## Source Request / Handoff
@@ -64,7 +64,7 @@ Non-goals:
 Assumptions:
 
 - Current dirty S21/S24 roadmap and Wily CLI changes are user/pre-existing work and must be preserved.
-- Wily Board edits are required for full acceptance. The workspace sandbox may require explicit approval for editing `/Users/wilycastle/Code/projects/wily-board`.
+- Wily Board edits are required for full acceptance. The workspace sandbox may require explicit approval for editing `/Users/wilycastle/Code/projects/wily-plugin/wily-board`.
 - Local E2E can use temporary secrets and local SQLite paths.
 
 ## Acceptance Criteria
@@ -85,7 +85,7 @@ Assumptions:
 
 ## File / Ownership Boundaries
 
-Expected touchpoints in `/Users/wilycastle/Code/projects/wily-roadmap`:
+Expected touchpoints in `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`:
 
 - `plugins/wily-roadmap/scripts/wily.py`
 - `plugins/wily-roadmap/scripts/wily_watch_ui.py`
@@ -96,7 +96,7 @@ Expected touchpoints in `/Users/wilycastle/Code/projects/wily-roadmap`:
 - `.wily/roadmap.yaml`
 - `agent-handoffs/s24-realtime-board-bridge-*.md`
 
-Expected touchpoints in `/Users/wilycastle/Code/projects/wily-board`:
+Expected touchpoints in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`:
 
 - `app/live/events.py`
 - `app/db/schema.sql`
@@ -141,7 +141,7 @@ Checkpoint 2: Wily checkpoint session bridge.
 
 Checkpoint 3: Board checkpoint overlay API, SSE, and UI parity.
 
-- Request approval before editing `/Users/wilycastle/Code/projects/wily-board` if sandbox blocks writes.
+- Request approval before editing `/Users/wilycastle/Code/projects/wily-plugin/wily-board` if sandbox blocks writes.
 - Add failing Board tests for signed checkpoint overlay acceptance, malformed rejection, storage separation, API/SSE fields, Hub rendering, and repo detail rendering.
 - Implement schema/repo/live/API/UI changes.
 - Verify targeted Board tests.
@@ -299,7 +299,7 @@ Reason: Wily CLI/watch and Board app facts can be explored independently, but im
 Agent: explorer
 Mode: read_only_evidence
 Timebox: 15 minutes
-Allowed files: `/Users/wilycastle/Code/projects/wily-roadmap`
+Allowed files: `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`
 Must not edit: all files
 Task: map current Wily config, checkpoint sync, live-worked, hooks, and watch/status rendering code and tests.
 Completion evidence: concise function/test map and gap list.
@@ -310,7 +310,7 @@ Dependencies: none.
 Agent: explorer
 Mode: read_only_evidence
 Timebox: 15 minutes
-Allowed files: `/Users/wilycastle/Code/projects/wily-board`
+Allowed files: `/Users/wilycastle/Code/projects/wily-plugin/wily-board`
 Must not edit: all files
 Task: map current Board live event, DB, API/SSE, and UI rendering support for checkpoint overlay.
 Completion evidence: concise file/test map and gap list.
@@ -319,7 +319,7 @@ Dependencies: none.
 ## Sequential Gates
 
 - Gate 1: Do not edit production secrets or production config.
-- Gate 2: Do not edit `/Users/wilycastle/Code/projects/wily-board` unless sandbox permits it or the user approves an escalated edit path.
+- Gate 2: Do not edit `/Users/wilycastle/Code/projects/wily-plugin/wily-board` unless sandbox permits it or the user approves an escalated edit path.
 - Gate 3: Do not mark S24 done until local E2E evidence exists or the status is explicitly PARTIAL with missing evidence named.
 
 ## Reviewer Gates
@@ -347,13 +347,13 @@ python3 -m unittest plugins.wily-roadmap.tests.test_wily_cli.WilyCliTest plugins
 Board targeted verification:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board && uv run pytest tests/test_live_events.py tests/test_db.py tests/test_api_routes.py tests/test_web_routes.py -q
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest tests/test_live_events.py tests/test_db.py tests/test_api_routes.py tests/test_web_routes.py -q
 ```
 
 Board full verification:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board && uv run pytest
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest
 ```
 
 Wily roadmap verification:

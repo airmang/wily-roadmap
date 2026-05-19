@@ -1,7 +1,7 @@
 # Stage 30 Board DAG Components Mobile Status
 
 - State: DONE
-- Objective: Complete Stage 30 Board DAG Components Mobile in `/Users/wilycastle/Code/projects/wily-board`.
+- Objective: Complete Stage 30 Board DAG Components Mobile in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`.
 - Last updated: 2026-05-18T05:41:31Z
 - Progress: 6/6 checkpoints complete (100%)
 - Current checkpoint/action: Final verification passed; Stage s30 roadmap state marked done.

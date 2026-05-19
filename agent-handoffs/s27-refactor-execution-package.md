@@ -25,7 +25,7 @@ Do not broaden scope beyond the execution package. Do not stop merely because lo
 
 Use Superpowers routing during implementation: test-driven-development for behavior changes, systematic-debugging for failures, verification-before-completion before any completion claim, writing-plans as task-granularity guidance, and dispatching/subagent skills only for bounded lanes whose file ownership is disjoint.
 
-Done only when all acceptance criteria are satisfied and final verification passes: python3 -m py_compile plugins/wily-roadmap/scripts/wily.py plugins/wily-roadmap/scripts/wily_runner.py plugins/wily-roadmap/scripts/wily_state_summary.py plugins/wily-roadmap/scripts/wily_watch_ui.py; python3 -m pytest plugins/wily-roadmap/tests/test_wily_state_summary.py; python3 -m pytest plugins/wily-roadmap/tests/test_wily_cli.py; python3 -m pytest plugins/wily-roadmap/tests/test_wily_watch_ui.py; python3 -m pytest plugins/wily-roadmap/tests/test_wily_command_skills.py; ./plugins/wily-roadmap/wily status; ./plugins/wily-roadmap/wily next; ./plugins/wily-roadmap/wily watch --once --ui ascii; ./plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run; disposable fixture apply/status/next/run dry-run verification; cd /Users/wilycastle/Code/projects/wily-board && uv run pytest; cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run lint && npm run build; cd /Users/wilycastle/Code/projects/wily-board && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run.
+Done only when all acceptance criteria are satisfied and final verification passes: python3 -m py_compile plugins/wily-roadmap/scripts/wily.py plugins/wily-roadmap/scripts/wily_runner.py plugins/wily-roadmap/scripts/wily_state_summary.py plugins/wily-roadmap/scripts/wily_watch_ui.py; python3 -m pytest plugins/wily-roadmap/tests/test_wily_state_summary.py; python3 -m pytest plugins/wily-roadmap/tests/test_wily_cli.py; python3 -m pytest plugins/wily-roadmap/tests/test_wily_watch_ui.py; python3 -m pytest plugins/wily-roadmap/tests/test_wily_command_skills.py; ./plugins/wily-roadmap/wily status; ./plugins/wily-roadmap/wily next; ./plugins/wily-roadmap/wily watch --once --ui ascii; ./plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run; disposable fixture apply/status/next/run dry-run verification; cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest; cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run lint && npm run build; cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run.
 ```
 
 ## Source Request / Handoff
@@ -60,7 +60,7 @@ In scope:
 - Shared `RoadmapProjection`/`wily-roadmap-projection-v1` semantics for status, watch, Board emitters, and Board rendering.
 - Wily Board read-only alignment, including `/me`, `/collab`, repo detail, checkpoint rows, visibility, and responsive web-native IA.
 - Skills, command docs, references, and tests needed to make the contract executable.
-- Two-repo final verification across `/Users/wilycastle/Code/projects/wily-roadmap` and `/Users/wilycastle/Code/projects/wily-board`.
+- Two-repo final verification across `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap` and `/Users/wilycastle/Code/projects/wily-plugin/wily-board`.
 
 Non-goals:
 
@@ -101,7 +101,7 @@ Assumptions:
 
 ## File / Ownership Boundaries
 
-Expected touchpoints in `/Users/wilycastle/Code/projects/wily-roadmap`:
+Expected touchpoints in `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`:
 
 - `agent-handoffs/s27-refactor-*.md`
 - `docs/superpowers/specs/2026-05-17-s27-refactor-design.md`
@@ -122,7 +122,7 @@ Expected touchpoints in `/Users/wilycastle/Code/projects/wily-roadmap`:
 - `.wily/stages/s27-wily-roadmap-large-refactor/**`
 - `.wily/roadmap.yaml`
 
-Expected touchpoints in `/Users/wilycastle/Code/projects/wily-board`:
+Expected touchpoints in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`:
 
 - `app/api/routes.py`
 - `app/db/*.sql`
@@ -219,10 +219,10 @@ Checkpoint 7: Checkpoint overlay and Board event contract (`s27/p07`).
 
 Checkpoint 8: Wily Board backend alignment (`s27/p08`).
 
-- In `/Users/wilycastle/Code/projects/wily-board`, update DB/API/live handling for canonical `(repo, stage_id, phase_id)` identity and checkpoint overlays.
+- In `/Users/wilycastle/Code/projects/wily-plugin/wily-board`, update DB/API/live handling for canonical `(repo, stage_id, phase_id)` identity and checkpoint overlays.
 - Keep Board read-only for roadmap state.
 - Preserve existing visibility/auth rules.
-- Verification: `cd /Users/wilycastle/Code/projects/wily-board && uv run pytest` or targeted backend tests first, then full backend tests before leaving the checkpoint.
+- Verification: `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest` or targeted backend tests first, then full backend tests before leaving the checkpoint.
 
 Checkpoint 9: Wily Board IA chrome (`s27/p09`).
 
@@ -485,16 +485,16 @@ Dependencies: `s27/p05` for checkpoint overlay inputs.
 
 ### Lane D - Wily Board Backend
 
-Agent: implementation worker in `/Users/wilycastle/Code/projects/wily-board`.
+Agent: implementation worker in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`.
 Mode: implementation_disjoint after Wily event contract is stable.
 Timebox: checkpoint-sized.
 Allowed files:
 
-- `/Users/wilycastle/Code/projects/wily-board/app/api/**`
-- `/Users/wilycastle/Code/projects/wily-board/app/db/**`
-- `/Users/wilycastle/Code/projects/wily-board/app/live/**`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_api_routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/**`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/**`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/**`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_live_events.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_api_routes.py`
 
 Must not edit:
 
@@ -507,15 +507,15 @@ Dependencies: `s27/p07`.
 
 ### Lane E - Wily Board Frontend
 
-Agent: implementation worker in `/Users/wilycastle/Code/projects/wily-board`.
+Agent: implementation worker in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`.
 Mode: implementation_disjoint after backend/API types are stable.
 Timebox: checkpoint-sized.
 Allowed files:
 
-- `/Users/wilycastle/Code/projects/wily-board/frontend/app/**`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/**`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/lib/types.ts`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/app/globals.css`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/**`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/**`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/lib/types.ts`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/globals.css`
 
 Must not edit:
 
@@ -583,20 +583,20 @@ Disposable fixture apply verification:
 ```bash
 tmp="$(mktemp -d)"
 cp -R plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy "$tmp/project"
-(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply)
-(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily status)
-(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily next)
-(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily run s27/p04 --dry-run)
+(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply)
+(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily status)
+(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily next)
+(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily run s27/p04 --dry-run)
 ```
 
 Wily Board final verification:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run pytest
 cd frontend && npm run lint && npm run build
-cd /Users/wilycastle/Code/projects/wily-board
-/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
+/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
 ```
 
 Manual smoke checks:

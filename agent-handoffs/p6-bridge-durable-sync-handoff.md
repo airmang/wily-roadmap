@@ -80,9 +80,9 @@ Tests: 231 pass (`python3 -m unittest discover -s plugins/wily-roadmap/tests`).
 
 - `~/.wily/board.json` exists with real production URL/secret/repo/actor.
 - `~/.codex/hooks.json` exists; PostToolUse hook points to
-  `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`
+  `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`
   (main repo path, stable).
-- `git remote origin` for `/Users/wilycastle/Code/projects/wily-roadmap`
+- `git remote origin` for `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`
   has been corrected from `airmang/wily-roadmap` to
   `R-W-LAB/wily-roadmap` so future pushes do not rely on the GitHub
   redirect.
@@ -99,7 +99,7 @@ remain untouched:
 
 ### Worktree to clean up
 
-Path: `/Users/wilycastle/Code/projects/wily-roadmap/.claude/worktrees/amazing-goodall-94b7f6`
+Path: `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.claude/worktrees/amazing-goodall-94b7f6`
 Branch: `claude/amazing-goodall-94b7f6` (same commit as `main`).
 
 Safe to remove with `git worktree remove .claude/worktrees/amazing-goodall-94b7f6`
@@ -108,7 +108,7 @@ nothing extra is in the worktree (git status clean expected).
 
 ## P6 — Restore durable sync
 
-Repository: `R-W-LAB/wily-board` at `/Users/wilycastle/Code/projects/wily-board`.
+Repository: `R-W-LAB/wily-board` at `/Users/wilycastle/Code/projects/wily-plugin/wily-board`.
 
 ### Symptoms (confirmed in production journal)
 
@@ -150,7 +150,7 @@ body contains the upstream status.
 Verification:
 
 ```
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run pytest tests/test_web_routes.py tests/test_operations_doc.py -q
 ```
 
@@ -205,7 +205,7 @@ gh run watch <run-id> -R R-W-LAB/wily-roadmap --exit-status
 Should exit 0. `journalctl -u wily-board --since '2 min ago'` should
 show `POST /webhooks/github` returning 200.
 
-Then from `/Users/wilycastle/Code/projects/wily-roadmap`:
+Then from `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`:
 
 ```
 python3 plugins/wily-roadmap/scripts/wily.py board check --probe
@@ -255,9 +255,9 @@ After all four rotations, retest:
 
 Repos:
 
-- wily-roadmap (this CLI plugin): `/Users/wilycastle/Code/projects/wily-roadmap`
-- wily-board (FastAPI service): `/Users/wilycastle/Code/projects/wily-board`
-- temporary worktree to clean up: `/Users/wilycastle/Code/projects/wily-roadmap/.claude/worktrees/amazing-goodall-94b7f6`
+- wily-roadmap (this CLI plugin): `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`
+- wily-board (FastAPI service): `/Users/wilycastle/Code/projects/wily-plugin/wily-board`
+- temporary worktree to clean up: `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.claude/worktrees/amazing-goodall-94b7f6`
 
 Developer config (already filled, gitignored):
 

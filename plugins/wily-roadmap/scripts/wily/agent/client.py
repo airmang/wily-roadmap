@@ -56,12 +56,14 @@ def register_agent(
 def publish_snapshot(config: AgentConfig, payload: dict[str, Any], timeout: float = 10.0) -> dict[str, Any]:
     if not config.snapshot_configured:
         return {"sent": False, "reason": "not logged in"}
-    return post_json(
-        config.board_url.rstrip("/") + "/agent/snapshot",
-        payload,
-        token=config.token,
-        timeout=timeout,
-    ) | {"sent": True}
+    return sent_result(
+        post_json(
+            config.board_url.rstrip("/") + "/agent/snapshot",
+            payload,
+            token=config.token,
+            timeout=timeout,
+        )
+    )
 
 
 def publish_heartbeat(
@@ -73,12 +75,20 @@ def publish_heartbeat(
 ) -> dict[str, Any]:
     if not config.snapshot_configured:
         return {"sent": False, "reason": "not logged in"}
-    return post_json(
-        config.board_url.rstrip("/") + "/agent/heartbeat",
-        {"project_id": project_id, "current_task_id": current_task_id, "actor": config.actor},
-        token=config.token,
-        timeout=timeout,
-    ) | {"sent": True}
+    return sent_result(
+        post_json(
+            config.board_url.rstrip("/") + "/agent/heartbeat",
+            {"project_id": project_id, "current_task_id": current_task_id, "actor": config.actor},
+            token=config.token,
+            timeout=timeout,
+        )
+    )
+
+
+def sent_result(result: dict[str, Any]) -> dict[str, Any]:
+    if result.get("sent") is False:
+        return result
+    return {"sent": True, **result}
 
 
 def post_json(

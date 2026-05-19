@@ -5,11 +5,11 @@
 - Checkpoint: CP00 Preflight and dependency baseline.
 - Files changed: initialized Stage 30 handoff files in `agent-handoffs/`.
 - Commands run:
-  - `git -C /Users/wilycastle/Code/projects/wily-board status --short`
-  - `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm ls @xyflow/react framer-motion cmdk @radix-ui/react-dialog @radix-ui/react-tooltip @radix-ui/react-progress @dagrejs/dagre --depth=0`
-  - `cd /Users/wilycastle/Code/projects/wily-board/frontend && node -e "const p=require('./package.json'); console.log(p.dependencies['@tremor/react'] || 'absent')"`
-  - `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run lint`
-  - `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run build`
+  - `git -C /Users/wilycastle/Code/projects/wily-plugin/wily-board status --short`
+  - `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm ls @xyflow/react framer-motion cmdk @radix-ui/react-dialog @radix-ui/react-tooltip @radix-ui/react-progress @dagrejs/dagre --depth=0`
+  - `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && node -e "const p=require('./package.json'); console.log(p.dependencies['@tremor/react'] || 'absent')"`
+  - `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run lint`
+  - `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run build`
 - Result: required packages present, Tremor absent, baseline lint/build pass.
 - Evidence file updates: `agent-handoffs/stage-30-board-dag-components-mobile-verification.md`.
 - Status board update: CP00 marked DONE; CP01-CP03 pending dispatch.
@@ -57,20 +57,20 @@
 
 - Checkpoint: CP04 mobile fallback, CP05 final verification and completion review.
 - Files changed:
-  - `/Users/wilycastle/Code/projects/wily-board/frontend/components/stage-map.tsx`
-  - `/Users/wilycastle/Code/projects/wily-board/frontend/components/local-desk.tsx`
-  - `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-headline.tsx`
-  - `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-attention.tsx`
-  - `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-switcher.tsx`
-  - `/Users/wilycastle/Code/projects/wily-board/frontend/app/globals.css`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/stage-map.tsx`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/local-desk.tsx`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-headline.tsx`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-attention.tsx`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-switcher.tsx`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/globals.css`
   - `.wily/roadmap.yaml`
   - `.wily/status.md`
   - `.wily/stages/s30-board-dag-components-mobile/stage.yaml`
   - `.wily/stages/s30-board-dag-components-mobile/verification.md`
 - Commands run:
-  - `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run lint` -> PASS.
-  - `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run build` -> PASS after stopping the dev server to avoid `.next` artifact conflicts.
-  - `cd /Users/wilycastle/Code/projects/wily-board && uv run pytest` -> PASS, 76 passed, 14 warnings.
+  - `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run lint` -> PASS.
+  - `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run build` -> PASS after stopping the dev server to avoid `.next` artifact conflicts.
+  - `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest` -> PASS, 76 passed, 14 warnings.
   - Playwright desktop smoke -> PASS: 4 stage nodes visible in React Flow, headline and Attention present, rail visible.
   - Playwright mobile smoke -> PASS: React Flow hidden, 4 mobile stage rows visible, rail hidden, bottom sheet opens with Working/Up Next.
   - Playwright switcher smoke -> PASS: Shared/Personal headings visible, repos loaded, pinned star visible.

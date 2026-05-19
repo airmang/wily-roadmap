@@ -23,7 +23,7 @@ OK
 Command:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board && uv run pytest tests/test_agent_routes.py -q
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest tests/test_agent_routes.py -q
 ```
 
 Result:
@@ -51,7 +51,7 @@ OK
 Command:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board && uv run pytest -q
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest -q
 ```
 
 Result:
@@ -63,7 +63,7 @@ Result:
 Command:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board && uv run ruff check .
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run ruff check .
 ```
 
 Result:
@@ -76,7 +76,7 @@ Command:
 
 ```bash
 git diff --check
-git -C /Users/wilycastle/Code/projects/wily-board diff --check
+git -C /Users/wilycastle/Code/projects/wily-plugin/wily-board diff --check
 ```
 
 Result: both commands exited 0 with no output.

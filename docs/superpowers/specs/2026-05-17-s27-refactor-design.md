@@ -263,10 +263,10 @@ Board가 하지 않는 것:
 | s27/p05 | Runner Adapter Registry + Custom Workflow integration test | `scripts/wily_runner.py`, adapter 모듈, `skills/wily-run/SKILL.md`, runner tests | p04 |
 | s27/p06 | Projection Core `wily-roadmap-projection-v1` (watch/status consumer 전환) | projection helper 모듈, `scripts/wily_watch_ui.py`, `scripts/wily.py`, watch/status tests | p02, p04, p05 |
 | s27/p07 | Checkpoint Overlay + Board Event Contract (tuple payload) | `scripts/wily.py`, board reflection reference, CLI/watch tests | p05, p06 |
-| s27/p08 | Wily Board Backend (api/db/live, schema namespace 수용) | `/Users/wilycastle/Code/projects/wily-board/app/db/*.sql`, `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`, `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`, `/Users/wilycastle/Code/projects/wily-board/app/api/routes.py`, `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`, `/Users/wilycastle/Code/projects/wily-board/tests/test_api_routes.py` | p07 |
-| s27/p09 | Wily Board IA Chrome (`/me`, `/collab` routing + 공통 chrome + 인증/visibility) | `/Users/wilycastle/Code/projects/wily-board/frontend/app/me/`, `/Users/wilycastle/Code/projects/wily-board/frontend/app/collab/`, `/Users/wilycastle/Code/projects/wily-board/frontend/app/page.tsx`, header/sidebar 컴포넌트, `/Users/wilycastle/Code/projects/wily-board/frontend/lib/types.ts` | p08 |
-| s27/p10 | Wily Board Surfaces — `/me` + `/collab` widgets | `/Users/wilycastle/Code/projects/wily-board/frontend/app/me/page.tsx`, `/Users/wilycastle/Code/projects/wily-board/frontend/app/collab/page.tsx`, `/Users/wilycastle/Code/projects/wily-board/frontend/components/active-phase-card.tsx`, `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-grid.tsx`, `/Users/wilycastle/Code/projects/wily-board/frontend/components/live-strip.tsx`, `/Users/wilycastle/Code/projects/wily-board/frontend/components/risk-queue.tsx` | p08, p09 |
-| s27/p11 | Wily Board Repo Detail (Stage/Phase/Checkpoint UI 리팩토링) | `/Users/wilycastle/Code/projects/wily-board/frontend/app/repos/[owner]/[name]/page.tsx`, `/Users/wilycastle/Code/projects/wily-board/frontend/components/stage-map.tsx`, `/Users/wilycastle/Code/projects/wily-board/frontend/components/phase-list.tsx`, `/Users/wilycastle/Code/projects/wily-board/frontend/components/desk.tsx`, `/Users/wilycastle/Code/projects/wily-board/frontend/components/checkpoint-rows.tsx` | p08, p09 |
+| s27/p08 | Wily Board Backend (api/db/live, schema namespace 수용) | `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/*.sql`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/events.py`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/routes.py`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_live_events.py`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_api_routes.py` | p07 |
+| s27/p09 | Wily Board IA Chrome (`/me`, `/collab` routing + 공통 chrome + 인증/visibility) | `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/me/`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/collab/`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/page.tsx`, header/sidebar 컴포넌트, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/lib/types.ts` | p08 |
+| s27/p10 | Wily Board Surfaces — `/me` + `/collab` widgets | `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/me/page.tsx`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/collab/page.tsx`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/active-phase-card.tsx`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-grid.tsx`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/live-strip.tsx`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/risk-queue.tsx` | p08, p09 |
+| s27/p11 | Wily Board Repo Detail (Stage/Phase/Checkpoint UI 리팩토링) | `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/repos/[owner]/[name]/page.tsx`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/stage-map.tsx`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/phase-list.tsx`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/desk.tsx`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/checkpoint-rows.tsx` | p08, p09 |
 | s27/p12 | Skills/Commands/Docs/Cache Sync | `plugins/wily-roadmap/skills/**`, `commands/**`, `README.md`, command skill tests | p03, p05, p07 |
 | s27/p13 | E2E Migration + Dashboard Verification (두 repo 동시) | tests + verification handoffs (no prod deploy) | 모든 이전 phase |
 
@@ -342,20 +342,20 @@ python3 -m pytest -m integration plugins/wily-roadmap/tests/   # Custom Workflow
 # Apply/run verification happens against a disposable fixture copy first.
 tmp="$(mktemp -d)"
 cp -R plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy "$tmp/project"
-(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply)
-(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily status)
-(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily next)
-(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily run s27/p04 --dry-run)
+(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply)
+(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily status)
+(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily next)
+(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily run s27/p04 --dry-run)
 ```
 
 Wily Board repo:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run pytest
 cd frontend && npm run lint && npm run build
-cd /Users/wilycastle/Code/projects/wily-board
-/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
+/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
 ```
 
 수동 스모크:

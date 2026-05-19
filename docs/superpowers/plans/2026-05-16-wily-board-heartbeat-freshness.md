@@ -13,11 +13,11 @@
 ## Task 1: Board Heartbeat Contract And Freshness Model
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/config.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_db.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/config.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/events.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_live_events.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_db.py`
 
 - [ ] Add failing tests proving `heartbeat` updates an existing live session to `active`.
 - [ ] Add failing tests for fresh/stale classification from `last_seen_at`.
@@ -40,12 +40,12 @@
 ## Task 3: Board Active Now And Stale UI
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/routes.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/templates/_phase_row.html`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/templates/board.html`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/static/app.css`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_web_routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/_phase_row.html`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/board.html`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/static/app.css`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_web_routes.py`
 
 - [ ] Add failing tests showing fresh sessions render `active now`.
 - [ ] Add failing tests showing stale sessions render `stale local session`.
@@ -56,7 +56,7 @@
 ## Task 4: Heartbeat Operations And Load Verification
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/docs/OPERATIONS.md`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/OPERATIONS.md`
 - Modify: `.wily/status.md`
 
 - [ ] Document heartbeat env vars, interval guidance, and load expectations.

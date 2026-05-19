@@ -83,7 +83,7 @@ Contract-level acceptance:
 Implementation-readiness acceptance:
 
 - S27 is decomposed into implementation Phases with dependencies, write scopes, expected touchpoints, and verification ideas.
-- The plan identifies which changes belong in `/Users/wilycastle/Code/projects/wily-roadmap` and which belong in `/Users/wilycastle/Code/projects/wily-board`.
+- The plan identifies which changes belong in `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap` and which belong in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`.
 - The plan identifies test suites and smoke checks needed before calling the refactor complete.
 - The plan includes a Claude Opus 4.7 review checklist and concrete questions.
 - The plan includes migration safety requirements: dry-run, backup, report, validation, and optional approved legacy cleanup.
@@ -157,7 +157,7 @@ Code structure facts:
 - `plugins/wily-roadmap/scripts/wily_runner.py` currently prepares Custom Workflow artifacts but only resolves top-level legacy phases through `wily.find_phase()`. It does not yet support Stage-local Phase execution.
 - Tests with broadest contract coverage are `plugins/wily-roadmap/tests/test_wily_cli.py`, `test_wily_watch_ui.py`, `test_wily_state_summary.py`, and `test_wily_command_skills.py`.
 
-Board facts from `/Users/wilycastle/Code/projects/wily-board`:
+Board facts from `/Users/wilycastle/Code/projects/wily-plugin/wily-board`:
 
 - Wily Board is a separate repository, not part of the marketplace plugin repo.
 - Board already has durable tables for `repos`, `stages`, `phases`, live tables for `live_sessions`, `live_items`, and `live_drafts`.
@@ -609,13 +609,13 @@ These are proposed child Phases for `.wily/stages/s27-wily-roadmap-large-refacto
 
 ### s27/p08: Wily Board Read-only Projection Alignment
 
-- Goal: Update `/Users/wilycastle/Code/projects/wily-board` to render the new projection semantics as a web superset of Watch.
+- Goal: Update `/Users/wilycastle/Code/projects/wily-plugin/wily-board` to render the new projection semantics as a web superset of Watch.
 - Write scope:
-  - `/Users/wilycastle/Code/projects/wily-board/app/api/`
-  - `/Users/wilycastle/Code/projects/wily-board/app/db/`
-  - `/Users/wilycastle/Code/projects/wily-board/app/live/`
-  - `/Users/wilycastle/Code/projects/wily-board/frontend/`
-  - `/Users/wilycastle/Code/projects/wily-board/tests/`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/`
 - Depends on: s27/p07 contract.
 - Expected output:
   - read-only Stage/Phase/checkpoint dashboard;
@@ -666,7 +666,7 @@ These are proposed child Phases for `.wily/stages/s27-wily-roadmap-large-refacto
   - `wily status`;
   - `wily next`;
   - `wily watch --once --ui ascii`;
-  - Board tests in `/Users/wilycastle/Code/projects/wily-board`;
+  - Board tests in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`;
   - local E2E Board smoke when UI/API changes exist.
 
 ## Assumptions
@@ -750,19 +750,19 @@ Wily Roadmap repo:
 
 Wily Board repo:
 
-- `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/db/schema.sql`
-- `/Users/wilycastle/Code/projects/wily-board/app/api/routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/lib/types.ts`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/stage-map.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/phase-list.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/desk.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/app/repos/[owner]/[name]/page.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_api_routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_web_routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_parser.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/events.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/schema.sql`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/lib/types.ts`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/stage-map.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/phase-list.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/desk.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/repos/[owner]/[name]/page.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_live_events.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_api_routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_web_routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_parser.py`
 
 ## Verification Ideas
 
@@ -787,16 +787,16 @@ Migration verification:
 # Apply mode is verified first against a disposable fixture copy, not the working repo.
 tmp="$(mktemp -d)"
 cp -R plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy "$tmp/project"
-(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply)
-(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily status)
-(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily next)
-(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily run s27/p04 --dry-run)
+(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply)
+(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily status)
+(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily next)
+(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily run s27/p04 --dry-run)
 ```
 
 Board verification, when Board repo changes are included:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run pytest
 cd frontend
 npm run lint

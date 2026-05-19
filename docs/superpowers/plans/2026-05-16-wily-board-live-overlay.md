@@ -12,26 +12,26 @@
 
 ## File Structure
 
-- `/Users/wilycastle/Code/projects/wily-board/app/db/schema.sql`: add `live_sessions`.
-- `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`: add live session upsert/list/clear helpers and call clear logic from `replace_repo_state`.
-- `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`: new signed live event router.
-- `/Users/wilycastle/Code/projects/wily-board/app/main.py`: include live event router.
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`: API and DB behavior tests.
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_db.py`: durable sync clear behavior tests.
-- `/Users/wilycastle/Code/projects/wily-board/app/web/routes.py`: later join live overlays into dashboard and repo detail queries.
-- `/Users/wilycastle/Code/projects/wily-board/app/web/templates/_phase_row.html`: later render live chips.
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`: later emit signed best-effort live events.
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`: later test no-config and configured live event behavior.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/schema.sql`: add `live_sessions`.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`: add live session upsert/list/clear helpers and call clear logic from `replace_repo_state`.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/events.py`: new signed live event router.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/main.py`: include live event router.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_live_events.py`: API and DB behavior tests.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_db.py`: durable sync clear behavior tests.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/routes.py`: later join live overlays into dashboard and repo detail queries.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/_phase_row.html`: later render live chips.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`: later emit signed best-effort live events.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`: later test no-config and configured live event behavior.
 
 ## Task 1: Board Storage And Signed Live Event API
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/db/schema.sql`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- Create: `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/main.py`
-- Create: `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_db.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/schema.sql`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/events.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/main.py`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_live_events.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_db.py`
 
 - [ ] **Step 1: Write failing live event API tests**
 
@@ -118,12 +118,12 @@ Expected: all selected checks pass.
 ## Task 2: Board Live Overlay Query And UI Chips
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/routes.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/templates/_phase_row.html`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/templates/board.html`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/static/app.css`
-- Test: `/Users/wilycastle/Code/projects/wily-board/tests/test_web_routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/_phase_row.html`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/board.html`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/static/app.css`
+- Test: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_web_routes.py`
 
 - [ ] Add failing tests for repo detail live chip rendering.
 - [ ] Add failing tests for Active right now including fresh live sessions.
@@ -134,8 +134,8 @@ Expected: all selected checks pass.
 ## Task 3: Wily CLI Best-Effort Event Emission
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`
 
 - [ ] Add failing tests proving no network call occurs without Board config.
 - [ ] Add failing tests for signed payload generation when Board config exists.
@@ -146,8 +146,8 @@ Expected: all selected checks pass.
 ## Task 4: Operations And End-To-End Verification
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/docs/OPERATIONS.md`
-- Modify: `/Users/wilycastle/Code/projects/wily-roadmap/docs/superpowers/specs/2026-05-16-wily-board-live-overlay-review-ko.md` only if behavior changes from the approved design.
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/OPERATIONS.md`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/docs/superpowers/specs/2026-05-16-wily-board-live-overlay-review-ko.md` only if behavior changes from the approved design.
 
 - [ ] Document local and production live sync environment variables.
 - [ ] Verify start, block, complete, stale, and push-clear flows locally.

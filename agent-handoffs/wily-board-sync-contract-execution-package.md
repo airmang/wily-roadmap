@@ -28,7 +28,7 @@ Done only when all acceptance criteria are satisfied and final verification pass
 
 ## Source Request / Handoff
 
-- User request: implement `/Users/wilycastle/Code/projects/wily-roadmap/agent-handoffs/wily-board-sync-contract-requirements.md`, push `main` so plugin updates are available, and update the locally installed Wily Roadmap plugin cache so the current plugin reflects the changes.
+- User request: implement `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/agent-handoffs/wily-board-sync-contract-requirements.md`, push `main` so plugin updates are available, and update the locally installed Wily Roadmap plugin cache so the current plugin reflects the changes.
 - Requirements handoff: `agent-handoffs/wily-board-sync-contract-requirements.md`.
 
 ## Inline Requirements
@@ -66,7 +66,7 @@ Separate handoff exists; inline requirements are not needed. Summary: make Board
 - Must not edit:
   - `.agents/plugins/marketplace.json` except to preserve the existing marketplace pointer.
   - `.wily` roadmap/session/stage state except status/progress artifacts explicitly required by this execution package.
-  - unrelated dirty files in `/Users/wilycastle/Code/projects/wily-board`.
+  - unrelated dirty files in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`.
 - User-owned or pre-existing changes to preserve:
   - `.wily/roadmap.yaml`
   - `.wily/status.md`
@@ -93,7 +93,7 @@ Separate handoff exists; inline requirements are not needed. Summary: make Board
 
 - Goal-scoped external engineering actions may proceed without user approval.
 - This includes committing and pushing `main` because the user explicitly requested it.
-- This does not include pushing unrelated `/Users/wilycastle/Code/projects/wily-board` dirty work.
+- This does not include pushing unrelated `/Users/wilycastle/Code/projects/wily-plugin/wily-board` dirty work.
 - Record externally visible actions in the progress log.
 - Stop only for hard destructive shell commands, payment/purchase actions, credential or secret exfiltration, explicit user-forbidden actions, or repeated verification failure.
 

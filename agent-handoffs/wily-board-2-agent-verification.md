@@ -5,7 +5,7 @@
 Command:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board && uv run pytest -q
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest -q
 ```
 
 Result:
@@ -22,7 +22,7 @@ Warnings:
 Command:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/agent && uv run pytest -v
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/agent && uv run pytest -v
 ```
 
 Result:
@@ -34,7 +34,7 @@ Result:
 Command:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/agent && uv run ruff check .
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/agent && uv run ruff check .
 ```
 
 Result:
@@ -46,7 +46,7 @@ All checks passed!
 Command:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board && uv run pytest -v
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest -v
 ```
 
 Result:
@@ -58,7 +58,7 @@ Result:
 Command:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board && uv run ruff check .
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run ruff check .
 ```
 
 Result:

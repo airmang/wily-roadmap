@@ -41,7 +41,7 @@ Current blocker: none.
 | Roadmap final unittest suite | 2026-05-18T01:10:05Z | 0 | PASS | `python3 -m unittest ...test_wily_state_summary.py ...test_wily_watch_ui.py ...test_wily_command_skills.py ...test_wily_cli.py` -> 256 tests OK, 2 skipped. |
 | Roadmap active usage scan | 2026-05-18T01:10:05Z | 1 | PASS | `rg` found no active command/skill/script primary `$wily-* <phase-id>`, `argument-hint: '<phase-id>`, or `live-worked [item-id]` surfaces. |
 | Roadmap status/watch/next smoke | 2026-05-18T01:05:48Z | 0 | PASS | `wily status` and `wily watch --once --ui ascii` show `27/27 - 100%`; `wily next` prints `Next phase: none`. |
-| Board full pytest | 2026-05-18T01:10:05Z | 0 | PASS | `cd /Users/wilycastle/Code/projects/wily-board && uv run pytest` -> 95 passed, 38 warnings. |
+| Board full pytest | 2026-05-18T01:10:05Z | 0 | PASS | `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest` -> 95 passed, 38 warnings. |
 | Board frontend lint/build | 2026-05-18T01:10:05Z | 0 | PASS | `npm run lint` passed; `npm run build` passed and includes canonical Stage/Phase route. |
 | Board canonical route smoke | 2026-05-18T01:05:48Z | 0 | PASS | `curl` against Next route returned `HTTP/1.1 200 OK` and rendered `R-W-LAB/wily-roadmap · s02/p01`, `Canonical route smoke`, and the Phase task text. |
 | Diff hygiene | 2026-05-18T01:10:05Z | 0 | PASS | `git diff --check` passed in Wily Roadmap and Wily Board. |

@@ -10,7 +10,7 @@ Files changed:
 - `agent-handoffs/s21-board-ui-redesign-progress.md`
 
 Commands run:
-- `uv run pytest` in `/Users/wilycastle/Code/projects/wily-board`
+- `uv run pytest` in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`
 
 Result:
 - Baseline backend tests passed: 71 passed, 26 warnings.
@@ -46,11 +46,11 @@ Next step:
 Checkpoint: Contract reconciliation and FastAPI API implementation.
 
 Files changed:
-- `/Users/wilycastle/Code/projects/wily-board/app/api/__init__.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/api/routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/main.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_api_routes.py`
-- `/Users/wilycastle/Code/projects/wily-roadmap/.wily/**` via Wily `start`/`complete` for 21-1
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/__init__.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/main.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_api_routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.wily/**` via Wily `start`/`complete` for 21-1
 
 Commands run:
 - `uv run pytest tests/test_api_routes.py -q`
@@ -81,17 +81,17 @@ Next step:
 Checkpoint: S21 implementation completed after roadmap v25 checkpoint bridge update.
 
 Files changed across the two workspaces:
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/scripts/wily_watch_ui.py`
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/test_wily_watch_ui.py`
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/skills/wily-workflow/references/runner-adapter-contract.md`
-- `/Users/wilycastle/Code/projects/wily-board/app/api/routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_api_routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/**`
-- `/Users/wilycastle/Code/projects/wily-board/deploy/**`
-- `/Users/wilycastle/Code/projects/wily-board/docs/OPERATIONS.md`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/scripts/wily_watch_ui.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/test_wily_watch_ui.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/skills/wily-workflow/references/runner-adapter-contract.md`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_api_routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/**`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/deploy/**`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/OPERATIONS.md`
 
 Implemented:
 - Wily `checkpoint-sync` adapter for Custom Workflow status boards.

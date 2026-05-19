@@ -264,8 +264,8 @@ Expected: exit code 0.
 Run in a temporary project:
 
 ```bash
-python3 /Users/wilycastle/Code/projects/wily-roadmap/scripts/wily.py init "Smoke test goal"
-python3 /Users/wilycastle/Code/projects/wily-roadmap/scripts/wily.py status
+python3 /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/scripts/wily.py init "Smoke test goal"
+python3 /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/scripts/wily.py status
 ```
 
 Expected:

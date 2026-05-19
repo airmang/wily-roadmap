@@ -4,7 +4,7 @@
 
 **Goal:** Make Wily Board a read-only Next.js surface by removing legacy Jinja rendering, board status mutation actions, and PR-opening UI/routes.
 
-**Architecture:** The Wily Roadmap marketplace repo owns Stage 28 state, but the code changes happen in `/Users/wilycastle/Code/projects/wily-board`. FastAPI keeps auth, read-only JSON APIs, SSE, signed live ingest, GitHub webhook sync, and admin resync; Next.js owns user-facing `/`, `/me`, `/collab`, and `/repos/{owner}/{name}` surfaces. Legacy Jinja and `/actions/phase/status` are deleted after regression tests prove no read-only invariant was weakened.
+**Architecture:** The Wily Roadmap marketplace repo owns Stage 28 state, but the code changes happen in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`. FastAPI keeps auth, read-only JSON APIs, SSE, signed live ingest, GitHub webhook sync, and admin resync; Next.js owns user-facing `/`, `/me`, `/collab`, and `/repos/{owner}/{name}` surfaces. Legacy Jinja and `/actions/phase/status` are deleted after regression tests prove no read-only invariant was weakened.
 
 **Tech Stack:** FastAPI, SQLite, pytest, Next.js 15 App Router, TypeScript, ESLint, Caddy.
 
@@ -12,8 +12,8 @@
 
 ## Current Facts
 
-- Wily Stage: `s28` in `/Users/wilycastle/Code/projects/wily-roadmap/.wily/stages/s28-board-readonly-cutover`.
-- Target repo: `/Users/wilycastle/Code/projects/wily-board`.
+- Wily Stage: `s28` in `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.wily/stages/s28-board-readonly-cutover`.
+- Target repo: `/Users/wilycastle/Code/projects/wily-plugin/wily-board`.
 - Target repo is already dirty:
   - `app/api/routes.py`
   - `frontend/app/repos/[owner]/[name]/page.tsx`
@@ -23,7 +23,7 @@
   - `tests/test_api_routes.py`
   - untracked `frontend/app/repos/[owner]/[name]/stages/`
 - Preserve those existing changes. Re-check `git status --short` before editing and do not reset or checkout files.
-- No repo-local `AGENTS.md` was found in `/Users/wilycastle/Code/projects/wily-board`; `/Users/wilycastle/Code/projects/wily-roadmap/AGENTS.md` still governs the plan artifact in this repo.
+- No repo-local `AGENTS.md` was found in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`; `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/AGENTS.md` still governs the plan artifact in this repo.
 
 ## Parallelization Decision
 
@@ -78,11 +78,11 @@ Do not parallel-edit `app/main.py`, `app/web/routes.py`, or `app/actions/*`; tho
 
 **Files:**
 - Modify through Wily command: `.wily/stages/s28-board-readonly-cutover/stage.yaml`
-- Read: `/Users/wilycastle/Code/projects/wily-board`
+- Read: `/Users/wilycastle/Code/projects/wily-plugin/wily-board`
 
 - [ ] **Step 1: Start the executable phase**
 
-Run from `/Users/wilycastle/Code/projects/wily-roadmap`:
+Run from `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`:
 
 ```bash
 python3 plugins/wily-roadmap/scripts/wily.py start s28/28-1
@@ -103,7 +103,7 @@ Expected: it names Stage 28, Phase `28-1`, target scope, and verification notes.
 
 - [ ] **Step 3: Snapshot target repo state**
 
-Run from `/Users/wilycastle/Code/projects/wily-board`:
+Run from `/Users/wilycastle/Code/projects/wily-plugin/wily-board`:
 
 ```bash
 git status --short
@@ -117,9 +117,9 @@ Expected: dirty files are preserved; legacy Jinja/action references are visible 
 ## Task 2: Add Failing Read-Only Invariant Tests
 
 **Files:**
-- Create: `/Users/wilycastle/Code/projects/wily-board/tests/test_readonly_invariants.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_web_routes.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_action_routes.py`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_readonly_invariants.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_web_routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_action_routes.py`
 
 - [ ] **Step 1: Create route invariant tests**
 
@@ -243,9 +243,9 @@ Expected now: FAIL on legacy route/template behavior until Tasks 3-5 remove it.
 ## Task 3: Remove Legacy Jinja Templates (`28-1`)
 
 **Files:**
-- Delete: `/Users/wilycastle/Code/projects/wily-board/app/web/templates/*.html`
-- Delete: `/Users/wilycastle/Code/projects/wily-board/app/web/static/app.css`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/pyproject.toml`
+- Delete: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/*.html`
+- Delete: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/static/app.css`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/pyproject.toml`
 - Modify tests that directly assert template/static packaging.
 
 - [ ] **Step 1: Delete template/static assets**
@@ -298,7 +298,7 @@ Expected: no runtime references to deleted template/static files; packaging test
 
 - [ ] **Step 4: Complete Wily Phase 28-1 after verification**
 
-Run from `/Users/wilycastle/Code/projects/wily-roadmap` only after the focused verification passes:
+Run from `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap` only after the focused verification passes:
 
 ```bash
 python3 plugins/wily-roadmap/scripts/wily.py complete s28/28-1
@@ -311,16 +311,16 @@ Expected: `28-1` becomes `done`; `28-2` becomes the next executable phase.
 ## Task 4: Remove Write Actions and PR Mutator (`28-2`)
 
 **Files:**
-- Delete: `/Users/wilycastle/Code/projects/wily-board/app/actions/routes.py`
-- Delete: `/Users/wilycastle/Code/projects/wily-board/app/actions/toggle_status.py`
-- Delete: `/Users/wilycastle/Code/projects/wily-board/app/actions/pr_writer.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/main.py`
-- Modify/Delete: `/Users/wilycastle/Code/projects/wily-board/tests/test_pr_writer.py`
-- Modify/Delete: `/Users/wilycastle/Code/projects/wily-board/tests/test_toggle_status.py`
+- Delete: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/actions/routes.py`
+- Delete: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/actions/toggle_status.py`
+- Delete: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/actions/pr_writer.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/main.py`
+- Modify/Delete: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_pr_writer.py`
+- Modify/Delete: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_toggle_status.py`
 
 - [ ] **Step 1: Start Phase 28-2**
 
-Run from `/Users/wilycastle/Code/projects/wily-roadmap`:
+Run from `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`:
 
 ```bash
 python3 plugins/wily-roadmap/scripts/wily.py start s28/28-2
@@ -410,7 +410,7 @@ Expected: no legacy action or PR mutator references; focused tests pass.
 
 - [ ] **Step 6: Complete Wily Phase 28-2**
 
-Run from `/Users/wilycastle/Code/projects/wily-roadmap`:
+Run from `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`:
 
 ```bash
 python3 plugins/wily-roadmap/scripts/wily.py complete s28/28-2
@@ -423,15 +423,15 @@ Expected: `28-2` becomes `done`; `28-3` becomes next.
 ## Task 5: Cut FastAPI Web Routes Over to Next.js (`28-3`)
 
 **Files:**
-- Delete: `/Users/wilycastle/Code/projects/wily-board/app/web/routes.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/__init__.py` or delete `app/web/` if empty.
-- Modify: `/Users/wilycastle/Code/projects/wily-board/pyproject.toml`
-- Review: `/Users/wilycastle/Code/projects/wily-board/frontend/next.config.ts`
-- Review: `/Users/wilycastle/Code/projects/wily-board/deploy/Caddyfile`
+- Delete: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/__init__.py` or delete `app/web/` if empty.
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/pyproject.toml`
+- Review: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/next.config.ts`
+- Review: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/deploy/Caddyfile`
 
 - [ ] **Step 1: Start Phase 28-3**
 
-Run from `/Users/wilycastle/Code/projects/wily-roadmap`:
+Run from `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`:
 
 ```bash
 python3 plugins/wily-roadmap/scripts/wily.py start s28/28-3
@@ -514,7 +514,7 @@ Expected: no Jinja/template route references; API/live tests still pass.
 
 - [ ] **Step 6: Complete Wily Phase 28-3**
 
-Run from `/Users/wilycastle/Code/projects/wily-roadmap`:
+Run from `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`:
 
 ```bash
 python3 plugins/wily-roadmap/scripts/wily.py complete s28/28-3
@@ -527,13 +527,13 @@ Expected: `28-3` becomes `done`; `28-4` becomes next.
 ## Task 6: Final Read-Only Regression and Frontend Smoke (`28-4`)
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_readonly_invariants.py`
-- Review/modify if needed: `/Users/wilycastle/Code/projects/wily-board/frontend/components/phase-list.tsx`
-- Review/modify if needed: `/Users/wilycastle/Code/projects/wily-board/frontend/app/repos/[owner]/[name]/page.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_readonly_invariants.py`
+- Review/modify if needed: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/phase-list.tsx`
+- Review/modify if needed: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/repos/[owner]/[name]/page.tsx`
 
 - [ ] **Step 1: Start Phase 28-4**
 
-Run from `/Users/wilycastle/Code/projects/wily-roadmap`:
+Run from `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`:
 
 ```bash
 python3 plugins/wily-roadmap/scripts/wily.py start s28/28-4
@@ -591,7 +591,7 @@ Expected: all backend tests pass.
 
 - [ ] **Step 4: Run frontend checks**
 
-Run from `/Users/wilycastle/Code/projects/wily-board/frontend`:
+Run from `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend`:
 
 ```bash
 npm run lint
@@ -618,7 +618,7 @@ Expected:
 
 - [ ] **Step 6: Complete Wily Phase 28-4 and Stage 28**
 
-Run from `/Users/wilycastle/Code/projects/wily-roadmap`:
+Run from `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`:
 
 ```bash
 python3 plugins/wily-roadmap/scripts/wily.py complete s28/28-4
@@ -630,7 +630,7 @@ Expected: `28-4` becomes `done`; Stage `s28` shows `4/4 phases`.
 
 ## Final Verification Matrix
 
-Run in `/Users/wilycastle/Code/projects/wily-board`:
+Run in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`:
 
 ```bash
 rg -n "Jinja2Templates|TemplateResponse|toggle_status|pr_writer|PullRequestWriter|GitHubAppPrApi|/actions/phase/status|new_status|Open PR|web/templates|web/static" app tests frontend pyproject.toml
@@ -642,7 +642,7 @@ Expected:
 - `rg` returns no legacy mutation/Jinja references outside this plan-independent documentation, if any docs are intentionally left.
 - `uv run pytest -q` passes.
 
-Run in `/Users/wilycastle/Code/projects/wily-board/frontend`:
+Run in `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend`:
 
 ```bash
 npm run lint
@@ -651,7 +651,7 @@ npm run build
 
 Expected: both pass.
 
-Run in `/Users/wilycastle/Code/projects/wily-roadmap`:
+Run in `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`:
 
 ```bash
 python3 plugins/wily-roadmap/scripts/wily.py watch --once --ui ascii
@@ -665,11 +665,11 @@ Do not commit automatically. After verification, summarize diffs across both rep
 
 Recommended commit grouping after approval:
 
-1. Wily Board code/test cutover commit in `/Users/wilycastle/Code/projects/wily-board`.
-2. Wily Roadmap durable state commit in `/Users/wilycastle/Code/projects/wily-roadmap`.
+1. Wily Board code/test cutover commit in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`.
+2. Wily Roadmap durable state commit in `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`.
 
 ## Self-Review
 
 - Spec coverage: covers template deletion, action/PR mutator deletion, route ownership cutover, backend invariant tests, frontend smoke, and deployment proxy review.
 - Red-flag scan: no deferred implementation slots or unspecified tests remain.
-- Type/path consistency: Phase IDs match Stage 28 (`28-1` through `28-4`); target code paths are under `/Users/wilycastle/Code/projects/wily-board`; Wily state paths are under `/Users/wilycastle/Code/projects/wily-roadmap`.
+- Type/path consistency: Phase IDs match Stage 28 (`28-1` through `28-4`); target code paths are under `/Users/wilycastle/Code/projects/wily-plugin/wily-board`; Wily state paths are under `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`.

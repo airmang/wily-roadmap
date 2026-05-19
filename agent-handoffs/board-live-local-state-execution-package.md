@@ -23,7 +23,7 @@ Work checkpoint-by-checkpoint. After each checkpoint:
 
 Do not broaden scope beyond the execution package. Stop only for hard destructive shell commands, payment/purchase actions, credential or secret exfiltration, production live event emission, production deploy/restart, GitHub push/PR/merge, edits outside the execution package, explicit user-forbidden actions, or if the same verification failure repeats twice without new evidence.
 
-Done only when all acceptance criteria are satisfied and final verification passes: python3 -m unittest plugins.wily-roadmap.tests.test_wily_cli.WilyCliTest; cd /Users/wilycastle/Code/projects/wily-board && uv run pytest tests/test_api_routes.py tests/test_live_events.py tests/test_web_routes.py; cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run lint && npm run build; python3 plugins/wily-roadmap/scripts/wily.py status; python3 plugins/wily-roadmap/scripts/wily.py board check --probe.
+Done only when all acceptance criteria are satisfied and final verification passes: python3 -m unittest plugins.wily-roadmap.tests.test_wily_cli.WilyCliTest; cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest tests/test_api_routes.py tests/test_live_events.py tests/test_web_routes.py; cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run lint && npm run build; python3 plugins/wily-roadmap/scripts/wily.py status; python3 plugins/wily-roadmap/scripts/wily.py board check --probe.
 ```
 
 ## Source Request / Handoff
@@ -77,13 +77,13 @@ Assumptions:
 
 ## File / Ownership Boundaries
 
-Expected touchpoints in `/Users/wilycastle/Code/projects/wily-roadmap`:
+Expected touchpoints in `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`:
 
 - `plugins/wily-roadmap/scripts/wily.py`
 - `plugins/wily-roadmap/tests/test_wily_cli.py`
 - `agent-handoffs/board-live-local-state-*.md`
 
-Expected touchpoints in `/Users/wilycastle/Code/projects/wily-board`:
+Expected touchpoints in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`:
 
 - `app/api/routes.py`
 - `app/db/repo.py`
@@ -232,18 +232,18 @@ User / pre-existing changes:
 
 Pre-existing modified files:
 
-- `/Users/wilycastle/Code/projects/wily-roadmap/.wily/roadmap.yaml`
-- `/Users/wilycastle/Code/projects/wily-roadmap/.wily/status.md`
-- `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.wily/roadmap.yaml`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.wily/status.md`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/events.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_live_events.py`
 
 Pre-existing untracked files:
 
-- `/Users/wilycastle/Code/projects/wily-roadmap/.playwright-mcp/`
-- `/Users/wilycastle/Code/projects/wily-roadmap/.wily/revisions/2026-05-17-132403-replan-26.md`
-- `/Users/wilycastle/Code/projects/wily-roadmap/.wily/stages/s25-wily-board-ui-polish-usability/`
-- `/Users/wilycastle/Code/projects/wily-roadmap/agent-handoffs/p6-bridge-durable-sync-handoff.md`
-- `/Users/wilycastle/Code/projects/wily-board/agent-handoffs/`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.playwright-mcp/`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.wily/revisions/2026-05-17-132403-replan-26.md`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.wily/stages/s25-wily-board-ui-polish-usability/`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/agent-handoffs/p6-bridge-durable-sync-handoff.md`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/agent-handoffs/`
 
 Checkpoint loop:
 
@@ -318,8 +318,8 @@ Dependencies: none.
 ## Verification Plan
 
 - `python3 -m unittest plugins.wily-roadmap.tests.test_wily_cli.WilyCliTest`
-- `cd /Users/wilycastle/Code/projects/wily-board && uv run pytest tests/test_api_routes.py tests/test_live_events.py tests/test_web_routes.py`
-- `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run lint && npm run build`
+- `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest tests/test_api_routes.py tests/test_live_events.py tests/test_web_routes.py`
+- `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run lint && npm run build`
 - `python3 plugins/wily-roadmap/scripts/wily.py status`
 - `python3 plugins/wily-roadmap/scripts/wily.py board check --probe`
 

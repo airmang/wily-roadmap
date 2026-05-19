@@ -4,7 +4,7 @@
 
 **Goal:** Complete Wily Board repo workspace polish by replacing the current zigzag React Flow layout with dependency-aware DAG layout, adding the missing Headline and Attention surfaces, improving mobile behavior, and polishing repo switcher/pin ordering.
 
-**Architecture:** The roadmap marketplace repo owns Stage state, but implementation happens in `/Users/wilycastle/Code/projects/wily-board`. Keep the Board API read-only, consume existing `RepoDetail`, `Stage`, `DeskPayload`, and `RepoGroups` shapes, and confine UI changes to the Next.js frontend. Parallelize only where write scopes do not overlap.
+**Architecture:** The roadmap marketplace repo owns Stage state, but implementation happens in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`. Keep the Board API read-only, consume existing `RepoDetail`, `Stage`, `DeskPayload`, and `RepoGroups` shapes, and confine UI changes to the Next.js frontend. Parallelize only where write scopes do not overlap.
 
 **Tech Stack:** Next.js 15 App Router, React 19, TypeScript, React Flow, Framer Motion, shadcn/ui, Radix Progress, cmdk, lucide-react, Tailwind/CSS tokens, npm.
 
@@ -13,7 +13,7 @@
 ## Current State
 
 - Roadmap stage: `.wily/stages/s30-board-dag-components-mobile/stage.yaml`
-- Implementation repo: `/Users/wilycastle/Code/projects/wily-board`
+- Implementation repo: `/Users/wilycastle/Code/projects/wily-plugin/wily-board`
 - Wily Board worktree is already dirty from earlier stages. Do not revert or clean unrelated changes.
 - Existing `frontend/components/stage-map.tsx` uses `position: { x: index * 250, y: index % 2 === 0 ? 40 : 160 }`.
 - Existing `frontend/components/repo-workspace.tsx` already renders a simple headline and inline Attention list, but Stage 30 wants those as deliberate components and with the specified progress/Alert behavior.
@@ -49,20 +49,20 @@
 ## Task 1: `30-0` Preflight And Dependency Decision
 
 **Files:**
-- Read: `/Users/wilycastle/Code/projects/wily-board/frontend/package.json`
-- Read: `/Users/wilycastle/Code/projects/wily-board/frontend/package-lock.json`
-- Read: `/Users/wilycastle/Code/projects/wily-board/frontend/components/stage-map.tsx`
-- Read: `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-workspace.tsx`
-- Read: `/Users/wilycastle/Code/projects/wily-board/frontend/components/local-desk.tsx`
-- Read: `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-switcher.tsx`
-- Read: `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-list.tsx`
-- Read: `/Users/wilycastle/Code/projects/wily-board/frontend/components/ui/progress.tsx`
+- Read: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/package.json`
+- Read: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/package-lock.json`
+- Read: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/stage-map.tsx`
+- Read: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-workspace.tsx`
+- Read: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/local-desk.tsx`
+- Read: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-switcher.tsx`
+- Read: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-list.tsx`
+- Read: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/ui/progress.tsx`
 
 - [ ] **Step 1: Confirm dirty baseline**
 
 Run:
 ```bash
-git -C /Users/wilycastle/Code/projects/wily-board status --short
+git -C /Users/wilycastle/Code/projects/wily-plugin/wily-board status --short
 ```
 
 Expected: existing dirty Stage 28/29 files may be present. Record the output in the phase notes; do not revert anything.
@@ -71,7 +71,7 @@ Expected: existing dirty Stage 28/29 files may be present. Record the output in 
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm ls @xyflow/react framer-motion cmdk @radix-ui/react-dialog @radix-ui/react-tooltip @radix-ui/react-progress @dagrejs/dagre --depth=0
 ```
 
@@ -79,7 +79,7 @@ Expected: React Flow/shadcn/cmdk, `@radix-ui/react-progress`, and `@dagrejs/dagr
 
 Confirm Tremor remains absent unless its React 19 peer dependency support changes:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 node -e "const p=require('./package.json'); console.log(p.dependencies['@tremor/react'] || 'absent')"
 ```
 
@@ -87,7 +87,7 @@ Expected: `absent`.
 
 If `@dagrejs/dagre` or `@radix-ui/react-progress` is missing, install it before worker dispatch:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm install @dagrejs/dagre @radix-ui/react-progress
 ```
 
@@ -95,7 +95,7 @@ npm install @dagrejs/dagre @radix-ui/react-progress
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run lint
 npm run build
 ```
@@ -107,8 +107,8 @@ Expected: record pass/fail. If failures are unrelated to Stage 30, capture them 
 ## Task 2: `30-1` React Flow Dagre Layout
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/stage-map.tsx`
-- Modify only if needed: `/Users/wilycastle/Code/projects/wily-board/frontend/app/globals.css`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/stage-map.tsx`
+- Modify only if needed: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/globals.css`
 
 - [ ] **Step 1: Preserve Done prefix behavior**
 
@@ -138,7 +138,7 @@ Do not remove `motion.div`, `Badge`, status CSS classes, `MiniMap`, `Controls`, 
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run lint
 npm run build
 ```
@@ -150,11 +150,11 @@ Expected: pass or only known unrelated baseline failures.
 ## Task 3: `30-2` Headline And `30-3` Attention Components
 
 **Files:**
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-headline.tsx`
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-attention.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-workspace.tsx`
-- Use: `/Users/wilycastle/Code/projects/wily-board/frontend/components/ui/progress.tsx`
-- Modify only if needed: `/Users/wilycastle/Code/projects/wily-board/frontend/app/globals.css`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-headline.tsx`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-attention.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-workspace.tsx`
+- Use: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/ui/progress.tsx`
+- Modify only if needed: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/globals.css`
 
 - [ ] **Step 1: Extract Headline**
 
@@ -205,7 +205,7 @@ In `repo-workspace.tsx`, replace the inline headline block with `<RepoHeadline r
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run lint
 npm run build
 ```
@@ -217,10 +217,10 @@ Expected: pass or only known unrelated baseline failures.
 ## Task 4: `30-5` Repo Switcher And Pin Polish
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/lib/storage.ts`
-- Create optional: `/Users/wilycastle/Code/projects/wily-board/frontend/lib/repo-ordering.ts`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-switcher.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-list.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/lib/storage.ts`
+- Create optional: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/lib/repo-ordering.ts`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-switcher.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-list.tsx`
 
 - [ ] **Step 1: Add recent repo storage helpers**
 
@@ -274,7 +274,7 @@ Update `RepoGroup` to use the shared ordering helper with pins and no recent ove
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run lint
 npm run build
 ```
@@ -286,9 +286,9 @@ Expected: pass or only known unrelated baseline failures.
 ## Task 5: `30-4` Mobile Fallback
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/stage-map.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/local-desk.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/app/globals.css`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/stage-map.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/local-desk.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/globals.css`
 
 - [ ] **Step 1: Add vertical mobile stage list**
 
@@ -320,7 +320,7 @@ In `globals.css`, keep `.react-flow-shell { display: none; }` under `max-width: 
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run lint
 npm run build
 ```
@@ -332,17 +332,17 @@ Expected: pass or only known unrelated baseline failures.
 ## Task 6: Final Integration And Visual Verification
 
 **Files:**
-- Read/verify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/stage-map.tsx`
-- Read/verify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-workspace.tsx`
-- Read/verify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/local-desk.tsx`
-- Read/verify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-switcher.tsx`
-- Read/verify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-list.tsx`
+- Read/verify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/stage-map.tsx`
+- Read/verify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-workspace.tsx`
+- Read/verify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/local-desk.tsx`
+- Read/verify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-switcher.tsx`
+- Read/verify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-list.tsx`
 
 - [ ] **Step 1: Run full frontend checks**
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run lint
 npm run build
 ```
@@ -353,7 +353,7 @@ Expected: pass.
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run pytest
 ```
 

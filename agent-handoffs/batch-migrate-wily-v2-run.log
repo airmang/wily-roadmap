@@ -1,5 +1,5 @@
 Batch migration run started: 2026-05-18 09:08:23 KST
-Wily binary: /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily
+Wily binary: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily
 
 
 ===== CANDIDATE: /Users/wilycastle/Code/projects/DIVE-2 =====
@@ -27,7 +27,7 @@ exit=0
 ?? dive/scripts/verify-audit-fixes.mjs
 ?? dive/src/components/product/PlanDraftRecoveryScreen.tsx
 Pre-schema: legacy-or-unspecified
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
 exit=0
 Migration mode: dry-run
 Target schema: wily-roadmap-v2
@@ -38,7 +38,7 @@ Would change: .wily/stages/s01-completed-foundation-baseline/stage.yaml
 Would change: .wily/stages/s02-phase10-hardening-complete/stage.yaml
 Would change: .wily/stages/s03-connected-provider-mac-e2e-qa/stage.yaml
 Would change: .wily/stages/s04-external-release-blockers/stage.yaml
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
 exit=0
 Migration mode: apply
 Target schema: wily-roadmap-v2
@@ -46,7 +46,7 @@ Backup: .wily/backups/20260518000825-wily-roadmap-v2
 Report: .wily/migrations/20260518000825-wily-roadmap-v2.md
 Report: .wily/migrations/20260518000825-wily-roadmap-v2.json
 Migration applied.
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily status
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily status
 exit=0
  Wily Roadmap - vunknown                                                   ~ 2s
 [####################------] 3/4 - 75%
@@ -65,7 +65,7 @@ exit=0
    \- x p01  외부 릴리스 블로커 - Win…GitHub Release, 서명 결정   @release-owner
  -------------------------------------------------------------------------------
  git: 28 changed - DIVE-2 - ^C to stop
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily next
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily next
 exit=0
 Active stage: S04 - 외부 릴리스 블로커 - Windows 스모크, GitHub Release, 서명 결정
 Active phase: p01 - 외부 릴리스 블로커 - Windows 스모크, GitHub Release, 서명 결정
@@ -79,7 +79,7 @@ $ git status --short
 exit=0
 ?? wily
 Pre-schema: legacy-or-unspecified
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
 exit=0
 Migration mode: dry-run
 Target schema: wily-roadmap-v2
@@ -99,7 +99,7 @@ Would change: .wily/stages/p09-right-cycle-mythic-lock/stage.yaml
 Would change: .wily/stages/p10-wily-mythic-preserve/stage.yaml
 Would change: .wily/stages/p11-shared-asset-swap/stage.yaml
 Would change: .wily/stages/p12-shared-launch/stage.yaml
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
 exit=0
 Migration mode: apply
 Target schema: wily-roadmap-v2
@@ -107,7 +107,7 @@ Backup: .wily/backups/20260518000825-wily-roadmap-v2
 Report: .wily/migrations/20260518000825-wily-roadmap-v2.md
 Report: .wily/migrations/20260518000825-wily-roadmap-v2.json
 Migration applied.
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily status
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily status
 exit=0
  Wily Roadmap - vunknown                                                   ~ 2s
 [########------------------] 4/13 - 31%
@@ -126,7 +126,7 @@ exit=0
  Stage p12-shared-launch -------------------------------------------------------
  -------------------------------------------------------------------------------
  git: 17 changed - Digit - ^C to stop
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily next
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily next
 exit=0
 Next stage: p04-right-layers-elevator - MVP 1 Right Stage: 층 구조 + 엘리베이터 / MaxDepth
 Depends on: p02-right-terrain
@@ -347,7 +347,7 @@ exit=128
 fatal: not a git repository (or any of the parent directories): .git
 RESULT: skipped (git status failed; skipped because candidate is not usable as a git repository for the required procedure)
 
-===== CANDIDATE: /Users/wilycastle/Code/projects/wily-roadmap =====
+===== CANDIDATE: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap =====
 $ git status --short
 exit=0
  M .wily/roadmap.yaml
@@ -404,7 +404,7 @@ exit=0
 ?? plugins/wily-roadmap/skills/wily-workflow/references/stage-phase-v2-contract.md
 ?? plugins/wily-roadmap/tests/fixtures/
 Pre-schema: legacy-or-unspecified
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
 exit=0
 Migration mode: dry-run
 Target schema: wily-roadmap-v2
@@ -438,7 +438,7 @@ Would change: .wily/stages/s24-s21-realtime-board-bridge-e2e/stage.yaml
 Would change: .wily/stages/s25-wily-board-ui-polish-usability/stage.yaml
 Would change: .wily/stages/s26-wily-roadmap-plugin-improvement-cleanup/stage.yaml
 Would change: .wily/stages/s27-wily-roadmap-large-refactor/stage.yaml
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
 exit=0
 Migration mode: apply
 Target schema: wily-roadmap-v2
@@ -446,7 +446,7 @@ Backup: .wily/backups/20260518000825-wily-roadmap-v2
 Report: .wily/migrations/20260518000825-wily-roadmap-v2.md
 Report: .wily/migrations/20260518000825-wily-roadmap-v2.json
 Migration applied.
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily status
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily status
 exit=0
  Wily Roadmap - vunknown                                                   ~ 2s
 [########################--] 25/27 - 93%
@@ -465,7 +465,7 @@ exit=0
  - s26  Wily Roadmap plugin 개선 및 정리   needs s25   @codex   task 플러그인 c…
  -------------------------------------------------------------------------------
  git: 77 changed - wily-roadmap - ^C to stop
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily next
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily next
 exit=0
 Next phase: none
 $ git diff --check
@@ -473,7 +473,7 @@ exit=0
 
 RESULT: migrated
 
-===== CANDIDATE: /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2 =====
+===== CANDIDATE: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2 =====
 $ git status --short
 exit=0
  M ../../../../../../.wily/roadmap.yaml
@@ -554,7 +554,7 @@ exit=0
 ?? ../../../../skills/wily-workflow/references/stage-phase-v2-contract.md
 ?? ../../
 Pre-schema: wily-roadmap-v2
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
 exit=0
 Migration mode: dry-run
 Target schema: wily-roadmap-v2
@@ -563,9 +563,9 @@ Would write reports: .wily/migrations/20260518000826-wily-roadmap-v2.md, .wily/m
 Would change: .wily/roadmap.yaml
 Would change: .wily/stages/s01-foundation/stage.yaml
 Would change: .wily/stages/s02-refactor/stage.yaml
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
 not run: dry-run succeeded; apply skipped because roadmap_schema already equals wily-roadmap-v2 before this run
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily status
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily status
 exit=0
  Wily Roadmap - vunknown                                                   ~ 2s
 [#############-------------] 1/2 - 50%
@@ -578,13 +578,13 @@ exit=0
    \- o p01  Refactor   needs s01/p01   @codex
  -------------------------------------------------------------------------------
  git: - - already-v2 - ^C to stop
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily next
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily next
 exit=0
 Next stage: s02 - Refactor
 Depends on: s01
-Stage path: /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2/.wily/stages/s02-refactor
+Stage path: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2/.wily/stages/s02-refactor
 Next phase: s02/p01 - Refactor
-Phase path: /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2/.wily/stages/s02-refactor/phases/p01-refactor
+Phase path: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2/.wily/stages/s02-refactor/phases/p01-refactor
 
 # Wily Stage Context
 
@@ -615,7 +615,7 @@ exit=0
 
 RESULT: already v2
 
-===== CANDIDATE: /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy =====
+===== CANDIDATE: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy =====
 $ git status --short
 exit=0
  M ../../../../../../.wily/roadmap.yaml
@@ -696,7 +696,7 @@ exit=0
 ?? ../../../../skills/wily-workflow/references/stage-phase-v2-contract.md
 ?? ../../
 Pre-schema: legacy-or-unspecified
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
 exit=0
 Migration mode: dry-run
 Target schema: wily-roadmap-v2
@@ -707,7 +707,7 @@ Would write reports: .wily/migrations/20260518000826-wily-roadmap-v2.md, .wily/m
 Would change: .wily/roadmap.yaml
 Would change: .wily/stages/s01-foundation/stage.yaml
 Would change: .wily/stages/s02-refactor/stage.yaml
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
 exit=0
 Migration mode: apply
 Target schema: wily-roadmap-v2
@@ -717,7 +717,7 @@ Backup: .wily/backups/20260518000826-wily-roadmap-v2
 Report: .wily/migrations/20260518000826-wily-roadmap-v2.md
 Report: .wily/migrations/20260518000826-wily-roadmap-v2.json
 Migration applied.
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily status
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily status
 exit=0
  Wily Roadmap - vunknown                                                   ~ 2s
 [#############-------------] 1/2 - 50%
@@ -730,13 +730,13 @@ exit=0
    \- o p01  Legacy refactor   needs s01/p01   @codex
  -------------------------------------------------------------------------------
  git: - - mixed-legacy - ^C to stop
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily next
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily next
 exit=0
 Next stage: s02 - Refactor
 Depends on: s01
-Stage path: /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy/.wily/stages/s02-refactor
+Stage path: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy/.wily/stages/s02-refactor
 Next phase: s02/p01 - Legacy refactor
-Phase path: /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy/.wily/stages/s02-refactor/phases/p01-legacy-refactor
+Phase path: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy/.wily/stages/s02-refactor/phases/p01-legacy-refactor
 
 # Wily Stage Context
 
@@ -767,7 +767,7 @@ exit=0
 
 RESULT: migrated
 
-===== CANDIDATE: /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only =====
+===== CANDIDATE: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only =====
 $ git status --short
 exit=0
  M ../../../../../../.wily/roadmap.yaml
@@ -848,7 +848,7 @@ exit=0
 ?? ../../../../skills/wily-workflow/references/stage-phase-v2-contract.md
 ?? ../../
 Pre-schema: legacy-or-unspecified
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
 exit=0
 Migration mode: dry-run
 Target schema: wily-roadmap-v2
@@ -859,7 +859,7 @@ Would write reports: .wily/migrations/20260518000827-wily-roadmap-v2.md, .wily/m
 Would change: .wily/roadmap.yaml
 Would change: .wily/stages/s01-audit/stage.yaml
 Would change: .wily/stages/s02-build/stage.yaml
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
 exit=0
 Migration mode: apply
 Target schema: wily-roadmap-v2
@@ -869,7 +869,7 @@ Backup: .wily/backups/20260518000827-wily-roadmap-v2
 Report: .wily/migrations/20260518000827-wily-roadmap-v2.md
 Report: .wily/migrations/20260518000827-wily-roadmap-v2.json
 Migration applied.
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily status
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily status
 exit=0
  Wily Roadmap - vunknown                                                   ~ 2s
 [#############-------------] 1/2 - 50%
@@ -882,13 +882,13 @@ exit=0
    \- o p01  Build   needs s01/p01   @codex
  -------------------------------------------------------------------------------
  git: - - v1-only - ^C to stop
-$ /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily next
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily next
 exit=0
 Next stage: s02 - Build
 Depends on: s01
-Stage path: /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only/.wily/stages/s02-build
+Stage path: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only/.wily/stages/s02-build
 Next phase: s02/p01 - Build
-Phase path: /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only/.wily/stages/s02-build/phases/p01-build
+Phase path: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only/.wily/stages/s02-build/phases/p01-build
 
 # Wily Stage Context
 

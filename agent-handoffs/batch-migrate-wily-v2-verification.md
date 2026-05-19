@@ -28,10 +28,10 @@ Recorded migration results:
 | `/Users/wilycastle/Code/projects/DIVE-2` | migrated | dry-run/apply/status/next/diff-check all exit 0 |
 | `/Users/wilycastle/Code/projects/Digit` | migrated | dry-run/apply/status/next/diff-check all exit 0 |
 | `/Users/wilycastle/Code/projects/hwpx` | skipped | `git status --short` exit 128: not a git repository |
-| `/Users/wilycastle/Code/projects/wily-roadmap` | migrated | dry-run/apply/status/next/diff-check all exit 0 |
-| `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2` | already v2 | dry-run/status/next/diff-check exit 0; apply skipped because schema was already v2 |
-| `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy` | migrated | dry-run/apply/status/next/diff-check all exit 0 |
-| `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only` | migrated | dry-run/apply/status/next/diff-check all exit 0 |
+| `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap` | migrated | dry-run/apply/status/next/diff-check all exit 0 |
+| `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2` | already v2 | dry-run/status/next/diff-check exit 0; apply skipped because schema was already v2 |
+| `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy` | migrated | dry-run/apply/status/next/diff-check all exit 0 |
+| `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only` | migrated | dry-run/apply/status/next/diff-check all exit 0 |
 
 Corrected candidate set:
 
@@ -40,13 +40,13 @@ Corrected candidate set:
 | `/Users/wilycastle/Code/projects/DIVE-2` | migrated | original dry-run/apply/status/next/diff-check all exit 0 |
 | `/Users/wilycastle/Code/projects/Digit` | migrated | original dry-run/apply/status/next/diff-check all exit 0 |
 | `/Users/wilycastle/Code/projects/hwpx` | skipped | original `git status --short` exit 128; not usable as a git repository for required procedure |
-| `/Users/wilycastle/Code/projects/wily-roadmap` | migrated | original dry-run/apply/status/next/diff-check all exit 0 |
+| `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap` | migrated | original dry-run/apply/status/next/diff-check all exit 0 |
 
 Invalidated fixture candidates:
 
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2`
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy`
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only`
 
 Corrected discovery command evidence:
 
@@ -57,7 +57,7 @@ Fresh final checks:
 
 - `git diff --check` in `/Users/wilycastle/Code/projects/DIVE-2`: exit 0.
 - `git diff --check` in `/Users/wilycastle/Code/projects/Digit`: exit 0.
-- `git diff --check` in `/Users/wilycastle/Code/projects/wily-roadmap`: exit 0.
+- `git diff --check` in `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`: exit 0.
 - Fixture integrity check: Roadmap full unittest suite passed after fixture restoration, including migration CLI coverage.
 - Schema check: all migrated/already-v2 candidates declare `roadmap_schema: wily-roadmap-v2`.
 - Run log check: no `--prune-legacy` invocation found.

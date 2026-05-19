@@ -49,7 +49,7 @@
 - Integration reviewer identified empty decomposition and out-of-order draft delivery risks. Added CLI rejection for empty decomposition JSON and Board `client_time` ordering so older drafts cannot supersede newer topology.
 - Re-ran final verification:
   - `python3 -m unittest plugins.wily-roadmap.tests.test_wily_cli.WilyCliTest`
-  - `cd /Users/wilycastle/Code/projects/wily-board && uv run pytest`
+  - `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest`
   - `python3 plugins/wily-roadmap/scripts/wily.py status`
   - `python3 plugins/wily-roadmap/scripts/wily.py next`
   - `rg -n "id: \"s23\"|status: \"done\"|depends_on: \\[\"s23\"\\]" .wily/roadmap.yaml .wily/stages/s23-wily-board-live-draft-topology-overlay/stage.yaml`

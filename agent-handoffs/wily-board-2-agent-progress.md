@@ -12,7 +12,7 @@ Commands run:
 - `find docs/superpowers/plans -maxdepth 1 -type f`
 - `find /Users/wilycastle/Code/projects -path '*docs/superpowers/plans*' -type f`
 - `sed -n ... 2026-05-19-wily-board-2-agent.md`
-- `uv run pytest -q` in `/Users/wilycastle/Code/projects/wily-board`
+- `uv run pytest -q` in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`
 
 Result:
 - Correct Plan 2 file found under `.claude/worktrees/wily-board-plans-2-3`.
@@ -23,7 +23,7 @@ Next:
 
 ## 2026-05-18T23:30:22Z - Implementation and final verification
 
-Files changed in `/Users/wilycastle/Code/projects/wily-board`:
+Files changed in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`:
 - `agent/**`
 - `README.md`
 - `app/api/agent.py`

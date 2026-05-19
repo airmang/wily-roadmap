@@ -11,7 +11,7 @@ uv run pytest
 Working directory:
 
 ```text
-/Users/wilycastle/Code/projects/wily-board
+/Users/wilycastle/Code/projects/wily-plugin/wily-board
 ```
 
 Result:
@@ -34,7 +34,7 @@ python3 /Users/wilycastle/.codex/plugins/cache/custom-workflow-skillset/custom-w
 Working directory:
 
 ```text
-/Users/wilycastle/Code/projects/wily-roadmap
+/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap
 ```
 
 First result:
@@ -65,7 +65,7 @@ uv run pytest tests/test_api_routes.py -q
 Working directory:
 
 ```text
-/Users/wilycastle/Code/projects/wily-board
+/Users/wilycastle/Code/projects/wily-plugin/wily-board
 ```
 
 First RED result:
@@ -94,7 +94,7 @@ uv run pytest
 Working directory:
 
 ```text
-/Users/wilycastle/Code/projects/wily-board
+/Users/wilycastle/Code/projects/wily-plugin/wily-board
 ```
 
 Result:
@@ -116,7 +116,7 @@ python3 -m unittest discover plugins/wily-roadmap/tests
 Working directory:
 
 ```text
-/Users/wilycastle/Code/projects/wily-roadmap
+/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap
 ```
 
 Result:
@@ -147,7 +147,7 @@ uv run pytest
 Working directory:
 
 ```text
-/Users/wilycastle/Code/projects/wily-board
+/Users/wilycastle/Code/projects/wily-plugin/wily-board
 ```
 
 Result:
@@ -167,7 +167,7 @@ npm run lint
 Working directory:
 
 ```text
-/Users/wilycastle/Code/projects/wily-board/frontend
+/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 ```
 
 Result: pass.
@@ -183,7 +183,7 @@ npm run build
 Working directory:
 
 ```text
-/Users/wilycastle/Code/projects/wily-board/frontend
+/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 ```
 
 Result:

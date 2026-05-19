@@ -7,7 +7,7 @@
 
 Maintain agent-handoffs/batch-migrate-wily-v2-progress.md and keep agent-handoffs/batch-migrate-wily-v2-status.md updated as the live status board.
 
-Use /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily for all Wily commands.
+Use /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily for all Wily commands.
 
 Do not run --prune-legacy. Do not push, deploy, create PRs, mutate GitHub, touch production services, reset, checkout, clean, or delete user changes.
 

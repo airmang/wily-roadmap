@@ -23,20 +23,20 @@ Work checkpoint-by-checkpoint. After each checkpoint:
 
 Do not broaden scope beyond the execution package. Stop only for hard destructive shell commands, payment/purchase actions, credential or secret exfiltration, edits outside the execution package, explicit user-forbidden actions, or if the same verification failure repeats twice without new evidence.
 
-Done only when all acceptance criteria are satisfied and final verification passes: cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run lint && npm run build; cd /Users/wilycastle/Code/projects/wily-board && uv run pytest when backend assumptions require it; browser smoke for desktop and 375px mobile.
+Done only when all acceptance criteria are satisfied and final verification passes: cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run lint && npm run build; cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest when backend assumptions require it; browser smoke for desktop and 375px mobile.
 ```
 
 ## Source Request / Handoff
 
 - User requested autonomous execution of Stage 30 from `docs/superpowers/plans/2026-05-18-stage-30-board-dag-components-mobile.md`.
 - Roadmap stage source: `.wily/stages/s30-board-dag-components-mobile/stage.yaml`.
-- Implementation repo: `/Users/wilycastle/Code/projects/wily-board`.
+- Implementation repo: `/Users/wilycastle/Code/projects/wily-plugin/wily-board`.
 
 ## Inline Requirements
 
 Outcome: complete Stage 30 board workspace polish in the Wily Board frontend: dependency-aware DAG layout, extracted Headline and Attention components, mobile stage-list fallback plus local desk bottom sheet, and repo switcher/list ordering polish.
 
-In scope: frontend-only changes under `/Users/wilycastle/Code/projects/wily-board/frontend` plus handoff evidence in this repository.
+In scope: frontend-only changes under `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend` plus handoff evidence in this repository.
 
 Non-goals: backend API mutations, Tremor dependency, changes to marketplace metadata, reverting unrelated dirty work, hooks/MCP/apps.
 
@@ -54,7 +54,7 @@ Assumptions: existing `RepoDetail`, `Stage`, `DeskPayload`, and `RepoGroups` sha
 
 ## File / Ownership Boundaries
 
-- Expected touchpoints in `/Users/wilycastle/Code/projects/wily-board/frontend`:
+- Expected touchpoints in `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend`:
   - `components/stage-map.tsx`
   - `components/repo-workspace.tsx`
   - `components/repo-headline.tsx`
@@ -68,7 +68,7 @@ Assumptions: existing `RepoDetail`, `Stage`, `DeskPayload`, and `RepoGroups` sha
 - Handoff touchpoints in this repo:
   - `agent-handoffs/stage-30-board-dag-components-mobile-*.md`
 - Must not edit: backend API behavior, generated `frontend/lib/api-types.ts`, marketplace `.agents/plugins/marketplace.json`, plugin manifest, unrelated dirty files.
-- User-owned or pre-existing changes to preserve: all pre-existing dirty files in `/Users/wilycastle/Code/projects/wily-board` and `/Users/wilycastle/Code/projects/wily-roadmap` unless listed above.
+- User-owned or pre-existing changes to preserve: all pre-existing dirty files in `/Users/wilycastle/Code/projects/wily-plugin/wily-board` and `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap` unless listed above.
 
 ## Execution Plan
 
@@ -127,12 +127,12 @@ Verification evidence:
 - `agent-handoffs/stage-30-board-dag-components-mobile-verification.md`
 
 Baseline:
-- Current git status: dirty in both `/Users/wilycastle/Code/projects/wily-roadmap` and `/Users/wilycastle/Code/projects/wily-board`; preserve unrelated changes.
+- Current git status: dirty in both `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap` and `/Users/wilycastle/Code/projects/wily-plugin/wily-board`; preserve unrelated changes.
 - Initial passing verification:
-  - `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm ls @xyflow/react framer-motion cmdk @radix-ui/react-dialog @radix-ui/react-tooltip @radix-ui/react-progress @dagrejs/dagre --depth=0`
-  - `cd /Users/wilycastle/Code/projects/wily-board/frontend && node -e "const p=require('./package.json'); console.log(p.dependencies['@tremor/react'] || 'absent')"`
-  - `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run lint`
-  - `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run build`
+  - `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm ls @xyflow/react framer-motion cmdk @radix-ui/react-dialog @radix-ui/react-tooltip @radix-ui/react-progress @dagrejs/dagre --depth=0`
+  - `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && node -e "const p=require('./package.json'); console.log(p.dependencies['@tremor/react'] || 'absent')"`
+  - `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run lint`
+  - `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run build`
 - Known broken tests unrelated to this task: none found in frontend baseline.
 
 User / pre-existing changes:
@@ -187,7 +187,7 @@ Agent: worker
 Mode: implementation_disjoint
 Timebox: 30 minutes
 Allowed files:
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/stage-map.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/stage-map.tsx`
 Must not edit:
 - `repo-workspace.tsx`, `local-desk.tsx`, `repo-switcher.tsx`, `repo-list.tsx`, `storage.ts`, CSS unless explicitly coordinated.
 Task: replace zigzag positioning with dagre LR layout, preserve Done prefix behavior and React Flow affordances.
@@ -200,9 +200,9 @@ Agent: worker
 Mode: implementation_disjoint
 Timebox: 30 minutes
 Allowed files:
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-headline.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-attention.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-workspace.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-headline.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-attention.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-workspace.tsx`
 Must not edit:
 - `stage-map.tsx`, `local-desk.tsx`, switcher/list/storage files, CSS unless explicitly coordinated.
 Task: extract Headline and Attention components, use local Progress, integrate render-only attention alerts.
@@ -215,10 +215,10 @@ Agent: worker
 Mode: implementation_disjoint
 Timebox: 30 minutes
 Allowed files:
-- `/Users/wilycastle/Code/projects/wily-board/frontend/lib/storage.ts`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/lib/repo-ordering.ts`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-switcher.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-list.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/lib/storage.ts`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/lib/repo-ordering.ts`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-switcher.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-list.tsx`
 Must not edit:
 - `stage-map.tsx`, `repo-workspace.tsx`, `local-desk.tsx`, CSS unless explicitly coordinated.
 Task: add recent repo storage, deterministic ordering helper, grouped command palette, pin star display, and Hub list ordering reuse.
@@ -231,9 +231,9 @@ Agent: root
 Mode: sequential_required
 Timebox: 30 minutes
 Allowed files:
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/stage-map.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/local-desk.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/app/globals.css`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/stage-map.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/local-desk.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/globals.css`
 Must not edit:
 - Lane B/C files unless integration requires it.
 Task: render mobile stage list from final visible stage sequence, ensure React Flow hidden below 600px, hide rail, expose mobile local desk bottom sheet.
@@ -248,9 +248,9 @@ Dependencies: Lane A; first-wave integration.
 
 ## Verification Plan
 
-- `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run lint`
-- `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run build`
-- `cd /Users/wilycastle/Code/projects/wily-board && uv run pytest` only if API/backend assumptions change.
+- `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run lint`
+- `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run build`
+- `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest` only if API/backend assumptions change.
 - Browser smoke with local frontend/backend: desktop repo workspace and 375px mobile.
 
 ## Rollback / Stop Conditions

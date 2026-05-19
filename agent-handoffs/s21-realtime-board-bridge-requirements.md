@@ -156,19 +156,19 @@ Local end-to-end must pass before any production smoke. Production smoke may be 
 
 ## Likely Touchpoints
 
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/scripts/wily_watch_ui.py`
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/test_wily_watch_ui.py`
-- `/Users/wilycastle/Code/projects/wily-roadmap/.wily/stages/s21-wily-board-ui-redesign/*`
-- `/Users/wilycastle/Code/projects/wily-roadmap/agent-handoffs/*-status.md`
-- `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/db/schema.sql`
-- `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/api/routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/web/templates/*`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/*`
-- `/Users/wilycastle/Code/projects/wily-board/tests/*`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/scripts/wily_watch_ui.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/test_wily_watch_ui.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.wily/stages/s21-wily-board-ui-redesign/*`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/agent-handoffs/*-status.md`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/events.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/schema.sql`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/*`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/*`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/*`
 
 ## Verification Ideas
 

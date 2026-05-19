@@ -170,7 +170,7 @@ In `wily-roadmap`:
 
 In `wily-board`, if operations docs are updated there:
 
-- `/Users/wilycastle/Code/projects/wily-board/docs/OPERATIONS.md`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/OPERATIONS.md`
 
 ## Verification Ideas
 

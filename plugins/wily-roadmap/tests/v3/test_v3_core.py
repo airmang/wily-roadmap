@@ -15,6 +15,7 @@ SCRIPT = ROOT / "scripts" / "wily.py"
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from wily.cli import agent as agent_cmd  # noqa: E402
+from wily.agent import client as agent_client  # noqa: E402
 from wily.cli import block as block_cmd, cp as cp_cmd, doctor as doctor_cmd, done as done_cmd, go as go_cmd, land as land_cmd, next as next_cmd, replan as replan_cmd, watch as watch_cmd  # noqa: E402
 from wily.agent.config import AgentConfig  # noqa: E402
 from wily.agent.daemon import run_once as agent_run_once  # noqa: E402
@@ -105,6 +106,32 @@ class CoreModelTest(unittest.TestCase):
 
             self.assertEqual(len(result), 1)
             self.assertEqual(result[0]["reason"], "not configured")
+
+    def test_agent_client_reports_failed_snapshot_and_heartbeat_as_not_sent(self) -> None:
+        calls: list[tuple[str, dict[str, object]]] = []
+
+        def fake_post_json(url: str, payload: dict[str, object], **_kwargs: object) -> dict[str, object]:
+            calls.append((url, payload))
+            return {"sent": False, "reason": "boom"}
+
+        original = agent_client.post_json
+        agent_client.post_json = fake_post_json
+        try:
+            config = AgentConfig(board_url="https://board.example", token="token", actor="wily")
+
+            snapshot = agent_client.publish_snapshot(config, {"repo": "R-W-LAB/demo"})
+            heartbeat = agent_client.publish_heartbeat(
+                config,
+                project_id="project-1",
+                current_task_id="T01",
+            )
+        finally:
+            agent_client.post_json = original
+
+        self.assertEqual(snapshot, {"sent": False, "reason": "boom"})
+        self.assertEqual(heartbeat, {"sent": False, "reason": "boom"})
+        self.assertEqual(calls[0][0], "https://board.example/agent/snapshot")
+        self.assertEqual(calls[1][0], "https://board.example/agent/heartbeat")
 
     def test_agent_builds_board_v3_snapshot_payload_from_local_wily_state(self) -> None:
         from wily.agent.snapshot import build_snapshot_payload, snapshot_sha
@@ -983,6 +1010,11 @@ class CliLifecycleTest(unittest.TestCase):
                 cwd=root,
                 capture_output=True,
                 text=True,
+                env={
+                    **os.environ,
+                    "WILY_AGENT_CONFIG": str(root / ".config" / "wily" / "agent" / "config.json"),
+                    "WILY_AGENT_REGISTRY": str(root / ".config" / "wily" / "agent" / "registry.json"),
+                },
             )
 
             self.assertEqual(result.returncode, 0, result.stderr)

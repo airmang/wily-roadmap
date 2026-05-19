@@ -82,10 +82,10 @@ Checkpoint evidence must be appended by the `/goal` runner after each checkpoint
     - `./plugins/wily-roadmap/wily watch --once --ui ascii`
     - `./plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run`
     - Disposable `mixed-legacy` fixture `migrate-state --apply`, `wily status`, `wily next`, and `wily run s02/p01 --dry-run`
-    - `cd /Users/wilycastle/Code/projects/wily-board && uv run pytest`
-    - `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run lint`
-    - `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run build`
-    - `cd /Users/wilycastle/Code/projects/wily-board && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run`
+    - `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest`
+    - `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run lint`
+    - `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run build`
+    - `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run`
     - Local browser smoke against `127.0.0.1:3000` using dev API seed on `127.0.0.1:8765`
     - `git diff --check` in Wily Roadmap and Wily Board
     - `wily complete s27`
@@ -98,7 +98,7 @@ Checkpoint evidence must be appended by the `/goal` runner after each checkpoint
 
 ### Remediation Corrections
 
-- Board canonical Phase detail route was missing from the original CP11 completion evidence and has now been implemented in `/Users/wilycastle/Code/projects/wily-board/frontend/app/repos/[owner]/[name]/stages/[stage_id]/phases/[phase_id]/page.tsx`; see `agent-handoffs/s27-remediation-verification.md`.
+- Board canonical Phase detail route was missing from the original CP11 completion evidence and has now been implemented in `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/repos/[owner]/[name]/stages/[stage_id]/phases/[phase_id]/page.tsx`; see `agent-handoffs/s27-remediation-verification.md`.
 - Superseded s25/s26 progress semantics were incomplete in the original final state and now report `27/27 - 100%`; see `agent-handoffs/s27-remediation-verification.md`.
 - Command/skill/runner usage surfaces that still used primary `<phase-id>` forms were corrected to primary `<stage-id>/<phase-id>` forms; see `agent-handoffs/s27-remediation-verification.md`.
 - Batch migration evidence originally included nested `plugins/wily-roadmap/tests/fixtures/**` paths as local repos. Corrected discovery excludes fixture/test-data paths and records four non-fixture candidates in `agent-handoffs/batch-migrate-wily-v2-corrected-candidates.tsv`.
@@ -148,20 +148,20 @@ Disposable fixture migration apply:
 ```bash
 tmp="$(mktemp -d)"
 cp -R plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy "$tmp/project"
-(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply)
-(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily status)
-(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily next)
-(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily run s02/p01 --dry-run)
+(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply)
+(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily status)
+(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily next)
+(cd "$tmp/project" && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily run s02/p01 --dry-run)
 ```
 
 Wily Board:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run pytest
 cd frontend && npm run lint && npm run build
-cd /Users/wilycastle/Code/projects/wily-board
-/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
+/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
 ```
 
 Manual smoke:

@@ -42,14 +42,14 @@ Auto-resolved under active /goal: Superpowers approval/review/continue gates -> 
 
 - Checkpoint: server foundation/API implementation
 - Files changed:
-  - `/Users/wilycastle/Code/projects/wily-board/.gitignore`
-  - `/Users/wilycastle/Code/projects/wily-board/README.md`
-  - `/Users/wilycastle/Code/projects/wily-board/pyproject.toml`
-  - `/Users/wilycastle/Code/projects/wily-board/uv.lock`
-  - `/Users/wilycastle/Code/projects/wily-board/app/**`
-  - `/Users/wilycastle/Code/projects/wily-board/tests/**`
-  - `/Users/wilycastle/Code/projects/wily-board/deploy/**`
-  - `/Users/wilycastle/Code/projects/wily-board/docs/deploy.md`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/.gitignore`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/README.md`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/pyproject.toml`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/uv.lock`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/**`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/**`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/deploy/**`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/deploy.md`
 - Commands run:
   - `git checkout --orphan feat/v3-rewrite && git rm -rf .`
   - `uv sync --extra dev`

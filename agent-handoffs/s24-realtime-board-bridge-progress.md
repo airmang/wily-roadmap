@@ -138,9 +138,9 @@ Final verification commands:
 
 ```text
 python3 -m unittest plugins.wily-roadmap.tests.test_wily_cli.WilyCliTest plugins.wily-roadmap.tests.test_wily_watch_ui.RenderWatchTest
-cd /Users/wilycastle/Code/projects/wily-board && uv run pytest -q
-cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run lint
-cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run build
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest -q
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run lint
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run build
 python3 plugins/wily-roadmap/scripts/wily.py status
 python3 plugins/wily-roadmap/scripts/wily.py next
 ```
@@ -159,8 +159,8 @@ Production smoke remains approval-gated; no production secret, deploy, restart, 
 
 Files changed:
 
-- `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/events.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_live_events.py`
 - `.wily/stages/s24-s21-realtime-board-bridge-e2e/stage.yaml` via Wily lifecycle updates
 
 Implemented:

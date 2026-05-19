@@ -11,7 +11,7 @@
 **Spec reference:** `docs/superpowers/specs/2026-05-18-wily-redesign-design.md` (commit `da9b2d3`). Decisions D1–D10 in spec §2 are non-negotiable.
 
 **Execution conventions:**
-- All paths are absolute or relative to repo root `/Users/wilycastle/Code/projects/wily-roadmap`.
+- All paths are absolute or relative to repo root `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`.
 - Test runner: `python3 -m unittest discover -s plugins/wily-roadmap/tests -v` (or `-p test_<name>.py`).
 - Commit after each task. Use `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>` trailer only when handing off through Claude Code; pure Codex commits use Codex's own convention.
 - Do NOT push during this work. Push is a separate manual action.

@@ -42,12 +42,12 @@ Next:
 ## 2026-05-19 - Board agent API red/green
 
 Files changed:
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_agent_routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/api/agent.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/config.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/db/schema.sql`
-- `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/main.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_agent_routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/agent.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/config.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/schema.sql`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/main.py`
 
 Red tests:
 - `/agent/register`, `/agent/snapshot`, and `/agent/heartbeat` returned 404.
@@ -74,7 +74,7 @@ Files changed:
 - `plugins/wily-roadmap/skills/wily-agent/SKILL.md`
 - `plugins/wily-roadmap/.codex-plugin/plugin.json`
 - `plugins/wily-roadmap/tests/v3/test_v3_surface.py`
-- `/Users/wilycastle/Code/projects/wily-board/README.md`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/README.md`
 
 Implemented:
 - Replaced the old `wily-board/agent` package direction with the approved `wily-roadmap` bundled agent ownership model.
@@ -88,12 +88,12 @@ Next:
 
 Commands run:
 - `python3 -m unittest plugins.wily-roadmap.tests.v3.test_v3_core plugins.wily-roadmap.tests.v3.test_v3_surface`
-- `cd /Users/wilycastle/Code/projects/wily-board && uv run pytest tests/test_agent_routes.py -q`
-- `cd /Users/wilycastle/Code/projects/wily-board && uv run ruff check app/api/agent.py tests/test_agent_routes.py`
-- `cd /Users/wilycastle/Code/projects/wily-board && uv run pytest -q`
-- `cd /Users/wilycastle/Code/projects/wily-board && uv run ruff check .`
+- `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest tests/test_agent_routes.py -q`
+- `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run ruff check app/api/agent.py tests/test_agent_routes.py`
+- `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest -q`
+- `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run ruff check .`
 - `git diff --check`
-- `git -C /Users/wilycastle/Code/projects/wily-board diff --check`
+- `git -C /Users/wilycastle/Code/projects/wily-plugin/wily-board diff --check`
 
 Results after final daemon polling update:
 - Roadmap unittest: 102 tests passed.

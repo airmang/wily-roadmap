@@ -57,9 +57,9 @@ Current blocker: none.
 | CP07 full CLI tests | 2026-05-17T14:33:31Z | 0 | PASS | `python3 -m unittest plugins/wily-roadmap/tests/test_wily_cli.py`: 139 tests OK, 1 skipped. |
 | CP08 Board backend red tests | 2026-05-17T14:38:00Z | 1 | EXPECTED FAIL | Duplicate `p01` sessions collapsed across stages and repo detail leaked an `s02/p01` overlay onto `s01/p01`. |
 | CP08 Board backend targeted tests | 2026-05-17T14:41:00Z | 0 | PASS | New tuple identity live/API tests passed; Board backend py_compile passed. |
-| CP08 Board full pytest | 2026-05-17T14:43:29Z | 0 | PASS | `cd /Users/wilycastle/Code/projects/wily-board && uv run pytest`: 94 passed, 37 warnings. |
+| CP08 Board full pytest | 2026-05-17T14:43:29Z | 0 | PASS | `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest`: 94 passed, 37 warnings. |
 | CP08 Wily bridge regression tests | 2026-05-17T14:43:29Z | 0 | PASS | Wily `v2_start` and `checkpoint_sync` unittest targets passed after adding `stage_id` to claim lookup. |
-| CP09 frontend lint | 2026-05-17T14:46:33Z | 0 | PASS | `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run lint` exited 0. |
+| CP09 frontend lint | 2026-05-17T14:46:33Z | 0 | PASS | `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run lint` exited 0. |
 | CP09 frontend build | 2026-05-17T14:46:33Z | 0 | PASS | `npm run build` compiled `/`, `/me`, `/collab`, and repo detail routes successfully. |
 | CP10 frontend lint | 2026-05-17T14:49:42Z | 0 | PASS | `npm run lint` exited 0 after surface widgets. |
 | CP10 frontend build | 2026-05-17T14:49:42Z | 0 | PASS | `npm run build` compiled `/me`, `/collab`, and repo detail with the new widgets. |

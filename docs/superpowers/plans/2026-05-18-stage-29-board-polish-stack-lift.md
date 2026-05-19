@@ -4,7 +4,7 @@
 
 **Goal:** Lift Wily Board's existing Next.js frontend onto Tailwind, shadcn/ui, Framer Motion, TanStack Query, next-themes, date-fns, sanitized markdown, and OpenAPI-generated types without changing backend API behavior.
 
-**Architecture:** The roadmap marketplace repo owns Wily stage state, but code changes for this stage happen in `/Users/wilycastle/Code/projects/wily-board`. Keep the FastAPI API read-only and use the current Next.js App Router frontend as the integration surface. Build a serial foundation first, then split independent frontend lanes by non-overlapping write scopes and integrate with one final build/browser pass.
+**Architecture:** The roadmap marketplace repo owns Wily stage state, but code changes for this stage happen in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`. Keep the FastAPI API read-only and use the current Next.js App Router frontend as the integration surface. Build a serial foundation first, then split independent frontend lanes by non-overlapping write scopes and integrate with one final build/browser pass.
 
 **Tech Stack:** FastAPI, pytest, Next.js 15 App Router, React 19, TypeScript, npm package-lock, Tailwind CSS, shadcn/ui/Radix, Framer Motion, TanStack Query, next-themes, date-fns, react-markdown, rehype-sanitize, openapi-typescript.
 
@@ -12,9 +12,9 @@
 
 ## Current State
 
-- Roadmap repo: `/Users/wilycastle/Code/projects/wily-roadmap`
-- Implementation repo: `/Users/wilycastle/Code/projects/wily-board`
-- Important constraint: `/Users/wilycastle/Code/projects/wily-board` is already dirty from Stage 28 readonly cutover. Do not revert or restage those changes.
+- Roadmap repo: `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`
+- Implementation repo: `/Users/wilycastle/Code/projects/wily-plugin/wily-board`
+- Important constraint: `/Users/wilycastle/Code/projects/wily-plugin/wily-board` is already dirty from Stage 28 readonly cutover. Do not revert or restage those changes.
 - Package manager: use `npm`, not `pnpm`; `frontend/package-lock.json` is the current lockfile.
 - Existing frontend has raw CSS tokens in `frontend/app/globals.css`, hand-rolled `.chip`, `.icon-button`, `.dialog-overlay`, and `router.refresh()` in `frontend/components/live-refresh.tsx`.
 - Existing backend already exposes `/openapi.json` through FastAPI defaults and read-only JSON APIs under `/api/*`.
@@ -43,18 +43,18 @@
 ## Task 1: Preflight and Baseline
 
 **Files:**
-- Read: `/Users/wilycastle/Code/projects/wily-board/frontend/package.json`
-- Read: `/Users/wilycastle/Code/projects/wily-board/frontend/app/globals.css`
-- Read: `/Users/wilycastle/Code/projects/wily-board/frontend/components/live-refresh.tsx`
-- Read: `/Users/wilycastle/Code/projects/wily-board/frontend/components/local-desk.tsx`
-- Read: `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-switcher.tsx`
-- Read: `/Users/wilycastle/Code/projects/wily-board/frontend/components/phase-list.tsx`
+- Read: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/package.json`
+- Read: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/globals.css`
+- Read: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/live-refresh.tsx`
+- Read: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/local-desk.tsx`
+- Read: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-switcher.tsx`
+- Read: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/phase-list.tsx`
 
 - [ ] **Step 1: Confirm dirty state before touching files**
 
 Run:
 ```bash
-git -C /Users/wilycastle/Code/projects/wily-board status --short
+git -C /Users/wilycastle/Code/projects/wily-plugin/wily-board status --short
 ```
 
 Expected: Stage 28 dirty files may be present. Treat them as user-owned baseline.
@@ -63,7 +63,7 @@ Expected: Stage 28 dirty files may be present. Treat them as user-owned baseline
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run lint
 npm run build
 ```
@@ -74,7 +74,7 @@ Expected: record pass/fail. If failures are unrelated to s29, note them before i
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run pytest
 ```
 
@@ -85,25 +85,25 @@ Expected: record pass/fail. s29 should not require backend API signature changes
 ## Task 2: `29-1` Tailwind + shadcn/ui Foundation
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/package.json`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/package-lock.json`
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/tailwind.config.ts`
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/postcss.config.mjs`
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/components.json`
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/lib/utils.ts`
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/components/ui/button.tsx`
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/components/ui/badge.tsx`
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/components/ui/dialog.tsx`
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/components/ui/sheet.tsx`
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/components/ui/tooltip.tsx`
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/components/ui/alert.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/app/globals.css`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/package.json`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/package-lock.json`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/tailwind.config.ts`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/postcss.config.mjs`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components.json`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/lib/utils.ts`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/ui/button.tsx`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/ui/badge.tsx`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/ui/dialog.tsx`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/ui/sheet.tsx`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/ui/tooltip.tsx`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/ui/alert.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/globals.css`
 
 - [ ] **Step 1: Install foundation dependencies**
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm install tailwindcss postcss autoprefixer tailwindcss-animate class-variance-authority clsx tailwind-merge @radix-ui/react-dialog @radix-ui/react-slot @radix-ui/react-tooltip
 ```
 
@@ -207,7 +207,7 @@ export function cn(...inputs: ClassValue[]) {
 
 Preferred command:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npx shadcn@latest add button badge dialog sheet tooltip alert
 ```
 
@@ -228,7 +228,7 @@ Keep the existing `:root` and `[data-theme="dark"]` variable blocks. Keep existi
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run lint
 npm run build
 ```
@@ -239,7 +239,7 @@ Expected: both pass; existing screens render without requiring call-site rewrite
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 git add frontend/package.json frontend/package-lock.json frontend/tailwind.config.ts frontend/postcss.config.mjs frontend/components.json frontend/lib/utils.ts frontend/components/ui frontend/app/globals.css
 git commit -m "feat(board): add Tailwind and shadcn foundation"
 ```
@@ -251,19 +251,19 @@ Expected: commit succeeds only if Stage 28 dirty changes are intentionally inclu
 ## Task 3A: Parallel Lane A - `29-4` TanStack Query + SSE Invalidation
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/package.json`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/package-lock.json`
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/components/query-provider.tsx`
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/lib/query-keys.ts`
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/lib/client-api.ts`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/live-refresh.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/app/layout.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/package.json`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/package-lock.json`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/query-provider.tsx`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/lib/query-keys.ts`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/lib/client-api.ts`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/live-refresh.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/layout.tsx`
 
 - [ ] **Step 1: Install TanStack Query**
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm install @tanstack/react-query
 ```
 
@@ -421,7 +421,7 @@ Modify `frontend/app/layout.tsx` so `LiveRefresh` is rendered inside `QueryProvi
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 rg -n "router\\.refresh|useRouter" frontend/components/live-refresh.tsx frontend
 cd frontend
 npm run lint
@@ -435,21 +435,21 @@ Expected: no `router.refresh` reference in `live-refresh.tsx`; lint and build pa
 ## Task 3B: Parallel Lane B - `29-5` Themes, Dates, Markdown, OpenAPI Types
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/package.json`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/package-lock.json`
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/components/theme-provider.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/theme-toggle.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/app/layout.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/lib/format.ts`
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/components/phase-markdown.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/phase-list.tsx`
-- Create: `/Users/wilycastle/Code/projects/wily-board/frontend/lib/api-types.ts`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/package.json`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/package-lock.json`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/theme-provider.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/theme-toggle.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/layout.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/lib/format.ts`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/phase-markdown.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/phase-list.tsx`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/lib/api-types.ts`
 
 - [ ] **Step 1: Install dependencies**
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm install next-themes date-fns react-markdown rehype-sanitize
 npm install --save-dev openapi-typescript
 ```
@@ -582,13 +582,13 @@ Modify `frontend/package.json` scripts:
 
 Run backend in one shell:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
 Run generation in another shell:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run types:generate
 ```
 
@@ -598,7 +598,7 @@ Expected: `frontend/lib/api-types.ts` is created from FastAPI OpenAPI.
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run lint
 npm run build
 ```
@@ -610,9 +610,9 @@ Expected: lint and build pass; no custom localStorage theme code remains in `the
 ## Task 4: Merge Parallel Lanes
 
 **Files:**
-- Review: `/Users/wilycastle/Code/projects/wily-board/frontend/app/layout.tsx`
-- Review: `/Users/wilycastle/Code/projects/wily-board/frontend/package.json`
-- Review: `/Users/wilycastle/Code/projects/wily-board/frontend/package-lock.json`
+- Review: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/layout.tsx`
+- Review: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/package.json`
+- Review: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/package-lock.json`
 
 - [ ] **Step 1: Reconcile provider nesting**
 
@@ -632,7 +632,7 @@ Ensure `layout.tsx` has one wrapper stack in this order:
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm ls @tanstack/react-query next-themes date-fns react-markdown rehype-sanitize openapi-typescript tailwindcss @radix-ui/react-dialog
 ```
 
@@ -642,7 +642,7 @@ Expected: all packages resolve.
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run lint
 npm run build
 ```
@@ -654,13 +654,13 @@ Expected: pass.
 ## Task 5: `29-2` shadcn Primitive Migration
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-switcher.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/local-desk.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/desk.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-list.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/phase-list.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/app/repos/[owner]/[name]/page.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/app/globals.css`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-switcher.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/local-desk.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/desk.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-list.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/phase-list.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/repos/[owner]/[name]/page.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/globals.css`
 
 - [ ] **Step 1: Replace repo switcher overlay with shadcn Dialog shell**
 
@@ -706,7 +706,7 @@ In `globals.css`, remove `.dialog-overlay`, `.command-dialog` overlay styles tha
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 rg -n "dialog-overlay|className=\\\"chip\\\"|className=\\\"icon-button\\\"" frontend
 cd frontend
 npm run lint
@@ -720,18 +720,18 @@ Expected: no manual dialog overlay; no direct `.chip`/`.icon-button` usage in mi
 ## Task 6: `29-3` Framer Motion Transitions
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/package.json`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/package-lock.json`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/local-desk.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/stage-map.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/desk.tsx`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/app/globals.css`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/package.json`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/package-lock.json`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/local-desk.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/stage-map.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/desk.tsx`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/globals.css`
 
 - [ ] **Step 1: Install Framer Motion**
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm install framer-motion
 ```
 
@@ -776,7 +776,7 @@ Append to `globals.css`:
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run lint
 npm run build
 ```
@@ -788,14 +788,14 @@ Expected: pass. Browser verification must also toggle reduced motion in DevTools
 ## Task 7: Full Verification
 
 **Files:**
-- Read: `/Users/wilycastle/Code/projects/wily-board/frontend/.next`
-- Read: `/Users/wilycastle/Code/projects/wily-board/tests`
+- Read: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/.next`
+- Read: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests`
 
 - [ ] **Step 1: Run backend tests**
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run pytest
 ```
 
@@ -805,7 +805,7 @@ Expected: all tests pass or only pre-existing Stage 28 failures remain with note
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run lint
 npm run build
 ```
@@ -816,7 +816,7 @@ Expected: pass.
 
 Run:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 rg -n "Open PR|/actions/phase/status|new_status|toggle_status|router\\.refresh\\(\\)" app frontend tests
 ```
 
@@ -826,13 +826,13 @@ Expected: no active UI/backend mutation references and no `router.refresh()` in 
 
 Run backend:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
 Run frontend:
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run dev
 ```
 

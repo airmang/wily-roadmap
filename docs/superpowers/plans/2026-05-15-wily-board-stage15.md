@@ -26,7 +26,7 @@
 
 ## File Structure
 
-Create `/Users/wilycastle/Code/projects/wily-board` as the separate application workspace.
+Create `/Users/wilycastle/Code/projects/wily-plugin/wily-board` as the separate application workspace.
 
 - `pyproject.toml`: package metadata, dependencies, pytest config.
 - `README.md`: architecture, setup, env vars, deployment, safety constraints.
@@ -56,11 +56,11 @@ Create `/Users/wilycastle/Code/projects/wily-board` as the separate application 
 ### Task 1: Repository Baseline
 
 **Files:**
-- Create: `/Users/wilycastle/Code/projects/wily-board/README.md`
-- Create: `/Users/wilycastle/Code/projects/wily-board/pyproject.toml`
-- Create: `/Users/wilycastle/Code/projects/wily-board/.env.example`
-- Create: `/Users/wilycastle/Code/projects/wily-board/app/__init__.py`
-- Create: `/Users/wilycastle/Code/projects/wily-board/tests/test_config.py`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/README.md`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/pyproject.toml`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/.env.example`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/__init__.py`
+- Create: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_config.py`
 
 - [ ] **Step 1: Create failing config tests**
 
@@ -79,7 +79,7 @@ def test_settings_defaults_for_fixed_stage15_inputs(monkeypatch):
 
 - [ ] **Step 2: Run red test**
 
-Run: `cd /Users/wilycastle/Code/projects/wily-board && python3 -m pytest tests/test_config.py -q`
+Run: `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && python3 -m pytest tests/test_config.py -q`
 Expected: FAIL because `app.config` does not exist.
 
 - [ ] **Step 3: Implement baseline files and config**
@@ -88,7 +88,7 @@ Create `pyproject.toml`, `README.md`, `.env.example`, `app/config.py`, package i
 
 - [ ] **Step 4: Run green test**
 
-Run: `cd /Users/wilycastle/Code/projects/wily-board && python3 -m pytest tests/test_config.py -q`
+Run: `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && python3 -m pytest tests/test_config.py -q`
 Expected: PASS.
 
 ### Task 2: Database Schema and Repository Layer
@@ -292,7 +292,7 @@ Expected: PASS.
 ### Task 8: Local Verification, Remote Setup, and Deployment
 
 **Files:**
-- Modify Wily state in `/Users/wilycastle/Code/projects/wily-roadmap/.wily/**`
+- Modify Wily state in `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.wily/**`
 - Possibly create remote `R-W-LAB/wily-board`
 - Possibly push branch and configure deployment.
 
@@ -301,7 +301,7 @@ Expected: PASS.
 Run:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 python3 -m pytest -q
 python3 -m py_compile $(find app -name '*.py' -print)
 ```
@@ -310,7 +310,7 @@ Expected: all tests pass.
 
 - [ ] **Step 2: Create private GitHub repo**
 
-Run: `gh repo create R-W-LAB/wily-board --private --source /Users/wilycastle/Code/projects/wily-board --remote origin --push`
+Run: `gh repo create R-W-LAB/wily-board --private --source /Users/wilycastle/Code/projects/wily-plugin/wily-board --remote origin --push`
 Expected: repo created or existing repo detected and remote configured.
 
 - [ ] **Step 3: Stop if OAuth or GitHub App credentials are missing**

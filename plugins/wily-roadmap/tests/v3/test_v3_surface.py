@@ -64,6 +64,13 @@ class V3SurfaceTest(unittest.TestCase):
         for token in ("wily agent login", "wily agent install", "wily agent start", "wily agent status", "wily agent check"):
             self.assertIn(token, readme)
 
+    def test_readme_documents_v3_board_reflection_contract(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+
+        self.assertIn("snapshots and heartbeats", readme)
+        self.assertIn("live-*` commands are not a Wily Board v3 reflection mechanism", readme)
+        self.assertIn("wily cp", readme)
+
     def test_replan_skill_routes_natural_language_work_to_task_addition(self) -> None:
         replan = (ROOT / "skills" / "wily-replan" / "SKILL.md").read_text(encoding="utf-8")
         command = (ROOT / "commands" / "replan.md").read_text(encoding="utf-8")

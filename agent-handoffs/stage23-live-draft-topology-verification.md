@@ -45,7 +45,7 @@ python3 -m unittest plugins.wily-roadmap.tests.test_wily_cli.WilyCliTest
 Result: `Ran 89 tests in 5.943s ... OK`.
 
 ```sh
-cd /Users/wilycastle/Code/projects/wily-board && uv run pytest
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest
 ```
 
 Result: `69 passed, 26 warnings in 1.73s`.

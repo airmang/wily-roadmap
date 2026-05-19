@@ -12,25 +12,25 @@
 
 ## File Map
 
-- Modify `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`: emit and report live draft topology events from `decompose-stage`.
-- Modify `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`: CLI tests for draft event emission and missing-config warning.
-- Modify `/Users/wilycastle/Code/projects/wily-board/app/db/schema.sql`: add `live_drafts`.
-- Modify `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`: store, list, render, and clear draft topology rows.
-- Modify `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`: validate and store `stage_decomposed_local` payloads.
-- Modify `/Users/wilycastle/Code/projects/wily-board/app/sync/parser.py` or existing sync ingest module if needed: expose durable phase presence by stage for reconciliation.
-- Modify `/Users/wilycastle/Code/projects/wily-board/app/web/routes.py`: merge draft phases into repo detail and dashboard context.
-- Modify `/Users/wilycastle/Code/projects/wily-board/app/web/templates/board.html`: show draft topology follow-up item.
-- Modify `/Users/wilycastle/Code/projects/wily-board/app/web/templates/repo_detail.html` or partials used by repo detail: render provisional child phase rows.
-- Modify `/Users/wilycastle/Code/projects/wily-board/docs/OPERATIONS.md`: document live draft setup and troubleshooting.
-- Modify `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`: API validation and storage tests.
-- Modify `/Users/wilycastle/Code/projects/wily-board/tests/test_db.py`: storage, listing, and clearing tests.
-- Modify `/Users/wilycastle/Code/projects/wily-board/tests/test_web_routes.py`: dashboard and repo detail rendering tests.
+- Modify `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`: emit and report live draft topology events from `decompose-stage`.
+- Modify `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`: CLI tests for draft event emission and missing-config warning.
+- Modify `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/schema.sql`: add `live_drafts`.
+- Modify `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`: store, list, render, and clear draft topology rows.
+- Modify `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/events.py`: validate and store `stage_decomposed_local` payloads.
+- Modify `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/sync/parser.py` or existing sync ingest module if needed: expose durable phase presence by stage for reconciliation.
+- Modify `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/routes.py`: merge draft phases into repo detail and dashboard context.
+- Modify `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/board.html`: show draft topology follow-up item.
+- Modify `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/repo_detail.html` or partials used by repo detail: render provisional child phase rows.
+- Modify `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/OPERATIONS.md`: document live draft setup and troubleshooting.
+- Modify `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_live_events.py`: API validation and storage tests.
+- Modify `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_db.py`: storage, listing, and clearing tests.
+- Modify `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_web_routes.py`: dashboard and repo detail rendering tests.
 
 ## Task 1: Wily CLI Draft Event Contract
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`
-- Test: `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`
+- Test: `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`
 
 - [ ] **Step 1: Write failing CLI emission test**
 
@@ -159,9 +159,9 @@ Expected: `OK`.
 ## Task 2: Board Draft Storage
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/db/schema.sql`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- Test: `/Users/wilycastle/Code/projects/wily-board/tests/test_db.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/schema.sql`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- Test: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_db.py`
 
 - [ ] **Step 1: Write storage test**
 
@@ -245,8 +245,8 @@ Expected: all tests pass.
 ## Task 3: Board Live Event API
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`
-- Test: `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/events.py`
+- Test: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_live_events.py`
 
 - [ ] **Step 1: Write API accept/reject tests**
 
@@ -317,10 +317,10 @@ Expected: all tests pass.
 ## Task 4: Draft Rendering And Dashboard Follow-Up
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/routes.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/templates/board.html`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/templates/repo_detail.html`
-- Test: `/Users/wilycastle/Code/projects/wily-board/tests/test_web_routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/board.html`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/repo_detail.html`
+- Test: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_web_routes.py`
 
 - [ ] **Step 1: Write repo detail rendering test**
 
@@ -382,9 +382,9 @@ Expected: all tests pass.
 ## Task 5: Durable Sync Reconciliation And Docs
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/docs/OPERATIONS.md`
-- Test: `/Users/wilycastle/Code/projects/wily-board/tests/test_db.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/OPERATIONS.md`
+- Test: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_db.py`
 
 - [ ] **Step 1: Write draft clear test**
 
@@ -418,7 +418,7 @@ Run:
 
 ```sh
 python3 -m unittest plugins.wily-roadmap.tests.test_wily_cli.WilyCliTest
-cd /Users/wilycastle/Code/projects/wily-board && uv run pytest
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest
 ```
 
 Expected: Wily CLI tests pass and Board pytest suite passes.

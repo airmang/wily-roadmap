@@ -412,7 +412,7 @@ Next step: CP08, align the Wily Board backend with `(repo, stage_id, phase_id)` 
 
 ## 2026-05-17T14:36:54Z - CP08 started
 
-- Entered `/Users/wilycastle/Code/projects/wily-board`.
+- Entered `/Users/wilycastle/Code/projects/wily-plugin/wily-board`.
 - No repo-local `AGENTS.md` applies in Wily Board.
 - Current Board worktree is dirty; treating those changes as user/pre-existing and preserving them.
 - TDD scope: backend storage and API projection must distinguish duplicate Stage-local Phase ids by `(repo, stage_id, phase_id)`, keep checkpoint overlays read-only, and place live/checkpoint rows under only the owning Stage/Phase.
@@ -423,14 +423,14 @@ Next step: add red backend tests for tuple identity collisions and repo-detail o
 
 Files changed:
 
-- `/Users/wilycastle/Code/projects/wily-board/app/db/schema.sql`
-- `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/api/routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/web/routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_api_routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_web_routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/schema.sql`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/events.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_live_events.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_api_routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_web_routes.py`
 - `plugins/wily-roadmap/scripts/wily.py`
 
 Red tests:
@@ -488,13 +488,13 @@ Next step: add route files and shared chrome components, then run `npm run lint`
 
 Files changed:
 
-- `/Users/wilycastle/Code/projects/wily-board/frontend/app/page.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/app/me/page.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/app/collab/page.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/header.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/surface-nav.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-list.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/app/globals.css`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/page.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/me/page.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/collab/page.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/header.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/surface-nav.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-list.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/globals.css`
 
 Implemented:
 
@@ -530,11 +530,11 @@ Next step: add reusable surface widgets and wire the two pages through them.
 
 Files changed:
 
-- `/Users/wilycastle/Code/projects/wily-board/frontend/app/me/page.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/app/collab/page.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-list.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/surface-widgets.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/app/globals.css`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/me/page.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/collab/page.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-list.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/surface-widgets.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/globals.css`
 
 Implemented:
 
@@ -567,12 +567,12 @@ Next step: add checkpoint row component, update PhaseList anchors/keys to `<stag
 
 Files changed:
 
-- `/Users/wilycastle/Code/projects/wily-board/app/api/routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/app/repos/[owner]/[name]/page.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/checkpoint-rows.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/phase-list.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/lib/types.ts`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/app/globals.css`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/repos/[owner]/[name]/page.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/checkpoint-rows.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/phase-list.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/lib/types.ts`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/globals.css`
 
 Implemented:
 
@@ -740,10 +740,10 @@ Disposable migration apply:
 tmp=$(mktemp -d)
 cp -R plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy "$tmp/project"
 cd "$tmp/project"
-/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
-/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily status
-/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily next
-/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily run s02/p01 --dry-run
+/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
+/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily status
+/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily next
+/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily run s02/p01 --dry-run
 ```
 
 Result:
@@ -756,10 +756,10 @@ Result:
 Wily Board verification:
 
 ```text
-cd /Users/wilycastle/Code/projects/wily-board && uv run pytest
-cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run lint
-cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run build
-cd /Users/wilycastle/Code/projects/wily-board && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run lint
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run build
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
 ```
 
 Result:
@@ -814,10 +814,10 @@ python3 -m py_compile plugins/wily-roadmap/scripts/wily.py plugins/wily-roadmap/
 ./plugins/wily-roadmap/wily watch --once --ui ascii
 ./plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
 disposable mixed-legacy apply/status/next/run dry-run smoke
-cd /Users/wilycastle/Code/projects/wily-board && uv run pytest
-cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run lint
-cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run build
-cd /Users/wilycastle/Code/projects/wily-board && /Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run lint
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run build
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
 ```
 
 Result:

@@ -61,8 +61,12 @@ After landing v3, remove stale local integration surfaces with explicit approval
 1. Edit `~/.codex/hooks.json` and remove any PostToolUse entry that invokes
    `plugins/wily-roadmap/scripts/wily.py live-worked` or another `live-*`
    command. v3 keeps `live-* --from-hook` non-blocking only so stale local hooks
-   do not break Codex while you clean them up.
+   do not break Codex while you clean them up. Do not re-point those hooks to
+   the moved `/Users/wilycastle/Code/projects/wily-plugin/...` plugin path;
+   Wily Board v3 reflection comes from `wily-agent` snapshots and heartbeats.
 2. Delete `~/.wily/board.json` if it exists; v3 ignores it.
 
 The old repository workflow at `.github/workflows/wily-board-sync.yml` has been
-removed because v3 has no Wily Board integration.
+removed. Current Wily Board v3 integration is local-agent based: `wily-agent`
+watches `.wily/`, sends snapshots and heartbeats, and includes checkpoint
+progress recorded through `wily cp`.

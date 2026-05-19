@@ -23,7 +23,7 @@ Work checkpoint-by-checkpoint. After each checkpoint:
 
 Do not broaden scope beyond the execution package. Stop only for hard destructive shell commands, payment/purchase actions, credential or secret exfiltration, edits outside the execution package, explicit user-forbidden actions, or if the same verification failure repeats twice without new evidence.
 
-Done only when all acceptance criteria are satisfied and final verification passes: python3 -m unittest plugins.wily-roadmap.tests.test_wily_cli.WilyCliTest; cd /Users/wilycastle/Code/projects/wily-board && uv run pytest; python3 plugins/wily-roadmap/scripts/wily.py status; python3 plugins/wily-roadmap/scripts/wily.py next.
+Done only when all acceptance criteria are satisfied and final verification passes: python3 -m unittest plugins.wily-roadmap.tests.test_wily_cli.WilyCliTest; cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest; python3 plugins/wily-roadmap/scripts/wily.py status; python3 plugins/wily-roadmap/scripts/wily.py next.
 ```
 
 ## Source Request / Handoff
@@ -74,20 +74,20 @@ Assumptions:
 
 Expected touchpoints:
 
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`
-- `/Users/wilycastle/Code/projects/wily-roadmap/.wily/**`
-- `/Users/wilycastle/Code/projects/wily-roadmap/docs/superpowers/plans/2026-05-17-wily-board-live-draft-topology.md`
-- `/Users/wilycastle/Code/projects/wily-board/app/db/schema.sql`
-- `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/web/routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/web/templates/board.html`
-- `/Users/wilycastle/Code/projects/wily-board/app/web/templates/repo_detail.html`
-- `/Users/wilycastle/Code/projects/wily-board/docs/OPERATIONS.md`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_db.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_web_routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.wily/**`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/docs/superpowers/plans/2026-05-17-wily-board-live-draft-topology.md`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/schema.sql`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/events.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/board.html`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/repo_detail.html`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/OPERATIONS.md`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_live_events.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_db.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_web_routes.py`
 
 Must not edit:
 
@@ -252,7 +252,7 @@ Reason: Wily CLI and Board code can be inspected independently. Implementation i
 
 Agent: explorer
 Mode: read_only_evidence
-Allowed files: `/Users/wilycastle/Code/projects/wily-roadmap`
+Allowed files: `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`
 Task: identify exact CLI helpers and tests for draft event emission.
 Completion evidence: concise function/test map.
 
@@ -260,7 +260,7 @@ Completion evidence: concise function/test map.
 
 Agent: explorer
 Mode: read_only_evidence
-Allowed files: `/Users/wilycastle/Code/projects/wily-board`
+Allowed files: `/Users/wilycastle/Code/projects/wily-plugin/wily-board`
 Task: identify DB/API/sync/render touchpoints.
 Completion evidence: concise function/test map.
 
@@ -294,14 +294,14 @@ Targeted:
 
 ```sh
 python3 -m unittest plugins.wily-roadmap.tests.test_wily_cli.WilyCliTest
-cd /Users/wilycastle/Code/projects/wily-board && uv run pytest tests/test_live_events.py tests/test_db.py tests/test_web_routes.py
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest tests/test_live_events.py tests/test_db.py tests/test_web_routes.py
 ```
 
 Final:
 
 ```sh
 python3 -m unittest plugins.wily-roadmap.tests.test_wily_cli.WilyCliTest
-cd /Users/wilycastle/Code/projects/wily-board && uv run pytest
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest
 python3 plugins/wily-roadmap/scripts/wily.py status
 python3 plugins/wily-roadmap/scripts/wily.py next
 ```

@@ -40,8 +40,8 @@ Wily Board must show the same current local Wily operating state that `wily stat
 
 - Goal-scoped local engineering changes may proceed autonomously once the goal starts.
 - Editing both local repositories is in scope:
-  - `/Users/wilycastle/Code/projects/wily-roadmap`
-  - `/Users/wilycastle/Code/projects/wily-board`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board`
 - Preserve all pre-existing dirty work. Do not revert user changes.
 - Stop for hard destructive commands, credential/secret exposure, production live event emission, production deploy/restart, GitHub push/PR/merge, or repeated verification failure without new evidence.
 
@@ -110,25 +110,25 @@ Wily Board must show the same current local Wily operating state that `wily stat
 
 ## Likely Touchpoints
 
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/api/routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/lib/types.ts`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/phase-list.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/desk.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/repo-list.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/live-refresh.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_api_routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_web_routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/lib/types.ts`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/phase-list.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/desk.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/repo-list.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/live-refresh.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_api_routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_web_routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_live_events.py`
 
 ## Verification Ideas
 
 - `python3 -m unittest plugins.wily-roadmap.tests.test_wily_cli.WilyCliTest`
 - targeted Wily CLI tests for local board draft replay.
-- `cd /Users/wilycastle/Code/projects/wily-board && uv run pytest tests/test_api_routes.py tests/test_live_events.py tests/test_web_routes.py`
-- `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run lint && npm run build`
+- `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest tests/test_api_routes.py tests/test_live_events.py tests/test_web_routes.py`
+- `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run lint && npm run build`
 - Local smoke with temporary Board DB:
   - durable repo data through `s24`;
   - signed local draft event for `s25`;

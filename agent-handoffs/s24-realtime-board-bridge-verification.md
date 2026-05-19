@@ -72,15 +72,15 @@
 - Exit: 0
 - Evidence: `Ran 121 tests ... OK (skipped=1)`
 
-- Command: `cd /Users/wilycastle/Code/projects/wily-board && uv run pytest -q`
+- Command: `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest -q`
 - Exit: 0
 - Evidence: `80 passed, 31 warnings`
 
-- Command: `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run lint`
+- Command: `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run lint`
 - Exit: 0
 - Evidence: ESLint completed with no reported errors.
 
-- Command: `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run build`
+- Command: `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run build`
 - Exit: 0
 - Evidence: Next.js production build completed successfully.
 

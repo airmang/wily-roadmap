@@ -4,7 +4,7 @@
 
 **Goal:** Finish Stage 31 by stabilizing Wily live-event identity, Board live-event ingestion, HMAC rotation, heartbeat TTL expiry, and frontend SSE reconnect behavior.
 
-**Architecture:** Split the work into three independent lanes. Lane A owns the Wily CLI client in this repository. Lane B owns Wily Board backend event ingestion in `/Users/wilycastle/Code/projects/wily-board`. Lane C owns Wily Board frontend SSE behavior and can run in parallel with Lane B because the backend already accepts a `repo` filter for `/api/sse/live`.
+**Architecture:** Split the work into three independent lanes. Lane A owns the Wily CLI client in this repository. Lane B owns Wily Board backend event ingestion in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`. Lane C owns Wily Board frontend SSE behavior and can run in parallel with Lane B because the backend already accepts a `repo` filter for `/api/sse/live`.
 
 **Tech Stack:** Python 3.11, pytest, FastAPI, SQLite, Next.js 15, React 19, TanStack Query, native `EventSource`.
 
@@ -15,7 +15,7 @@
 - Stage: `s31` is ready and decomposed.
 - Ready phases: `s31/31-1`, `s31/31-2`, `s31/31-3`, `s31/31-4`, `s31/31-5`.
 - `s31` itself is not executable in `wily-roadmap-v2`; workers must claim phase refs such as `s31/31-1`.
-- Current worktree note: `/Users/wilycastle/Code/projects/wily-roadmap` has an unrelated untracked file `agent-handoffs/p6-bridge-durable-sync-handoff.md`.
+- Current worktree note: `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap` has an unrelated untracked file `agent-handoffs/p6-bridge-durable-sync-handoff.md`.
 
 ## Parallel Execution Map
 
@@ -23,9 +23,9 @@ Run these lanes at the same time only if each worker gets the listed write scope
 
 | Lane | Phase refs | Write scope | Can run with |
 | --- | --- | --- | --- |
-| A. Wily CLI live-event client | `s31/31-1`, client part of `s31/31-2`, `s31/31-4` | `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`, `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py` | B, C |
-| B. Board live-event backend | server part of `s31/31-1`, server part of `s31/31-2`, `s31/31-3`, Board config part of `s31/31-4` | `/Users/wilycastle/Code/projects/wily-board/app/config.py`, `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`, `/Users/wilycastle/Code/projects/wily-board/app/sync/signature.py`, `/Users/wilycastle/Code/projects/wily-board/app/sync/webhook.py`, `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`, `/Users/wilycastle/Code/projects/wily-board/tests/test_config.py`, `/Users/wilycastle/Code/projects/wily-board/tests/test_signature.py`, `/Users/wilycastle/Code/projects/wily-board/tests/test_webhook.py`, `/Users/wilycastle/Code/projects/wily-board/docs/OPERATIONS.md` | A, C |
-| C. Board frontend SSE | `s31/31-5` | `/Users/wilycastle/Code/projects/wily-board/frontend/components/live-refresh.tsx`, `/Users/wilycastle/Code/projects/wily-board/frontend/app/api/sse/live/route.ts`, `/Users/wilycastle/Code/projects/wily-board/tests/test_api_routes.py` | A, B |
+| A. Wily CLI live-event client | `s31/31-1`, client part of `s31/31-2`, `s31/31-4` | `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`, `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py` | B, C |
+| B. Board live-event backend | server part of `s31/31-1`, server part of `s31/31-2`, `s31/31-3`, Board config part of `s31/31-4` | `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/config.py`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/events.py`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/sync/signature.py`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/sync/webhook.py`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_live_events.py`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_config.py`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_signature.py`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_webhook.py`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/OPERATIONS.md` | A, C |
+| C. Board frontend SSE | `s31/31-5` | `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/live-refresh.tsx`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/api/sse/live/route.ts`, `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_api_routes.py` | A, B |
 | D. Integration | all `s31` phases | both repos, no parallel edits | after A, B, C |
 
 Do not let two workers edit the same file. In particular, Lane B and Lane C must not both edit `app/api/routes.py`; the backend SSE route already accepts `repo_filter`, so Lane C should only add a focused regression test if needed.
@@ -33,8 +33,8 @@ Do not let two workers edit the same file. In particular, Lane B and Lane C must
 ## Lane A: Wily CLI Live-Event Client
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/scripts/wily.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/test_wily_cli.py`
 
 ### Task A1: Add stable `event_id` generation to every Board live payload
 
@@ -55,7 +55,7 @@ assert payload["event_id"] == "evt-fixed-1"  # when phase already contains event
 - [ ] Run the failing tests:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-roadmap
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap
 python3 -m pytest plugins/wily-roadmap/tests/test_wily_cli.py -k "event_id" -q
 ```
 
@@ -82,7 +82,7 @@ This keeps retries idempotent when callers reuse a supplied `event_id`, and give
 - [ ] Run:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-roadmap
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap
 python3 -m pytest plugins/wily-roadmap/tests/test_wily_cli.py -k "event_id" -q
 ```
 
@@ -123,7 +123,7 @@ assert payload["new_item_id"] == "s22"
 - [ ] Run the failing tests:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-roadmap
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap
 python3 -m pytest plugins/wily-roadmap/tests/test_wily_cli.py -k "renamed_live" -q
 ```
 
@@ -149,7 +149,7 @@ Keep failure best-effort like existing Board live emits.
 - [ ] Run:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-roadmap
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap
 python3 -m pytest plugins/wily-roadmap/tests/test_wily_cli.py -k "renamed_live or replan" -q
 ```
 
@@ -167,7 +167,7 @@ Use `patch.object(wily.time, "monotonic", side_effect=[0.0, 3.0])` and `patch.ob
 - [ ] Run:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-roadmap
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap
 python3 -m pytest plugins/wily-roadmap/tests/test_wily_cli.py -k "heartbeat and ttl" -q
 ```
 
@@ -194,7 +194,7 @@ Initialize `ttl = heartbeat_ttl_from_env()` and keep explicit `--ttl` parsing as
 - [ ] Run:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-roadmap
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap
 python3 -m pytest plugins/wily-roadmap/tests/test_wily_cli.py -k "live_heartbeat or board_live_event or renamed_live" -q
 ```
 
@@ -203,15 +203,15 @@ Expected: PASS.
 ## Lane B: Board Live-Event Backend
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/config.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/live/events.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/sync/signature.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/sync/webhook.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_live_events.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_config.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_signature.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_webhook.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/docs/OPERATIONS.md`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/config.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/live/events.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/sync/signature.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/sync/webhook.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_live_events.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_config.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_signature.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_webhook.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/OPERATIONS.md`
 
 ### Task B1: Support `WILY_BOARD_SECRETS` dual HMAC rotation
 
@@ -234,7 +234,7 @@ assert settings.wily_board_secret == "new-secret"
 - [ ] Run:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run pytest tests/test_config.py tests/test_signature.py tests/test_live_events.py -k "secret or signature" -q
 ```
 
@@ -269,7 +269,7 @@ Expected DB behavior: duplicate request does not create a second `live_event` au
 - [ ] Run:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run pytest tests/test_live_events.py -k "dedup" -q
 ```
 
@@ -288,7 +288,7 @@ Use server monotonic time. On every live event, prune expired keys and trim olde
 - [ ] Run:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run pytest tests/test_live_events.py -q
 ```
 
@@ -299,7 +299,7 @@ Expected: PASS.
 - [ ] Add failing test:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run pytest tests/test_live_events.py -k "renamed" -q
 ```
 
@@ -317,7 +317,7 @@ Reject malformed renamed events with a 400 when `session_id`, `old_item_id`, or 
 - [ ] Run:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run pytest tests/test_live_events.py tests/test_db.py -k "renamed or live_item" -q
 ```
 
@@ -325,7 +325,7 @@ Expected: PASS.
 
 ### Task B4: Document secret rotation
 
-- [ ] Add an operations section to `/Users/wilycastle/Code/projects/wily-board/docs/OPERATIONS.md` named `HMAC Secret Rotation`.
+- [ ] Add an operations section to `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/OPERATIONS.md` named `HMAC Secret Rotation`.
 
 Include this exact operational flow:
 
@@ -343,7 +343,7 @@ Include this exact operational flow:
 - [ ] Run:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run pytest tests/test_operations_doc.py -q
 ```
 
@@ -362,12 +362,12 @@ def test_settings_reads_live_heartbeat_ttl_seconds(monkeypatch):
 
 - [ ] Implement `live_heartbeat_ttl_seconds: int` in `Settings`, defaulting to `14400`.
 
-- [ ] Document `WILY_BOARD_HEARTBEAT_TTL_SECONDS` in `/Users/wilycastle/Code/projects/wily-board/docs/OPERATIONS.md` as the client/sidecar TTL default used by Wily live heartbeat clients.
+- [ ] Document `WILY_BOARD_HEARTBEAT_TTL_SECONDS` in `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/OPERATIONS.md` as the client/sidecar TTL default used by Wily live heartbeat clients.
 
 - [ ] Run:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run pytest tests/test_config.py tests/test_operations_doc.py -q
 ```
 
@@ -376,9 +376,9 @@ Expected: PASS.
 ## Lane C: Board Frontend SSE
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/frontend/components/live-refresh.tsx`
-- Verify or minimally modify: `/Users/wilycastle/Code/projects/wily-board/frontend/app/api/sse/live/route.ts`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_api_routes.py` only for backend `repo_filter` regression coverage.
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/live-refresh.tsx`
+- Verify or minimally modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/api/sse/live/route.ts`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_api_routes.py` only for backend `repo_filter` regression coverage.
 
 ### Task C1: Scope repo workspace SSE with `?repo=owner/name`
 
@@ -415,9 +415,9 @@ Hub pages such as `/me` and `/collab` keep the unfiltered stream.
 - [ ] Run:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run pytest tests/test_api_routes.py -k "sse_live" -q
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run lint
 ```
 
@@ -465,7 +465,7 @@ function handleVisibilityChange() {
 - [ ] Run:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run lint
 npm run build
 ```
@@ -479,14 +479,14 @@ Run after Lanes A, B, and C are complete.
 - [ ] Verify Wily CLI tests:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-roadmap
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap
 python3 -m pytest plugins/wily-roadmap/tests/test_wily_cli.py plugins/wily-roadmap/tests/test_wily_watch_ui.py -q
 ```
 
 - [ ] Verify Board backend tests:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run pytest tests/test_live_events.py tests/test_config.py tests/test_signature.py tests/test_api_routes.py tests/test_db.py tests/test_operations_doc.py -q
 uv run pytest tests/test_webhook.py -q
 ```
@@ -494,7 +494,7 @@ uv run pytest tests/test_webhook.py -q
 - [ ] Verify Board frontend:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run lint
 npm run build
 ```
@@ -502,14 +502,14 @@ npm run build
 - [ ] Manual local smoke:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
 In another terminal:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board/frontend
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend
 npm run dev
 ```
 
@@ -518,14 +518,14 @@ Open `http://127.0.0.1:3000/repos/R-W-LAB/wily-roadmap` and confirm the browser 
 - [ ] Manual event smoke with dual secrets:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-board
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-board
 WILY_BOARD_SECRET=old WILY_BOARD_SECRETS=new,old uv run pytest tests/test_live_events.py -k "previous_rotation_secret or dedup or renamed" -q
 ```
 
 - [ ] Manual Wily heartbeat TTL smoke:
 
 ```bash
-cd /Users/wilycastle/Code/projects/wily-roadmap
+cd /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap
 WILY_BOARD_HEARTBEAT_TTL_SECONDS=2 python3 plugins/wily-roadmap/scripts/wily.py live-heartbeat s31/31-1 --interval 1 --foreground
 ```
 

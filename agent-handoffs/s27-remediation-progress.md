@@ -32,7 +32,7 @@ Notes:
 
 ## 2026-05-18T00:49:15Z - CP02 complete
 
-Changed in `/Users/wilycastle/Code/projects/wily-board`:
+Changed in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`:
 
 - Added canonical API route `/api/repos/{owner}/{name}/stages/{stage_id}/phases/{phase_id}`.
 - Kept legacy `/api/repos/{owner}/{name}/phases/{phase_id}?stage_id=...` on the same lookup helper.
@@ -114,9 +114,9 @@ Verification:
 - `python3 -m unittest plugins/wily-roadmap/tests/test_wily_state_summary.py plugins/wily-roadmap/tests/test_wily_watch_ui.py plugins/wily-roadmap/tests/test_wily_command_skills.py plugins/wily-roadmap/tests/test_wily_cli.py` -> 256 tests OK, 2 skipped.
 - Active command/skill/script usage scan for primary `$wily-* <phase-id>`, `argument-hint: '<phase-id>`, and `live-worked [item-id]` -> no matches.
 - `./plugins/wily-roadmap/wily status` and `./plugins/wily-roadmap/wily watch --once --ui ascii` -> `27/27 - 100%`; `./plugins/wily-roadmap/wily next` -> `Next phase: none`.
-- `cd /Users/wilycastle/Code/projects/wily-board && uv run pytest` -> 95 passed, 38 warnings.
-- `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run lint` -> exit 0.
-- `cd /Users/wilycastle/Code/projects/wily-board/frontend && npm run build` -> exit 0; route table includes `/repos/[owner]/[name]/stages/[stage_id]/phases/[phase_id]`.
+- `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest` -> 95 passed, 38 warnings.
+- `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run lint` -> exit 0.
+- `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend && npm run build` -> exit 0; route table includes `/repos/[owner]/[name]/stages/[stage_id]/phases/[phase_id]`.
 - Canonical route smoke returned `HTTP/1.1 200 OK` and rendered `R-W-LAB/wily-roadmap · s02/p01`, `Canonical route smoke`, and `Render the tuple-safe phase detail route.`
 - `git diff --check` -> exit 0 in both Wily Roadmap and Wily Board.
 - Execution package validator -> `PASS: execution package contract is complete.`

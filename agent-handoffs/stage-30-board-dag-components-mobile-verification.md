@@ -2,7 +2,7 @@
 
 ## 2026-05-18T05:14:05Z - Baseline
 
-Working directory: `/Users/wilycastle/Code/projects/wily-board/frontend`
+Working directory: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend`
 
 | Command | Exit | Evidence |
 | --- | ---: | --- |
@@ -13,7 +13,7 @@ Working directory: `/Users/wilycastle/Code/projects/wily-board/frontend`
 
 ## 2026-05-18T05:41:31Z - Final
 
-Working directory: `/Users/wilycastle/Code/projects/wily-board`
+Working directory: `/Users/wilycastle/Code/projects/wily-plugin/wily-board`
 
 | Command | Exit | Evidence |
 | --- | ---: | --- |

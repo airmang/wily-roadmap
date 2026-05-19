@@ -42,10 +42,10 @@ Outcome:
 
 In scope:
 - Add read-only FastAPI JSON APIs and SSE stream while preserving existing sync/live ingestion behavior.
-- Add a `frontend/` Next.js app in `/Users/wilycastle/Code/projects/wily-board/frontend`.
+- Add a `frontend/` Next.js app in `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend`.
 - Build hub, repo workspace, local desk, pinned repos, command palette, theme, responsive behavior, and read-only cutover.
 - Remove Board mutation UI/action routes only after replacement surfaces exist.
-- Update Wily roadmap state in `/Users/wilycastle/Code/projects/wily-roadmap` as phases progress.
+- Update Wily roadmap state in `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap` as phases progress.
 
 Non-goals:
 - Do not alter durable `.wily` source-of-truth semantics.
@@ -72,25 +72,25 @@ Assumptions:
 ## File / Ownership Boundaries
 
 - Expected touchpoints:
-  - `/Users/wilycastle/Code/projects/wily-board/app/main.py`
-  - `/Users/wilycastle/Code/projects/wily-board/app/web/routes.py`
-  - `/Users/wilycastle/Code/projects/wily-board/app/api/*`
-  - `/Users/wilycastle/Code/projects/wily-board/app/actions/*`
-  - `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-  - `/Users/wilycastle/Code/projects/wily-board/app/config.py`
-  - `/Users/wilycastle/Code/projects/wily-board/tests/*`
-  - `/Users/wilycastle/Code/projects/wily-board/frontend/*`
-  - `/Users/wilycastle/Code/projects/wily-board/deploy/*`
-  - `/Users/wilycastle/Code/projects/wily-board/docs/OPERATIONS.md`
-  - `/Users/wilycastle/Code/projects/wily-roadmap/.wily/**`
-  - `/Users/wilycastle/Code/projects/wily-roadmap/agent-handoffs/s21-board-ui-redesign-*`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/main.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/routes.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/*`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/actions/*`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/config.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/*`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/*`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/deploy/*`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/OPERATIONS.md`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.wily/**`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/agent-handoffs/s21-board-ui-redesign-*`
 - Must not edit:
   - unrelated repositories
   - secrets such as private keys, real env files, and OAuth/App credentials
   - user-owned untracked `.playwright-mcp/` artifacts unless needed only for new screenshots
 - User-owned or pre-existing changes to preserve:
-  - `/Users/wilycastle/Code/projects/wily-roadmap/docs/superpowers/specs/2026-05-16-wily-board-ui-redesign-design.md` is pre-existing untracked design input.
-  - `/Users/wilycastle/Code/projects/wily-roadmap/.playwright-mcp/` is pre-existing untracked output.
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/docs/superpowers/specs/2026-05-16-wily-board-ui-redesign-design.md` is pre-existing untracked design input.
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.playwright-mcp/` is pre-existing untracked output.
 
 ## Execution Plan
 
@@ -205,17 +205,17 @@ Baseline:
   - `wily-roadmap`: goal-owned `.wily` s21 decomposition files modified/untracked, pre-existing `.playwright-mcp/` and design spec untracked.
   - `wily-board`: clean at start.
 - Initial passing verification:
-  - `/Users/wilycastle/Code/projects/wily-board`: `uv run pytest` -> 71 passed, 26 warnings.
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board`: `uv run pytest` -> 71 passed, 26 warnings.
 - Known broken tests unrelated to this task:
   - none discovered.
 
 User / pre-existing changes:
 - Pre-existing modified files:
-  - none in `/Users/wilycastle/Code/projects/wily-board` at baseline.
-  - goal-owned Wily state changes already exist in `/Users/wilycastle/Code/projects/wily-roadmap`.
+  - none in `/Users/wilycastle/Code/projects/wily-plugin/wily-board` at baseline.
+  - goal-owned Wily state changes already exist in `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`.
 - Pre-existing untracked files:
-  - `/Users/wilycastle/Code/projects/wily-roadmap/.playwright-mcp/`
-  - `/Users/wilycastle/Code/projects/wily-roadmap/docs/superpowers/specs/2026-05-16-wily-board-ui-redesign-design.md`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.playwright-mcp/`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/docs/superpowers/specs/2026-05-16-wily-board-ui-redesign-design.md`
 - Preserve pre-existing untracked design spec and `.playwright-mcp/`.
 - Do not overwrite unrelated user changes if they appear later; work with them or stop only if safe editing is impossible.
 

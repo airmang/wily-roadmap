@@ -13,13 +13,13 @@
 ## Task 1: Claim Conflict Warnings
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/routes.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/templates/_phase_row.html`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/templates/board.html`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/static/app.css`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_db.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_web_routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/_phase_row.html`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/board.html`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/static/app.css`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_db.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_web_routes.py`
 - Modify: `plugins/wily-roadmap/scripts/wily.py`
 - Modify: `plugins/wily-roadmap/tests/test_wily_cli.py`
 
@@ -35,12 +35,12 @@
 ## Task 2: Review And Awaiting-Push Queue
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/routes.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/templates/board.html`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/static/app.css`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_db.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_web_routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/board.html`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/static/app.css`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_db.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_web_routes.py`
 
 - [ ] Write failing DB tests for a follow-up queue containing `completed_local`, durable `needs_review`, blocked-local review items, and PR-open rows.
 - [ ] Write failing route tests proving the queue appears on the dashboard and links to repo detail anchors.
@@ -52,12 +52,12 @@
 ## Task 3: Repository Sync Health Panel
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/routes.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/templates/board.html`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/app/web/static/app.css`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_db.py`
-- Modify: `/Users/wilycastle/Code/projects/wily-board/tests/test_web_routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/routes.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/templates/board.html`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/static/app.css`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_db.py`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_web_routes.py`
 
 - [ ] Write failing DB tests classifying repo health as `ok`, `stale`, or `not_initialized`.
 - [ ] Write failing route tests proving missing `.wily` state and stale sync time are visible.
@@ -68,8 +68,8 @@
 ## Task 4: Collaboration Ops Polish And Verification
 
 **Files:**
-- Modify: `/Users/wilycastle/Code/projects/wily-board/docs/OPERATIONS.md`
-- Modify: `/Users/wilycastle/Code/projects/wily-roadmap/.wily/status.md`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/OPERATIONS.md`
+- Modify: `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.wily/status.md`
 - Modify: Board templates/CSS only if visual polish is required by tests or QA.
 
 - [ ] Document conflict warnings, follow-up queue, and sync health in operations docs.

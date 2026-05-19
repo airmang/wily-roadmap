@@ -9,10 +9,10 @@ Candidate discovery found:
 - `/Users/wilycastle/Code/projects/DIVE-2`
 - `/Users/wilycastle/Code/projects/Digit`
 - `/Users/wilycastle/Code/projects/hwpx`
-- `/Users/wilycastle/Code/projects/wily-roadmap`
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2`
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy`
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only`
 
 Decision: process sequentially to preserve dirty worktree evidence and avoid interleaved migration output.
 
@@ -25,10 +25,10 @@ Results:
 - `/Users/wilycastle/Code/projects/DIVE-2`: migrated.
 - `/Users/wilycastle/Code/projects/Digit`: migrated.
 - `/Users/wilycastle/Code/projects/hwpx`: skipped because `git status --short` failed with `fatal: not a git repository`.
-- `/Users/wilycastle/Code/projects/wily-roadmap`: migrated.
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2`: already v2; dry-run succeeded and apply was skipped because the roadmap already declared `wily-roadmap-v2`.
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy`: migrated.
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only`: migrated.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`: migrated.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2`: already v2; dry-run succeeded and apply was skipped because the roadmap already declared `wily-roadmap-v2`.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy`: migrated.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only`: migrated.
 
 Generated evidence:
 
@@ -41,7 +41,7 @@ Final evidence pass:
 
 - Fresh `git diff --check` passed for `/Users/wilycastle/Code/projects/DIVE-2`.
 - Fresh `git diff --check` passed for `/Users/wilycastle/Code/projects/Digit`.
-- Fresh `git diff --check` passed for `/Users/wilycastle/Code/projects/wily-roadmap`.
+- Fresh `git diff --check` passed for `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`.
 - Schema check confirmed `wily-roadmap-v2` for the six migrated/already-v2 git-usable candidates.
 - Run log check found no `--prune-legacy` invocation.
 
@@ -58,13 +58,13 @@ Corrected candidate set:
 - `/Users/wilycastle/Code/projects/DIVE-2`: migrated.
 - `/Users/wilycastle/Code/projects/Digit`: migrated.
 - `/Users/wilycastle/Code/projects/hwpx`: skipped because `git status --short` failed with `fatal: not a git repository`.
-- `/Users/wilycastle/Code/projects/wily-roadmap`: migrated.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap`: migrated.
 
 Invalidated fixture candidates:
 
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2`
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy`
-- `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only`
 
 Evidence:
 

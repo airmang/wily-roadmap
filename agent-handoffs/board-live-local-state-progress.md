@@ -110,13 +110,13 @@ Files changed:
 
 - `plugins/wily-roadmap/scripts/wily.py`
 - `plugins/wily-roadmap/tests/test_wily_cli.py`
-- `/Users/wilycastle/Code/projects/wily-board/app/api/routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/lib/types.ts`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/desk.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/phase-list.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/stage-map.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/app/globals.css`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_api_routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/lib/types.ts`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/desk.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/phase-list.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/stage-map.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/globals.css`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_api_routes.py`
 - `agent-handoffs/board-live-local-state-*.md`
 
 Commands run:
@@ -152,7 +152,7 @@ Checkpoint: CP01 Baseline and regression tests
 Files changed:
 
 - `plugins/wily-roadmap/tests/test_wily_cli.py`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_api_routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_api_routes.py`
 - `agent-handoffs/board-live-local-state-status.md`
 - `agent-handoffs/board-live-local-state-progress.md`
 - `agent-handoffs/board-live-local-state-verification.md`
@@ -212,13 +212,13 @@ Checkpoint: CP03 Board API draft projection and CP04 Next.js rendering/live refr
 
 Files changed:
 
-- `/Users/wilycastle/Code/projects/wily-board/app/api/routes.py`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/lib/types.ts`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/desk.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/phase-list.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/components/stage-map.tsx`
-- `/Users/wilycastle/Code/projects/wily-board/frontend/app/globals.css`
-- `/Users/wilycastle/Code/projects/wily-board/tests/test_api_routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/routes.py`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/lib/types.ts`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/desk.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/phase-list.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/components/stage-map.tsx`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/frontend/app/globals.css`
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_api_routes.py`
 - `agent-handoffs/board-live-local-state-status.md`
 - `agent-handoffs/board-live-local-state-progress.md`
 - `agent-handoffs/board-live-local-state-verification.md`

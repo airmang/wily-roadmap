@@ -41,7 +41,7 @@ Non-goals:
 - Do not refactor unrelated Board frontend or GitHub sync behavior.
 
 Assumptions:
-- Existing dirty changes in `/Users/wilycastle/Code/projects/wily-board` are user-owned and must be preserved.
+- Existing dirty changes in `/Users/wilycastle/Code/projects/wily-plugin/wily-board` are user-owned and must be preserved.
 - The current Board repo may not yet match the full v3 design, so the ingest implementation should be additive and compatible with the existing tables/rendering.
 - macOS launchd remains the plugin-friendly daemon install path for the bundled agent; systemd packaging belongs only in Board deployment docs if later requested.
 
@@ -64,11 +64,11 @@ Assumptions:
   - `plugins/wily-roadmap/README.md`
   - `plugins/wily-roadmap/tests/v3/**`
   - `docs/superpowers/specs/2026-05-19-wily-board-v3-design.md`
-  - `/Users/wilycastle/Code/projects/wily-board/app/api/agent.py`
-  - `/Users/wilycastle/Code/projects/wily-board/app/main.py`
-  - `/Users/wilycastle/Code/projects/wily-board/app/db/schema.sql`
-  - `/Users/wilycastle/Code/projects/wily-board/app/db/repo.py`
-  - `/Users/wilycastle/Code/projects/wily-board/tests/test_api_agent_*.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/agent.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/main.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/schema.sql`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/db/repo.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_api_agent_*.py`
 - Must not edit:
   - Remote deploy files unless required for local tests.
   - Board frontend unless ingestion tests require a typed API update.

@@ -42,7 +42,7 @@ Primary spec: `docs/superpowers/specs/2026-05-19-wily-board-v3-design.md`.
 Outcome: build the `wily-board` server foundation as a Python FastAPI + SQLite service with GitHub OAuth shell and `/agent/*` ingest API.
 
 In scope:
-- Preserve the existing v2 repo history, then create or use a scoped `feat/v3-rewrite` v3 rewrite branch in `/Users/wilycastle/Code/projects/wily-board`.
+- Preserve the existing v2 repo history, then create or use a scoped `feat/v3-rewrite` v3 rewrite branch in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`.
 - Implement Plan 1 tasks 1-19: tooling, config, schema/migrations, repo helpers, parser, merge policy, sessions, OAuth, org allowlist, machine code minting, agent register/snapshot/heartbeat, web login shell, main wiring, deploy artifacts, smoke test, README/deploy docs.
 - Keep the service local-first and approval-first for real remote deployment. Do not SSH or deploy unless verification reveals a local-only blocker that the plan explicitly requires remote diagnosis.
 
@@ -52,7 +52,7 @@ Non-goals:
 - No remote production deployment.
 
 Assumptions:
-- Existing `/Users/wilycastle/Code/projects/wily-board` is the legacy v2 repo referenced by the plan.
+- Existing `/Users/wilycastle/Code/projects/wily-plugin/wily-board` is the legacy v2 repo referenced by the plan.
 - Rewriting tracked files on an orphan branch is goal-scoped and preserves legacy history.
 - `uv` is available locally.
 
@@ -72,8 +72,8 @@ Assumptions:
 ## File / Ownership Boundaries
 
 - Expected touchpoints:
-  - `/Users/wilycastle/Code/projects/wily-board/**`
-  - `/Users/wilycastle/Code/projects/wily-roadmap/agent-handoffs/wily-board-1-server-*.md`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/**`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/agent-handoffs/wily-board-1-server-*.md`
 - Must not edit:
   - `plugins/wily-roadmap/**`
   - existing unrelated `wily-roadmap` modified/untracked files

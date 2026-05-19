@@ -2,7 +2,7 @@
 
 State: DONE
 
-Objective: Implement Plan 3 UI, SSE, and realtime behavior in `/Users/wilycastle/Code/projects/wily-board`.
+Objective: Implement Plan 3 UI, SSE, and realtime behavior in `/Users/wilycastle/Code/projects/wily-plugin/wily-board`.
 
 Progress: 9/9 (100%)
 

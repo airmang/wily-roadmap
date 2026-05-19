@@ -21,20 +21,20 @@ Work checkpoint-by-checkpoint. After each checkpoint:
 3. append progress, evidence, and remaining work to the progress log,
 4. continue unless a narrow hard-stop condition is triggered.
 
-Done only when all Plan 3 acceptance criteria are satisfied and final verification passes: cd /Users/wilycastle/Code/projects/wily-board && uv run pytest -v; cd /Users/wilycastle/Code/projects/wily-board/agent && uv run pytest -v; cd /Users/wilycastle/Code/projects/wily-board && uv run ruff check .; cd /Users/wilycastle/Code/projects/wily-board/agent && uv run ruff check .
+Done only when all Plan 3 acceptance criteria are satisfied and final verification passes: cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest -v; cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/agent && uv run pytest -v; cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run ruff check .; cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/agent && uv run ruff check .
 ```
 
 ## Source Request / Handoff
 
 User requested Custom Workflow goal execution for:
 
-`/Users/wilycastle/Code/projects/wily-roadmap/.claude/worktrees/wily-board-plans-2-3/docs/superpowers/plans/2026-05-19-wily-board-3-ui.md`
+`/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/.claude/worktrees/wily-board-plans-2-3/docs/superpowers/plans/2026-05-19-wily-board-3-ui.md`
 
 The plan title is "Wily Board v3 - Plan 3: UI · SSE · Real-time".
 
 ## Inline Requirements
 
-Outcome: make `/Users/wilycastle/Code/projects/wily-board` visible and realtime with server-rendered Jinja pages, htmx partial refreshes, authenticated SSE, presence indicators, project cards, detail pages, activity timelines, parallel swim-lanes, and docs.
+Outcome: make `/Users/wilycastle/Code/projects/wily-plugin/wily-board` visible and realtime with server-rendered Jinja pages, htmx partial refreshes, authenticated SSE, presence indicators, project cards, detail pages, activity timelines, parallel swim-lanes, and docs.
 
 In scope:
 - Add `sse-starlette`, an in-process `SseBroker`, `/sse`, and broker publish hooks in `/agent/snapshot` and `/agent/heartbeat`.
@@ -48,7 +48,7 @@ Non-goals:
 - No unrelated refactors.
 
 Assumptions:
-- `/Users/wilycastle/Code/projects/wily-board` is the implementation repo.
+- `/Users/wilycastle/Code/projects/wily-plugin/wily-board` is the implementation repo.
 - The Plan 3 file in `.claude/worktrees/wily-board-plans-2-3` is authoritative even though it is not present in the main plan directory.
 - Existing dirty files in `wily-board` are Plan 2/user-owned and must be preserved while making compatible edits.
 
@@ -67,20 +67,20 @@ Assumptions:
 ## File / Ownership Boundaries
 
 - Expected touchpoints:
-  - `/Users/wilycastle/Code/projects/wily-board/pyproject.toml`
-  - `/Users/wilycastle/Code/projects/wily-board/uv.lock`
-  - `/Users/wilycastle/Code/projects/wily-board/app/main.py`
-  - `/Users/wilycastle/Code/projects/wily-board/app/api/agent.py`
-  - `/Users/wilycastle/Code/projects/wily-board/app/sse/**`
-  - `/Users/wilycastle/Code/projects/wily-board/app/web/**`
-  - `/Users/wilycastle/Code/projects/wily-board/tests/test_sse_*.py`
-  - `/Users/wilycastle/Code/projects/wily-board/tests/test_agent_publishes_events.py`
-  - `/Users/wilycastle/Code/projects/wily-board/tests/test_web_*.py`
-  - `/Users/wilycastle/Code/projects/wily-board/README.md`
-  - `/Users/wilycastle/Code/projects/wily-board/docs/deploy.md`
-  - `/Users/wilycastle/Code/projects/wily-roadmap/agent-handoffs/wily-board-3-ui-*.md`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/pyproject.toml`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/uv.lock`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/main.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/api/agent.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/sse/**`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/app/web/**`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_sse_*.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_agent_publishes_events.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/tests/test_web_*.py`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/README.md`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-board/docs/deploy.md`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/agent-handoffs/wily-board-3-ui-*.md`
 - Must not edit:
-  - `/Users/wilycastle/Code/projects/wily-roadmap/plugins/wily-roadmap/**`
+  - `/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/**`
   - unrelated dirty files in either repo
   - remote servers or external systems
 - User-owned or pre-existing changes to preserve:
@@ -158,7 +158,7 @@ Reason: read-only exploration/review lanes are safe. Implementation tasks touch 
 ### Lane A - Existing Repo Pattern Explorer
 Agent: Huygens
 Mode: read_only_evidence
-Allowed files: `/Users/wilycastle/Code/projects/wily-board/**`
+Allowed files: `/Users/wilycastle/Code/projects/wily-plugin/wily-board/**`
 Must not edit: all files
 Task: summarize existing patterns, mismatches with Plan 3 snippets, dirty-file risks, and verification commands.
 Completion evidence: concise summary returned in thread.
@@ -171,10 +171,10 @@ Completion evidence: concise summary returned in thread.
 ## Verification Plan
 
 - Targeted checkpoint tests from Plan 3.
-- Final server suite: `cd /Users/wilycastle/Code/projects/wily-board && uv run pytest -v`
-- Final agent suite: `cd /Users/wilycastle/Code/projects/wily-board/agent && uv run pytest -v`
-- Server lint: `cd /Users/wilycastle/Code/projects/wily-board && uv run ruff check .`
-- Agent lint: `cd /Users/wilycastle/Code/projects/wily-board/agent && uv run ruff check .`
+- Final server suite: `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run pytest -v`
+- Final agent suite: `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/agent && uv run pytest -v`
+- Server lint: `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board && uv run ruff check .`
+- Agent lint: `cd /Users/wilycastle/Code/projects/wily-plugin/wily-board/agent && uv run ruff check .`
 
 ## Rollback / Stop Conditions
 
