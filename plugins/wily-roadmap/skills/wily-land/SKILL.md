@@ -10,12 +10,14 @@ Collect scoped changed files, create a git commit with `Wily-Task: <id>`, and op
 ## Internal Command
 
 ```bash
-python3 <plugin-root>/scripts/wily.py land <id> [--no-push|--force]
+python3 <plugin-root>/scripts/wily.py land <id> [--no-push|--force|--include-ledger-closure]
 ```
 
 ## Behavior
 
 - State-changing: creates a git commit.
+- Without `--include-ledger-closure`, stop if out-of-scope Wily ledger files are present.
+- Use `--include-ledger-closure` to include `.wily/tasks.yaml`, `.wily/tasks/<id>/result.md`, or task `progress.jsonl` closure files with the landing commit.
 - Remote actions remain approval-first; do not push without explicit user approval.
 
 ## Response Style

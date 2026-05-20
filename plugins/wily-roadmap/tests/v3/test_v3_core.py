@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from wily.cli import agent as agent_cmd  # noqa: E402
 from wily.agent import client as agent_client  # noqa: E402
+from wily.cli import _common  # noqa: E402
 from wily.cli import block as block_cmd, cp as cp_cmd, doctor as doctor_cmd, done as done_cmd, go as go_cmd, land as land_cmd, next as next_cmd, replan as replan_cmd, watch as watch_cmd  # noqa: E402
 from wily.agent.config import AgentConfig  # noqa: E402
 from wily.agent.daemon import run_once as agent_run_once  # noqa: E402
@@ -2771,6 +2772,78 @@ class CliLifecycleTest(unittest.TestCase):
 
             self.assertIn("Wily-Task: T01", message)
             self.assertIn("Wily-Pre-Done: true", message)
+
+    def test_land_blocks_ledger_closure_outside_scope_without_opt_in(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _git_repo(root)
+            paths = WilyPaths(root)
+            paths.wily_dir.mkdir()
+            (root / "src").mkdir()
+            (root / "src" / "feature.txt").write_text("base\n", encoding="utf-8")
+            save_tasks(
+                paths,
+                "demo",
+                [
+                    Task(id="T01", title="Previous task", status=TaskStatus.DONE, scope=["legacy/*"]),
+                    Task(id="T02", title="Current task", status=TaskStatus.DONE, scope=["src/*"]),
+                ],
+            )
+            subprocess.run(["git", "add", "."], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-q", "-m", "baseline"], cwd=root, check=True)
+            before = subprocess.run(["git", "rev-list", "--count", "HEAD"], cwd=root, capture_output=True, text=True, check=True).stdout.strip()
+
+            (root / "src" / "feature.txt").write_text("changed\n", encoding="utf-8")
+            _, tasks = load_tasks(paths)
+            tasks[0].scope.append(".wily/tasks/T01/result.md")
+            save_tasks(paths, "demo", tasks)
+            paths.result_md("T01").parent.mkdir(parents=True, exist_ok=True)
+            paths.result_md("T01").write_text("# T01 result\n\n- finished earlier\n", encoding="utf-8")
+
+            with chdir_compat(root):
+                stderr = StringIO()
+                with redirect_stderr(stderr):
+                    code = land_cmd.main(["T02", "--no-push"])
+
+            after = subprocess.run(["git", "rev-list", "--count", "HEAD"], cwd=root, capture_output=True, text=True, check=True).stdout.strip()
+            self.assertEqual(code, _common.EXIT_TRANSITION)
+            self.assertEqual(after, before)
+            self.assertIn("ledger closure changes detected", stderr.getvalue())
+            self.assertIn("--include-ledger-closure", stderr.getvalue())
+
+    def test_land_include_ledger_closure_commits_wily_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _git_repo(root)
+            paths = WilyPaths(root)
+            paths.wily_dir.mkdir()
+            (root / "src").mkdir()
+            (root / "src" / "feature.txt").write_text("base\n", encoding="utf-8")
+            save_tasks(
+                paths,
+                "demo",
+                [
+                    Task(id="T01", title="Previous task", status=TaskStatus.DONE, scope=["legacy/*"]),
+                    Task(id="T02", title="Current task", status=TaskStatus.DONE, scope=["src/*"]),
+                ],
+            )
+            subprocess.run(["git", "add", "."], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-q", "-m", "baseline"], cwd=root, check=True)
+
+            (root / "src" / "feature.txt").write_text("changed\n", encoding="utf-8")
+            _, tasks = load_tasks(paths)
+            tasks[0].scope.append(".wily/tasks/T01/result.md")
+            save_tasks(paths, "demo", tasks)
+            paths.result_md("T01").parent.mkdir(parents=True, exist_ok=True)
+            paths.result_md("T01").write_text("# T01 result\n\n- finished earlier\n", encoding="utf-8")
+
+            with chdir_compat(root):
+                self.assertEqual(land_cmd.main(["T02", "--include-ledger-closure", "--no-push"]), _common.EXIT_OK)
+
+            committed = subprocess.run(["git", "show", "--name-only", "--format=", "HEAD"], cwd=root, capture_output=True, text=True, check=True).stdout.splitlines()
+            self.assertIn("src/feature.txt", committed)
+            self.assertIn(".wily/tasks.yaml", committed)
+            self.assertIn(".wily/tasks/T01/result.md", committed)
 
     def test_go_checkpoint_commands_are_portable(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

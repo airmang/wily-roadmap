@@ -58,6 +58,16 @@ class V3SurfaceTest(unittest.TestCase):
             self.assertIn(token, command)
             self.assertIn(token, skill)
 
+    def test_land_surface_documents_ledger_closure_guard(self) -> None:
+        command = (ROOT / "commands" / "land.md").read_text(encoding="utf-8")
+        skill = (ROOT / "skills" / "wily-land" / "SKILL.md").read_text(encoding="utf-8")
+
+        for text in (command, skill):
+            with self.subTest(path="land-ledger-closure"):
+                self.assertIn("--include-ledger-closure", text)
+                self.assertIn(".wily/tasks.yaml", text)
+                self.assertIn(".wily/tasks/<id>/result.md", text)
+
     def test_plugin_manifest_and_readme_document_agent_onboarding(self) -> None:
         data = json.loads((ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
         prompt = "\n".join(data["interface"]["defaultPrompt"])
