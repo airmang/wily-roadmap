@@ -5,9 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..config import load_actors, load_tasks
+from ..coordination import resolve_project_context
 from ..models import Task, TaskStatus
 from ..observation import git_config_identity, match_actor
-from ..paths import WilyPaths, WilyRootNotFound, find_wily_root
+from ..paths import WilyRootNotFound
 from ..scheduling import parallel_candidates, waiting_candidates
 from . import _common
 
@@ -29,11 +30,12 @@ def main(args: list[str]) -> int:
     mine = "--mine" in args
     all_candidates = "--all" in args or "--parallel" in args
     try:
-        root = find_wily_root(Path.cwd())
+        context = resolve_project_context(Path.cwd())
     except WilyRootNotFound as exc:
         _common.emit_error(str(exc))
         return _common.EXIT_FAILURE
-    paths = WilyPaths(root)
+    root = context.paths.root
+    paths = context.paths
     _, tasks = load_tasks(paths)
     actor_id = None
     if mine:
@@ -50,12 +52,13 @@ def main(args: list[str]) -> int:
             _common.emit_error("no ready task with satisfied dependencies")
             return _common.EXIT_FAILURE
         if as_json:
-            _common.emit_json(
-                {
-                    "parallel": [task.to_dict() for task in parallel],
-                    "waiting": [task.to_dict() for task in waiting],
-                }
-            )
+            payload = {
+                "parallel": [task.to_dict() for task in parallel],
+                "waiting": [task.to_dict() for task in waiting],
+            }
+            if context.active_mode == "coordination":
+                payload["active_mode"] = context.active_mode
+            _common.emit_json(payload)
         else:
             for task in parallel:
                 _emit_task_line(task, status="parallel")
@@ -67,7 +70,10 @@ def main(args: list[str]) -> int:
         _common.emit_error("no ready task with satisfied dependencies")
         return _common.EXIT_FAILURE
     if as_json:
-        _common.emit_json(task.to_dict())
+        if context.active_mode == "coordination":
+            _common.emit_json({"active_mode": context.active_mode, "task": task.to_dict()})
+        else:
+            _common.emit_json(task.to_dict())
     else:
         _emit_task_line(task, status="ready")
     return _common.EXIT_OK

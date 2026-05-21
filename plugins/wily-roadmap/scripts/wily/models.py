@@ -46,7 +46,7 @@ class Task:
     intent: str = ""
     acceptance: str | list[AcceptanceItem] = ""
     acceptance_file: str | None = None
-    scope: list[str] = field(default_factory=list)
+    scope: list[Any] = field(default_factory=list)
     depends_on: list[str] = field(default_factory=list)
     parallel_lane: str | None = None
     priority: int | None = None
@@ -55,6 +55,7 @@ class Task:
     assignee: str | None = None
     actor: str | None = None
     claim_sha: str | None = None
+    claim_snapshot: dict[str, Any] | None = None
     claim_at: str | None = None
     done_at: str | None = None
     blocker: str | None = None
@@ -83,6 +84,8 @@ class Task:
             data["priority"] = self.priority
         if self.capacity_hint is not None:
             data["capacity_hint"] = self.capacity_hint
+        if self.claim_snapshot is not None:
+            data["claim_snapshot"] = self.claim_snapshot
         return data
 
     @classmethod
@@ -102,6 +105,7 @@ class Task:
             assignee=data.get("assignee"),
             actor=data.get("actor"),
             claim_sha=data.get("claim_sha"),
+            claim_snapshot=data.get("claim_snapshot") if isinstance(data.get("claim_snapshot"), dict) else None,
             claim_at=data.get("claim_at"),
             done_at=data.get("done_at"),
             blocker=data.get("blocker"),

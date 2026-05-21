@@ -7,10 +7,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ..config import load_actors, load_tasks, save_tasks
+from ..coordination import ProjectContext, nested_repo_exclusions, resolve_project_context
 from ..hooks.drift_guard import ensure_drift_stub
-from ..observation import changed_files_since_by_actor, head_sha, list_commits_since_fork, match_actor
-from ..paths import WilyPaths, WilyRootNotFound, find_wily_root, touch_wily
+from ..observation import changed_files_since_by_actor, head_sha, list_commits_since_fork, match_actor, repo_snapshot
+from ..paths import WilyRootNotFound, touch_wily
 from ..progress import AcCheck, append_event, cp_summary, read_ac_checks
+from ..scope import file_matches_scope, normalize_scope_entries
 from ..transitions import TransitionError, apply_done
 from . import _common
 
@@ -51,11 +53,12 @@ def main(args: list[str]) -> int:
         return _common.EXIT_USAGE
     task_id = positional[0]
     try:
-        root = find_wily_root(Path.cwd())
+        context = resolve_project_context(Path.cwd())
     except WilyRootNotFound as exc:
         _common.emit_error(str(exc))
         return _common.EXIT_FAILURE
-    paths = WilyPaths(root)
+    root = context.paths.root
+    paths = context.paths
     project_title, tasks = load_tasks(paths)
     task = next((item for item in tasks if item.id == task_id), None)
     if task is None:
@@ -63,14 +66,18 @@ def main(args: list[str]) -> int:
         return _common.EXIT_FAILURE
     current_sha = "?"
     changed: list[str] = []
-    try:
-        current_sha = head_sha(root)
-        if task.claim_sha:
-            actor = next((item for item in load_actors(paths) if item.id == task.actor), None)
-            changed = changed_files_since_by_actor(root, task.claim_sha, actor=actor)
-    except Exception:
-        changed = []
-    outside_scope = _outside_scope(task.scope, changed)
+    if context.active_mode == "coordination" and task.claim_snapshot:
+        current_sha = "coordination"
+        changed = _coordination_changed_files(context, task.claim_snapshot)
+    else:
+        try:
+            current_sha = head_sha(root)
+            if task.claim_sha:
+                actor = next((item for item in load_actors(paths) if item.id == task.actor), None)
+                changed = changed_files_since_by_actor(root, task.claim_sha, actor=actor)
+        except Exception:
+            changed = []
+    outside_scope = _outside_scope(task.scope, changed, context=context)
     if outside_scope and not force:
         if add_scope:
             task.scope = _extend_scope(task.scope, outside_scope)
@@ -95,7 +102,7 @@ def main(args: list[str]) -> int:
     parsed_ac_checks = read_ac_checks(paths, task_id)
     paths.task_dir(task_id).mkdir(parents=True, exist_ok=True)
     paths.result_md(task_id).write_text(
-        _format_result(updated, done_at=now, current_sha=current_sha, changed=changed, cp_total=summary.total, cp_done=summary.done, note=note, observed=observed, ac_checks=parsed_ac_checks),
+        _format_result(updated, done_at=now, current_sha=current_sha, changed=changed, cp_total=summary.total, cp_done=summary.done, note=note, observed=observed, ac_checks=parsed_ac_checks, context=context),
         encoding="utf-8",
     )
     save_tasks(paths, project_title, [updated if item.id == task_id else item for item in tasks])
@@ -103,6 +110,7 @@ def main(args: list[str]) -> int:
     if as_json:
         _common.emit_json(
             {
+                "active_mode": context.active_mode,
                 "task": updated.to_dict(),
                 "changed_files": changed,
                 "cp": {"done": summary.done, "total": summary.total},
@@ -128,6 +136,27 @@ def _observed_actor(root: Path, paths: WilyPaths, claim_sha: str | None) -> str 
     return None
 
 
+def _coordination_changed_files(context: ProjectContext, claim_snapshot: dict[str, object]) -> list[str]:
+    if context.coordination is None:
+        return []
+    baseline_repos = claim_snapshot.get("repos") if isinstance(claim_snapshot.get("repos"), dict) else {}
+    changed: list[str] = []
+    for repo in context.coordination.all_repos:
+        baseline = baseline_repos.get(repo.id) if isinstance(baseline_repos, dict) else None
+        baseline_fingerprints = {}
+        if isinstance(baseline, dict) and isinstance(baseline.get("fingerprints"), dict):
+            baseline_fingerprints = baseline["fingerprints"]
+        current = repo_snapshot(repo.path, exclude_paths=nested_repo_exclusions(context.coordination, repo))
+        for path in current.get("changed_files") or []:
+            if not isinstance(path, str):
+                continue
+            current_fingerprints = current.get("fingerprints") if isinstance(current.get("fingerprints"), dict) else {}
+            if baseline_fingerprints.get(path) == current_fingerprints.get(path):
+                continue
+            changed.append(f"{repo.id}:{path}")
+    return changed
+
+
 def _format_result(
     task,
     *,
@@ -139,8 +168,9 @@ def _format_result(
     note: str | None,
     observed: bool,
     ac_checks: list[AcCheck],
+    context: ProjectContext | None = None,
 ) -> str:
-    drift = _drift_summary(task.scope, changed)
+    drift = _drift_summary(task.scope, changed, context=context)
     lines = [
         f"# {task.id}: {task.title} — done",
         "",
@@ -160,6 +190,9 @@ def _format_result(
         for check in ac_checks:
             acceptance = items.get(check.index)
             lines.append(f"| {check.index} | {check.status} | {acceptance.text if acceptance else ''} | {check.evidence} |")
+    if changed:
+        lines.extend(["", "## Changed Files", ""])
+        lines.extend(f"- {file}" for file in changed)
     lines.append("")
     return "\n".join(lines)
 
@@ -175,8 +208,8 @@ def _parse_ac_checks(values: list[str], *, actor: str, ts: str) -> list[AcCheck]
     return checks
 
 
-def _drift_summary(scope: list[str], changed: list[str]) -> str:
-    outside = _outside_scope(scope, changed)
+def _drift_summary(scope: list[str], changed: list[str], *, context: ProjectContext | None = None) -> str:
+    outside = _outside_scope(scope, changed, context=context)
     if not scope:
         return "(no scope declared)" if outside else "0 files outside scope"
     if not outside:
@@ -184,9 +217,17 @@ def _drift_summary(scope: list[str], changed: list[str]) -> str:
     return f"{len(outside)} files outside scope (first: {outside[0]})"
 
 
-def _outside_scope(scope: list[str], changed: list[str]) -> list[str]:
+def _outside_scope(scope: list[str], changed: list[str], *, context: ProjectContext | None = None) -> list[str]:
     if not scope:
         return list(changed)
+    if context and context.coordination:
+        entries = normalize_scope_entries(scope, default_repo=context.coordination.parent.id, coordination=True)
+        outside = []
+        for file in changed:
+            repo_id, sep, path = file.partition(":")
+            if not sep or not file_matches_scope(entries, repo_id=repo_id, path=path):
+                outside.append(file)
+        return outside
     return [file for file in changed if not any(fnmatch.fnmatch(file, pattern) for pattern in scope)]
 
 

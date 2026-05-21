@@ -45,6 +45,27 @@ def _git_repo(path: Path) -> None:
     subprocess.run(["git", "commit", "-q", "-m", "seed"], cwd=path, check=True)
 
 
+def _write_coordination(parent: Path, *, child_id: str = "roadmap", child_path: str = "./wily-roadmap") -> None:
+    wily_dir = parent / ".wily"
+    wily_dir.mkdir(exist_ok=True)
+    (wily_dir / "coordination.yaml").write_text(
+        "\n".join(
+            [
+                "schema: wily-coordination-v1",
+                "title: Parent Project",
+                "parent:",
+                "  id: parent",
+                "  path: .",
+                "repos:",
+                f"  - id: {child_id}",
+                f"    path: {child_path}",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
 class chdir_compat:
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -1167,6 +1188,981 @@ class CoreModelTest(unittest.TestCase):
             with self.assertRaises(WilyRootNotFound):
                 find_wily_root(root.parent)
 
+    def test_coordination_config_loads_parent_owned_repo_registry(self) -> None:
+        from wily.coordination import load_coordination_config
+
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            wily_dir = parent / ".wily"
+            wily_dir.mkdir()
+            (wily_dir / "coordination.yaml").write_text(
+                "\n".join(
+                    [
+                        "schema: wily-coordination-v1",
+                        "title: Parent Project",
+                        "parent:",
+                        "  id: parent",
+                        "  path: .",
+                        "repos:",
+                        "  - id: roadmap",
+                        "    path: ./wily-roadmap",
+                        "    title: Wily Roadmap",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            config = load_coordination_config(wily_dir / "coordination.yaml")
+
+            self.assertEqual(config.title, "Parent Project")
+            self.assertEqual(config.parent.id, "parent")
+            self.assertEqual(config.parent.path, parent.resolve())
+            self.assertEqual([repo.id for repo in config.repos], ["roadmap"])
+            self.assertEqual(config.repos[0].path, child.resolve())
+
+    def test_coordination_context_prefers_parent_mode_but_child_wily_wins_inside_child_repo(self) -> None:
+        from wily.coordination import resolve_project_context
+
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            paths = WilyPaths(parent)
+            paths.wily_dir.mkdir()
+            save_tasks(paths, "Parent Project", [Task(id="T01", title="Parent ready")])
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            save_tasks(WilyPaths(child), "Child Project", [Task(id="C01", title="Child ready")])
+            (paths.wily_dir / "coordination.yaml").write_text(
+                "\n".join(
+                    [
+                        "schema: wily-coordination-v1",
+                        "title: Parent Project",
+                        "parent:",
+                        "  id: parent",
+                        "  path: .",
+                        "repos:",
+                        "  - id: roadmap",
+                        "    path: ./wily-roadmap",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (parent / "wily-workspace.yaml").write_text(
+                "schema: wily-workspace-v1\ntitle: Manifest Only\nrepos: []\n",
+                encoding="utf-8",
+            )
+
+            parent_context = resolve_project_context(parent / "nested")
+            child_context = resolve_project_context(child)
+
+            self.assertEqual(parent_context.active_mode, "coordination")
+            self.assertEqual(parent_context.paths.root, parent.resolve())
+            self.assertEqual(parent_context.repo_id_for_path(parent / "README.md"), "parent")
+            self.assertEqual(parent_context.repo_id_for_path(child / "src" / "app.py"), "roadmap")
+            self.assertEqual(child_context.active_mode, "single_repo")
+            self.assertEqual(child_context.paths.root, child.resolve())
+            self.assertIsNone(child_context.coordination)
+
+    def test_scope_normalization_accepts_repo_qualified_and_structured_entries(self) -> None:
+        from wily.scope import ScopeEntry, normalize_scope_entries, scope_to_yaml
+
+        entries = normalize_scope_entries(
+            [
+                "parent:README.md",
+                "roadmap:src/**",
+                {"repo": "board", "path": "app/**"},
+                "legacy/**",
+            ],
+            default_repo="parent",
+            coordination=True,
+        )
+
+        self.assertEqual(
+            entries,
+            [
+                ScopeEntry(repo="parent", path="README.md", source="parent:README.md"),
+                ScopeEntry(repo="roadmap", path="src/**", source="roadmap:src/**"),
+                ScopeEntry(repo="board", path="app/**", source={"repo": "board", "path": "app/**"}),
+                ScopeEntry(repo="parent", path="legacy/**", source="legacy/**"),
+            ],
+        )
+        self.assertEqual(
+            scope_to_yaml(entries),
+            [
+                "parent:README.md",
+                "roadmap:src/**",
+                {"repo": "board", "path": "app/**"},
+                "legacy/**",
+            ],
+        )
+
+    def test_scope_matching_is_repo_aware_in_coordination_mode(self) -> None:
+        from wily.scope import file_matches_scope, normalize_scope_entries
+
+        scope = normalize_scope_entries(["parent:README.md", "roadmap:src/**"], default_repo="parent", coordination=True)
+
+        self.assertTrue(file_matches_scope(scope, repo_id="parent", path="README.md"))
+        self.assertTrue(file_matches_scope(scope, repo_id="roadmap", path="src/app.py"))
+        self.assertFalse(file_matches_scope(scope, repo_id="board", path="src/app.py"))
+        self.assertFalse(file_matches_scope(scope, repo_id="roadmap", path="README.md"))
+
+    def test_task_serializes_claim_snapshot_and_structured_scope(self) -> None:
+        snapshot = {
+            "schema": "wily-claim-snapshot-v1",
+            "repos": {
+                "parent": {"git_available": False, "branch": None, "sha": None, "dirty": False, "changed_files": [], "fingerprints": {}},
+                "roadmap": {"git_available": True, "branch": "main", "sha": "abc", "dirty": True, "changed_files": ["src/app.py"], "fingerprints": {}},
+            },
+        }
+
+        task = Task(
+            id="T01",
+            title="Coordination",
+            scope=[{"repo": "roadmap", "path": "src/**"}],
+            claim_snapshot=snapshot,
+        )
+        data = task.to_dict()
+        loaded = Task.from_dict(data)
+        claimed = apply_claim(loaded, actor="wily", sha=None, at="now", claim_snapshot=snapshot)
+
+        self.assertEqual(data["claim_snapshot"], snapshot)
+        self.assertEqual(loaded.claim_snapshot, snapshot)
+        self.assertEqual(loaded.scope, [{"repo": "roadmap", "path": "src/**"}])
+        self.assertIsNone(claimed.claim_sha)
+        self.assertEqual(claimed.claim_snapshot, snapshot)
+
+    def test_coordination_claim_from_non_git_parent_records_claim_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            save_tasks(WilyPaths(child), "Child Project", [])
+            subprocess.run(["git", "add", ".wily"], cwd=child, check=True)
+            subprocess.run(["git", "commit", "-q", "-m", "child wily"], cwd=child, check=True)
+            (child / "src").mkdir()
+            (child / "src" / "app.py").write_text("print('hello')\n", encoding="utf-8")
+
+            paths = WilyPaths(parent)
+            paths.wily_dir.mkdir()
+            save_actors(paths, [Actor(id="wily", display="Wily")])
+            save_tasks(
+                paths,
+                "Parent Project",
+                [Task(id="T01", title="Parent task", intent="do it", acceptance="done", scope=["roadmap:src/**"])],
+            )
+            (paths.wily_dir / "coordination.yaml").write_text(
+                "\n".join(
+                    [
+                        "schema: wily-coordination-v1",
+                        "title: Parent Project",
+                        "parent:",
+                        "  id: parent",
+                        "  path: .",
+                        "repos:",
+                        "  - id: roadmap",
+                        "    path: ./wily-roadmap",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "claim", "T01", "--as", "wily", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            task_payload = payload["task"]
+            self.assertEqual(task_payload["status"], "in_progress")
+            self.assertIsNone(task_payload["claim_sha"])
+            self.assertEqual(task_payload["claim_snapshot"]["schema"], "wily-claim-snapshot-v1")
+            repos = task_payload["claim_snapshot"]["repos"]
+            self.assertFalse(repos["parent"]["git_available"])
+            self.assertIsNone(repos["parent"]["sha"])
+            self.assertTrue(repos["roadmap"]["git_available"])
+            self.assertTrue(repos["roadmap"]["branch"])
+            self.assertEqual(
+                repos["roadmap"]["sha"],
+                subprocess.run(["git", "rev-parse", "HEAD"], cwd=child, capture_output=True, text=True, check=True).stdout.strip(),
+            )
+            self.assertTrue(repos["roadmap"]["dirty"])
+            self.assertIn("src/app.py", repos["roadmap"]["changed_files"])
+            fingerprint = repos["roadmap"]["fingerprints"]["src/app.py"]
+            self.assertEqual(fingerprint["kind"], "file")
+            self.assertEqual(len(fingerprint["sha256"]), 64)
+            _, tasks = load_tasks(paths)
+            self.assertIsNone(tasks[0].claim_sha)
+            self.assertIn("roadmap", tasks[0].claim_snapshot["repos"])
+
+    def test_coordination_done_from_non_git_parent_reports_child_changes_from_claim_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            paths = WilyPaths(parent)
+            paths.wily_dir.mkdir()
+            save_actors(paths, [Actor(id="wily", display="Wily")])
+            save_tasks(
+                paths,
+                "Parent Project",
+                [Task(id="T01", title="Parent task", intent="do it", acceptance="done", scope=["roadmap:src/**"])],
+            )
+            (paths.wily_dir / "coordination.yaml").write_text(
+                "\n".join(
+                    [
+                        "schema: wily-coordination-v1",
+                        "title: Parent Project",
+                        "parent:",
+                        "  id: parent",
+                        "  path: .",
+                        "repos:",
+                        "  - id: roadmap",
+                        "    path: ./wily-roadmap",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            claim = subprocess.run(
+                [sys.executable, str(SCRIPT), "claim", "T01", "--as", "wily", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(claim.returncode, 0, claim.stderr)
+            (child / "src").mkdir()
+            (child / "src" / "app.py").write_text("print('hello')\n", encoding="utf-8")
+
+            done = subprocess.run(
+                [sys.executable, str(SCRIPT), "done", "T01", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(done.returncode, 0, done.stderr)
+            payload = json.loads(done.stdout)
+            self.assertEqual(payload["changed_files"], ["roadmap:src/app.py"])
+            self.assertEqual(payload["task"]["status"], "done")
+            self.assertIn("roadmap:src/app.py", paths.result_md("T01").read_text(encoding="utf-8"))
+
+    def test_coordination_cp_status_next_and_watch_use_parent_tasks_and_expose_active_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            paths = WilyPaths(parent)
+            paths.wily_dir.mkdir()
+            save_actors(paths, [Actor(id="wily", display="Wily")])
+            save_tasks(
+                paths,
+                "Parent Project",
+                [Task(id="T01", title="Parent ready", intent="do it", acceptance="done", scope=["roadmap:src/**"])],
+            )
+            (paths.wily_dir / "coordination.yaml").write_text(
+                "\n".join(
+                    [
+                        "schema: wily-coordination-v1",
+                        "title: Parent Project",
+                        "parent:",
+                        "  id: parent",
+                        "  path: .",
+                        "repos:",
+                        "  - id: roadmap",
+                        "    path: ./wily-roadmap",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            cp = subprocess.run(
+                [sys.executable, str(SCRIPT), "cp", "T01", "start", "plan", "--actor", "wily"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+            status = subprocess.run(
+                [sys.executable, str(SCRIPT), "status", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+            next_result = subprocess.run(
+                [sys.executable, str(SCRIPT), "next", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+            watch = subprocess.run(
+                [sys.executable, str(SCRIPT), "watch", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+            status_text = subprocess.run(
+                [sys.executable, str(SCRIPT), "status", "--ui", "ascii"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(cp.returncode, 0, cp.stderr)
+            self.assertIn("T01 cp start: plan", cp.stdout)
+            self.assertEqual(status.returncode, 1, status.stderr)
+            status_payload = json.loads(status.stdout)
+            self.assertEqual(status_payload["active_mode"], "coordination")
+            self.assertEqual(status_payload["tasks"][0]["id"], "T01")
+            self.assertEqual(status_payload["cp"]["T01"]["current_cp"], "plan")
+            self.assertEqual(next_result.returncode, 0, next_result.stderr)
+            next_payload = json.loads(next_result.stdout)
+            self.assertEqual(next_payload["active_mode"], "coordination")
+            self.assertEqual(next_payload["task"]["id"], "T01")
+            self.assertEqual(watch.returncode, 1, watch.stderr)
+            watch_payload = json.loads(watch.stdout)
+            self.assertEqual(watch_payload["active_mode"], "coordination")
+            self.assertEqual(watch_payload["tasks"][0]["id"], "T01")
+            self.assertEqual(status_text.returncode, 1, status_text.stderr)
+            self.assertIn("coordination", status_text.stdout)
+
+    def test_coordination_cp_import_status_uses_parent_task_progress(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            _write_coordination(parent)
+            paths = WilyPaths(parent)
+            save_actors(paths, [Actor(id="wily", display="Wily")])
+            save_tasks(paths, "Parent Project", [Task(id="T01", title="Parent ready", intent="do it", acceptance="done")])
+            status_board = parent / "agent-handoffs" / "demo-status.md"
+            status_board.parent.mkdir()
+            status_board.write_text(
+                "| Checkpoint | Status | Evidence |\n| --- | --- | --- |\n| Plan | DONE | imported |\n",
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "cp", "T01", "import-status", str(status_board.relative_to(parent)), "--actor", "wily"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual([(event.cp, event.event) for event in read_events(paths, "T01")], [("Plan", "start"), ("Plan", "done")])
+
+    def test_coordination_cli_inside_registered_child_uses_child_local_project(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            _write_coordination(parent)
+            save_tasks(WilyPaths(parent), "Parent Project", [Task(id="T01", title="Parent ready", intent="do it", acceptance="done")])
+            save_tasks(WilyPaths(child), "Child Project", [Task(id="C01", title="Child ready", intent="do it", acceptance="done")])
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "next", "--json"],
+                cwd=child,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["id"], "C01")
+            self.assertNotIn("active_mode", payload)
+
+    def test_coordination_done_filters_unchanged_claim_dirty_files_and_reports_mixed_files(self) -> None:
+        from wily.observation import claim_snapshot_for_repos
+
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            _write_coordination(parent)
+            (child / "src").mkdir()
+            (child / "src" / "pre.py").write_text("pre\n", encoding="utf-8")
+            (child / "src" / "mixed.py").write_text("before\n", encoding="utf-8")
+            snapshot = claim_snapshot_for_repos([("parent", parent), ("roadmap", child)])
+            paths = WilyPaths(parent)
+            save_tasks(
+                paths,
+                "Parent Project",
+                [Task(id="T01", title="Dirty done", status=TaskStatus.IN_PROGRESS, actor="wily", scope=["roadmap:src/**"], claim_snapshot=snapshot)],
+            )
+            (child / "src" / "mixed.py").write_text("after\n", encoding="utf-8")
+            (child / "src" / "new.py").write_text("new\n", encoding="utf-8")
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "done", "T01", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout)["changed_files"], ["roadmap:src/mixed.py", "roadmap:src/new.py"])
+
+    def test_coordination_done_accepts_structured_repo_scope(self) -> None:
+        from wily.observation import claim_snapshot_for_repos
+
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            _write_coordination(parent)
+            snapshot = claim_snapshot_for_repos([("parent", parent), ("roadmap", child)])
+            paths = WilyPaths(parent)
+            save_tasks(
+                paths,
+                "Parent Project",
+                [
+                    Task(
+                        id="T01",
+                        title="Structured scope",
+                        status=TaskStatus.IN_PROGRESS,
+                        actor="wily",
+                        scope=[{"repo": "roadmap", "path": "src/**"}],
+                        claim_snapshot=snapshot,
+                    )
+                ],
+            )
+            (child / "src").mkdir()
+            (child / "src" / "app.py").write_text("app\n", encoding="utf-8")
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "done", "T01", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout)["changed_files"], ["roadmap:src/app.py"])
+
+    def test_coordination_land_dry_run_blocks_parent_artifact_when_parent_is_not_git(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            _write_coordination(parent)
+            paths = WilyPaths(parent)
+            (parent / "docs").mkdir()
+            (parent / "docs" / "spec.md").write_text("parent work\n", encoding="utf-8")
+            save_tasks(
+                paths,
+                "Parent Project",
+                [Task(id="T01", title="Parent artifact", status=TaskStatus.DONE, scope=["parent:docs/**"])],
+            )
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "land", "T01", "--dry-run", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, _common.EXIT_TRANSITION)
+            payload = json.loads(result.stdout)
+            self.assertFalse(payload["ok"])
+            self.assertIn("parent:docs/spec.md", payload["parent_task_artifact_changes"])
+            self.assertEqual(payload["errors"][0]["code"], "parent_not_git")
+
+    def test_coordination_land_blocks_parent_artifact_before_commit_when_parent_is_not_git(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            _write_coordination(parent)
+            paths = WilyPaths(parent)
+            (parent / "docs").mkdir()
+            (parent / "docs" / "spec.md").write_text("parent work\n", encoding="utf-8")
+            save_tasks(paths, "Parent Project", [Task(id="T01", title="Parent artifact", status=TaskStatus.DONE, scope=["parent:docs/**"])])
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "land", "T01", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, _common.EXIT_TRANSITION)
+            self.assertEqual(json.loads(result.stdout)["errors"][0]["code"], "parent_not_git")
+
+    def test_coordination_land_dry_run_blocks_out_of_scope_child_changes_before_staging(self) -> None:
+        from wily.observation import claim_snapshot_for_repos
+
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            _write_coordination(parent)
+            paths = WilyPaths(parent)
+            snapshot = claim_snapshot_for_repos([("parent", parent), ("roadmap", child)])
+            save_tasks(
+                paths,
+                "Parent Project",
+                [Task(id="T01", title="Child work", status=TaskStatus.DONE, scope=["roadmap:src/**"], claim_snapshot=snapshot)],
+            )
+            (child / "src").mkdir()
+            (child / "src" / "app.py").write_text("app\n", encoding="utf-8")
+            (child / "docs").mkdir()
+            (child / "docs" / "outside.md").write_text("outside\n", encoding="utf-8")
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "land", "T01", "--dry-run", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+            staged = subprocess.run(["git", "diff", "--cached", "--name-only"], cwd=child, capture_output=True, text=True, check=True)
+
+            self.assertEqual(result.returncode, _common.EXIT_TRANSITION)
+            self.assertEqual(staged.stdout.strip(), "")
+            payload = json.loads(result.stdout)
+            repo = payload["repos"]["roadmap"]
+            self.assertEqual(repo["task_candidate_changes"], ["src/app.py"])
+            self.assertEqual(repo["out_of_scope_changes"], ["docs/outside.md"])
+            self.assertEqual(payload["errors"][0]["code"], "out_of_scope_changes")
+
+    def test_coordination_land_blocks_out_of_scope_child_changes_before_staging(self) -> None:
+        from wily.observation import claim_snapshot_for_repos
+
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            _write_coordination(parent)
+            paths = WilyPaths(parent)
+            snapshot = claim_snapshot_for_repos([("parent", parent), ("roadmap", child)])
+            save_tasks(paths, "Parent Project", [Task(id="T01", title="Child work", status=TaskStatus.DONE, scope=["roadmap:src/**"], claim_snapshot=snapshot)])
+            (child / "src").mkdir()
+            (child / "src" / "app.py").write_text("app\n", encoding="utf-8")
+            (child / "docs").mkdir()
+            (child / "docs" / "outside.md").write_text("outside\n", encoding="utf-8")
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "land", "T01", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+            staged = subprocess.run(["git", "diff", "--cached", "--name-only"], cwd=child, capture_output=True, text=True, check=True)
+
+            self.assertEqual(result.returncode, _common.EXIT_TRANSITION)
+            self.assertEqual(json.loads(result.stdout)["errors"][0]["code"], "out_of_scope_changes")
+            self.assertEqual(staged.stdout.strip(), "")
+
+    def test_coordination_land_dry_run_allows_child_only_changes_with_parent_ledger_reported(self) -> None:
+        from wily.observation import claim_snapshot_for_repos
+
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            _write_coordination(parent)
+            paths = WilyPaths(parent)
+            snapshot = claim_snapshot_for_repos([("parent", parent), ("roadmap", child)])
+            save_tasks(
+                paths,
+                "Parent Project",
+                [Task(id="T01", title="Child work", status=TaskStatus.DONE, scope=["roadmap:src/**"], claim_snapshot=snapshot)],
+            )
+            paths.result_md("T01").parent.mkdir(parents=True, exist_ok=True)
+            paths.result_md("T01").write_text("# result\n", encoding="utf-8")
+            (child / "src").mkdir()
+            (child / "src" / "app.py").write_text("app\n", encoding="utf-8")
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "land", "T01", "--dry-run", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertTrue(payload["ok"])
+            self.assertFalse(payload["parent_git_required"])
+            self.assertIn(".wily/tasks.yaml", payload["parent_ledger_changes"])
+            self.assertIn(".wily/tasks/T01/result.md", payload["parent_ledger_changes"])
+            self.assertEqual(payload["repos"]["roadmap"]["task_candidate_changes"], ["src/app.py"])
+
+    def test_coordination_land_commits_parent_git_artifacts(self) -> None:
+        from wily.observation import claim_snapshot_for_repos
+
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            _git_repo(parent)
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            _write_coordination(parent)
+            paths = WilyPaths(parent)
+            snapshot = claim_snapshot_for_repos([("parent", parent), ("roadmap", child)])
+            save_tasks(
+                paths,
+                "Parent Project",
+                [Task(id="T01", title="Parent commit", status=TaskStatus.DONE, scope=["parent:docs/**"], claim_snapshot=snapshot)],
+            )
+            (parent / "docs").mkdir()
+            (parent / "docs" / "spec.md").write_text("parent\n", encoding="utf-8")
+
+            dry_run = subprocess.run(
+                [sys.executable, str(SCRIPT), "land", "T01", "--dry-run", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "land", "T01", "--no-push"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(dry_run.returncode, 0, dry_run.stderr)
+            payload = json.loads(dry_run.stdout)
+            self.assertEqual(payload["repos"]["parent"]["task_candidate_changes"], ["docs/spec.md"])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            message = subprocess.run(["git", "show", "-s", "--format=%B", "HEAD"], cwd=parent, capture_output=True, text=True, check=True).stdout
+            committed = subprocess.run(["git", "show", "--name-only", "--format=", "HEAD"], cwd=parent, capture_output=True, text=True, check=True).stdout.splitlines()
+            self.assertIn("Wily-Task: T01", message)
+            self.assertEqual(committed, ["docs/spec.md"])
+
+    def test_coordination_land_blocks_out_of_scope_parent_git_changes(self) -> None:
+        from wily.observation import claim_snapshot_for_repos
+
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            _git_repo(parent)
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            _write_coordination(parent)
+            paths = WilyPaths(parent)
+            snapshot = claim_snapshot_for_repos([("parent", parent), ("roadmap", child)])
+            save_tasks(
+                paths,
+                "Parent Project",
+                [Task(id="T01", title="Parent guarded", status=TaskStatus.DONE, scope=["parent:docs/**"], claim_snapshot=snapshot)],
+            )
+            (parent / "docs").mkdir()
+            (parent / "docs" / "spec.md").write_text("parent\n", encoding="utf-8")
+            (parent / "notes.txt").write_text("outside\n", encoding="utf-8")
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "land", "T01", "--dry-run", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+            staged = subprocess.run(["git", "diff", "--cached", "--name-only"], cwd=parent, capture_output=True, text=True, check=True)
+
+            self.assertEqual(result.returncode, _common.EXIT_TRANSITION)
+            self.assertEqual(staged.stdout.strip(), "")
+            payload = json.loads(result.stdout)
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["repos"]["parent"]["task_candidate_changes"], ["docs/spec.md"])
+            self.assertEqual(payload["repos"]["parent"]["out_of_scope_changes"], ["notes.txt"])
+            self.assertIn({"code": "out_of_scope_changes", "repo": "parent", "files": ["notes.txt"]}, payload["errors"])
+
+    def test_coordination_claim_snapshot_excludes_registered_child_repos_from_parent_git(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            _git_repo(parent)
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            _write_coordination(parent)
+            paths = WilyPaths(parent)
+            save_actors(paths, [Actor(id="wily", display="Wily", git_author_emails=["wily@example.com"])])
+            save_tasks(
+                paths,
+                "Parent Project",
+                [Task(id="T01", title="Claim snapshot", intent="do it", acceptance="done", scope=["roadmap:src/**"])],
+            )
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "claim", "T01", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            task = json.loads(result.stdout)["task"]
+            parent_changed = task["claim_snapshot"]["repos"]["parent"]["changed_files"]
+            self.assertNotIn("wily-roadmap/README.md", parent_changed)
+            self.assertFalse(any(path.startswith("wily-roadmap/.git/") for path in parent_changed))
+
+    def test_coordination_land_dry_run_classifies_pre_existing_task_candidate_and_mixed_files(self) -> None:
+        from wily.observation import claim_snapshot_for_repos
+
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            _write_coordination(parent)
+            (child / "src").mkdir()
+            (child / "src" / "pre.py").write_text("pre\n", encoding="utf-8")
+            (child / "src" / "mixed.py").write_text("before\n", encoding="utf-8")
+            snapshot = claim_snapshot_for_repos([("parent", parent), ("roadmap", child)])
+            paths = WilyPaths(parent)
+            save_tasks(
+                paths,
+                "Parent Project",
+                [Task(id="T01", title="Dirty baseline", status=TaskStatus.DONE, scope=["roadmap:src/**"], claim_snapshot=snapshot)],
+            )
+            (child / "src" / "mixed.py").write_text("after\n", encoding="utf-8")
+            (child / "src" / "new.py").write_text("new\n", encoding="utf-8")
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "land", "T01", "--dry-run", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, _common.EXIT_TRANSITION)
+            payload = json.loads(result.stdout)
+            repo = payload["repos"]["roadmap"]
+            self.assertEqual(repo["pre_existing_dirty"], ["src/pre.py"])
+            self.assertEqual(repo["mixed_files"], ["src/mixed.py"])
+            self.assertEqual(repo["task_candidate_changes"], ["src/new.py"])
+            self.assertEqual(payload["errors"][0]["code"], "mixed_files")
+
+    def test_coordination_land_dry_run_allows_mixed_files_only_with_explicit_include(self) -> None:
+        from wily.observation import claim_snapshot_for_repos
+
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            _write_coordination(parent)
+            (child / "src").mkdir()
+            (child / "src" / "mixed.py").write_text("before\n", encoding="utf-8")
+            snapshot = claim_snapshot_for_repos([("parent", parent), ("roadmap", child)])
+            paths = WilyPaths(parent)
+            save_tasks(
+                paths,
+                "Parent Project",
+                [Task(id="T01", title="Mixed", status=TaskStatus.DONE, scope=["roadmap:src/**"], claim_snapshot=snapshot)],
+            )
+            (child / "src" / "mixed.py").write_text("after\n", encoding="utf-8")
+
+            by_file = subprocess.run(
+                [sys.executable, str(SCRIPT), "land", "T01", "--dry-run", "--json", "--include", "roadmap:src/mixed.py"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+            by_flag = subprocess.run(
+                [sys.executable, str(SCRIPT), "land", "T01", "--dry-run", "--json", "--include-mixed"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(by_file.returncode, 0, by_file.stderr)
+            self.assertEqual(by_flag.returncode, 0, by_flag.stderr)
+            self.assertTrue(json.loads(by_file.stdout)["ok"])
+            self.assertEqual(json.loads(by_flag.stdout)["repos"]["roadmap"]["included_mixed_files"], ["src/mixed.py"])
+
+    def test_coordination_land_dry_run_rejects_invalid_explicit_include(self) -> None:
+        from wily.observation import claim_snapshot_for_repos
+
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            _write_coordination(parent)
+            (child / "src").mkdir()
+            (child / "src" / "mixed.py").write_text("before\n", encoding="utf-8")
+            snapshot = claim_snapshot_for_repos([("parent", parent), ("roadmap", child)])
+            paths = WilyPaths(parent)
+            save_tasks(
+                paths,
+                "Parent Project",
+                [Task(id="T01", title="Mixed", status=TaskStatus.DONE, scope=["roadmap:src/**"], claim_snapshot=snapshot)],
+            )
+            (child / "src" / "mixed.py").write_text("after\n", encoding="utf-8")
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "land", "T01", "--dry-run", "--json", "--include", "wrong:src/mixed.py"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, _common.EXIT_TRANSITION)
+            payload = json.loads(result.stdout)
+            self.assertIn({"code": "invalid_include", "message": "--include must name an existing mixed file as <repo:path>", "files": ["wrong:src/mixed.py"]}, payload["errors"])
+
+    def test_coordination_land_commits_child_only_repo_changes_without_parent_git(self) -> None:
+        from wily.observation import claim_snapshot_for_repos
+
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            _write_coordination(parent)
+            paths = WilyPaths(parent)
+            snapshot = claim_snapshot_for_repos([("parent", parent), ("roadmap", child)])
+            save_tasks(
+                paths,
+                "Parent Project",
+                [Task(id="T01", title="Child commit", status=TaskStatus.DONE, scope=["roadmap:src/**"], claim_snapshot=snapshot)],
+            )
+            paths.result_md("T01").parent.mkdir(parents=True, exist_ok=True)
+            paths.result_md("T01").write_text("# result\n\n- changed files: 1\n", encoding="utf-8")
+            (child / "src").mkdir()
+            (child / "src" / "app.py").write_text("app\n", encoding="utf-8")
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "land", "T01", "--no-push"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            message = subprocess.run(["git", "show", "-s", "--format=%B", "HEAD"], cwd=child, capture_output=True, text=True, check=True).stdout
+            committed = subprocess.run(["git", "show", "--name-only", "--format=", "HEAD"], cwd=child, capture_output=True, text=True, check=True).stdout.splitlines()
+            self.assertIn("Wily-Task: T01", message)
+            self.assertEqual(committed, ["src/app.py"])
+            self.assertEqual(subprocess.run(["git", "status", "--porcelain"], cwd=child, capture_output=True, text=True, check=True).stdout.strip(), "")
+
+    def test_coordination_land_commits_one_local_commit_per_touched_child_repo(self) -> None:
+        from wily.observation import claim_snapshot_for_repos
+
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            roadmap = parent / "wily-roadmap"
+            board = parent / "wily-board"
+            roadmap.mkdir()
+            board.mkdir()
+            _git_repo(roadmap)
+            _git_repo(board)
+            paths = WilyPaths(parent)
+            paths.wily_dir.mkdir()
+            (paths.wily_dir / "coordination.yaml").write_text(
+                "\n".join(
+                    [
+                        "schema: wily-coordination-v1",
+                        "title: Parent Project",
+                        "parent:",
+                        "  id: parent",
+                        "  path: .",
+                        "repos:",
+                        "  - id: roadmap",
+                        "    path: ./wily-roadmap",
+                        "  - id: board",
+                        "    path: ./wily-board",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            snapshot = claim_snapshot_for_repos([("parent", parent), ("roadmap", roadmap), ("board", board)])
+            save_tasks(
+                paths,
+                "Parent Project",
+                [
+                    Task(
+                        id="T01",
+                        title="Multi repo",
+                        status=TaskStatus.DONE,
+                        scope=["roadmap:src/**", "board:app/**"],
+                        claim_snapshot=snapshot,
+                    )
+                ],
+            )
+            (roadmap / "src").mkdir()
+            (roadmap / "src" / "app.py").write_text("app\n", encoding="utf-8")
+            (board / "app").mkdir()
+            (board / "app" / "ui.py").write_text("ui\n", encoding="utf-8")
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "land", "T01", "--no-push"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            for repo, expected in ((roadmap, "src/app.py"), (board, "app/ui.py")):
+                message = subprocess.run(["git", "show", "-s", "--format=%B", "HEAD"], cwd=repo, capture_output=True, text=True, check=True).stdout
+                committed = subprocess.run(["git", "show", "--name-only", "--format=", "HEAD"], cwd=repo, capture_output=True, text=True, check=True).stdout.splitlines()
+                self.assertIn("Wily-Task: T01", message)
+                self.assertEqual(committed, [expected])
+
+    def test_coordination_land_rejects_push_before_preflight(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            _write_coordination(parent)
+            paths = WilyPaths(parent)
+            save_tasks(paths, "Parent Project", [Task(id="T01", title="No push", status=TaskStatus.DONE)])
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "land", "T01", "--push", "--dry-run"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, _common.EXIT_USAGE)
+            self.assertIn("--push is not supported in coordination mode", result.stderr)
+
     def test_workspace_manifest_discovery_prefers_visible_manifest(self) -> None:
         from wily.workspace import discover_workspace_manifest, load_workspace
 
@@ -1489,6 +2485,29 @@ class CoreModelTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("wily-roadmap R01", result.stdout)
             self.assertIn("[missing] ERROR", result.stderr)
+
+    def test_lifecycle_commands_do_not_treat_manifest_only_parent_as_wily_project(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            child = parent / "repo"
+            child.mkdir()
+            save_tasks(WilyPaths(child), "Child", [Task(id="C01", title="Child ready")])
+            (parent / "wily-workspace.yaml").write_text(
+                "schema: wily-workspace-v1\ntitle: Manifest Only\nrepos:\n  - id: repo\n    path: ./repo\n",
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "status", "--json"],
+                cwd=parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, _common.EXIT_FAILURE)
+            self.assertIn("no .wily/ directory", result.stderr)
+            self.assertFalse((parent / ".wily").exists())
 
     def test_watch_renderer_keeps_rich_pipeline_shape(self) -> None:
         output = render_watch(
@@ -2772,6 +3791,30 @@ class CliLifecycleTest(unittest.TestCase):
 
             self.assertIn("Wily-Task: T01", message)
             self.assertIn("Wily-Pre-Done: true", message)
+
+    def test_land_help_distinguishes_coordination_force_from_legacy_scope_force(self) -> None:
+        self.assertIn("--force                   land before done; in legacy single-repo mode it can include out-of-scope files", land_cmd.HELP)
+
+    def test_land_legacy_single_repo_commits_in_scope_done_task_with_trailer(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _git_repo(root)
+            paths = WilyPaths(root)
+            paths.wily_dir.mkdir()
+            (root / "src").mkdir()
+            (root / "src" / "feature.txt").write_text("base\n", encoding="utf-8")
+            save_tasks(paths, "demo", [Task(id="T01", title="Legacy land", status=TaskStatus.DONE, scope=["src/*"])])
+            subprocess.run(["git", "add", "."], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-q", "-m", "baseline"], cwd=root, check=True)
+            (root / "src" / "feature.txt").write_text("changed\n", encoding="utf-8")
+
+            with chdir_compat(root):
+                self.assertEqual(land_cmd.main(["T01", "--no-push"]), _common.EXIT_OK)
+
+            message = subprocess.run(["git", "show", "-s", "--format=%B", "HEAD"], cwd=root, capture_output=True, text=True, check=True).stdout
+            committed = subprocess.run(["git", "show", "--name-only", "--format=", "HEAD"], cwd=root, capture_output=True, text=True, check=True).stdout.splitlines()
+            self.assertIn("Wily-Task: T01", message)
+            self.assertEqual(committed, ["src/feature.txt"])
 
     def test_land_blocks_ledger_closure_outside_scope_without_opt_in(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

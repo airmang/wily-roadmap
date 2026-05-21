@@ -62,6 +62,23 @@ repos:
 The manifest is not a source of truth; each child repo keeps its own
 `.wily/tasks.yaml`. `wily workspace init` writes only the manifest and does not create parent `.wily/`.
 
+Manifest-only mode is read-only aggregation. Parent-owned coordination mode is
+separate: a parent `.wily/coordination.yaml` plus parent `.wily/tasks.yaml`
+means the parent owns tasks while registered child Git repos own task files.
+When both exist, `.wily/coordination.yaml` takes precedence for lifecycle
+commands; `wily-workspace.yaml` remains a manifest-only view.
+
+Coordination tasks can use repo-qualified scope such as `parent:docs/**` or
+`wily-roadmap:src/**`, plus structured `{repo, path}` scope entries.
+`wily claim` stores a `claim_snapshot` with each registered repo's branch, sha,
+dirty files, and fingerprints. JSON project views expose `active_mode`.
+
+In parent-owned coordination mode, `wily land --dry-run` is the preflight
+surface. It reports parent ledger changes separately, blocks parent artifacts
+when the parent is not Git, blocks out-of-scope or mixed files, supports
+`--include-mixed` and `--include <repo:path>`, creates local-only child repo
+commits after preflight, and `--push is rejected`.
+
 Useful commands:
 
 ```bash
@@ -71,6 +88,52 @@ wily workspace status --json
 wily workspace next
 wily workspace watch --once
 ```
+
+## Parent-Owned Coordination Mode
+
+Use parent-owned coordination mode when a parent directory owns the Wily task
+ledger but one or more registered child Git repos contain the work. Add
+`.wily/coordination.yaml` next to the parent `.wily/tasks.yaml`:
+
+```yaml
+schema: wily-coordination-v1
+title: Parent Project
+parent:
+  id: parent
+  path: .
+repos:
+  - id: roadmap
+    path: ./wily-roadmap
+  - id: board
+    path: ./wily-board
+```
+
+Mode precedence is explicit: `.wily/coordination.yaml takes precedence` as
+parent-owned coordination mode; `wily-workspace.yaml` and
+`.wily-workspace.yaml` remain manifest-only read-only aggregate views and do not
+create parent `.wily/`.
+
+Parent-owned coordination mode uses repo-qualified scope such as
+`parent:docs/**`, `roadmap:src/**`, or structured `{repo, path}` entries. Plain
+legacy scope strings are treated as parent scope for compatibility.
+
+`wily claim` in coordination mode records a `claim_snapshot` instead of a fake
+parent `claim_sha`. The snapshot includes each repo's branch, sha, dirty files,
+and fingerprints for dirty or untracked files. `wily done` and `wily land`
+compare later changes against those fingerprints.
+
+`wily status --json` and `wily watch --json` include `active_mode`. `wily next
+--json` includes `active_mode` in coordination mode. Commands run inside a
+registered child repo that has its own `.wily/` use the child-local project.
+
+`wily land --dry-run <id>` is the coordination preflight surface. It reports
+parent ledger changes separately, blocks parent task artifacts when the parent
+is not Git, blocks out-of-scope child changes before staging, and classifies
+`pre_existing_dirty`, `task_candidate_changes`, and `mixed_files`. Mixed files
+block by default; use `--include-mixed` or `--include <repo:path>` only when the
+mixed file belongs to the task. `--push is rejected` in coordination mode:
+coordination land is local-only and creates one local commit per touched
+registered child repo with `Wily-Task: <id>`. In coordination mode, `--force` only bypasses the done-status gate; it does not include out-of-scope or mixed files.
 
 ## Wily Agent
 
@@ -118,5 +181,6 @@ checkpoint ledger that `wily-agent` includes in snapshots.
 ## Safety
 
 Wily behavior stays local-first. Remote or destructive work requires explicit
-user approval. `wily land` asks before pushing unless the user separately handles
-the push.
+user approval. In single-repo mode, `wily land` asks before pushing unless the
+user separately handles the push. In parent-owned coordination mode, `wily land`
+is local-only and does not push.

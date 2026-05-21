@@ -100,6 +100,31 @@ class V3SurfaceTest(unittest.TestCase):
                 self.assertIn("wily workspace next", text)
         self.assertIn("$wily-workspace", prompt)
 
+    def test_coordination_surface_documents_parent_owned_mode(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        prompt = "\n".join(json.loads((ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))["interface"]["defaultPrompt"])
+        command_text = "\n".join((ROOT / "commands" / f"{name}.md").read_text(encoding="utf-8") for name in ("claim", "cp", "done", "land", "next", "status", "watch", "workspace"))
+        skill_text = "\n".join((ROOT / "skills" / f"wily-{name}" / "SKILL.md").read_text(encoding="utf-8") for name in ("claim", "cp", "done", "execute", "land", "next", "status", "watch", "workspace"))
+        land_text = (ROOT / "commands" / "land.md").read_text(encoding="utf-8") + (ROOT / "skills" / "wily-land" / "SKILL.md").read_text(encoding="utf-8")
+        claim_text = (ROOT / "commands" / "claim.md").read_text(encoding="utf-8") + (ROOT / "skills" / "wily-claim" / "SKILL.md").read_text(encoding="utf-8")
+        workspace_text = (ROOT / "commands" / "workspace.md").read_text(encoding="utf-8") + (ROOT / "skills" / "wily-workspace" / "SKILL.md").read_text(encoding="utf-8")
+
+        for token in (".wily/coordination.yaml", "parent-owned coordination mode", "repo-qualified scope", "claim_snapshot"):
+            self.assertIn(token, readme)
+        for token in ("parent-owned coordination mode", ".wily/coordination.yaml", "active_mode"):
+            self.assertIn(token, command_text)
+            self.assertIn(token, skill_text)
+        for token in ("land --dry-run", "--include-mixed", "--include <repo:path>", "--push is rejected", "local-only", "`--force` only bypasses the done-status gate"):
+            self.assertIn(token, land_text)
+            self.assertIn(token, readme)
+        for token in ("claim_snapshot", "branch", "sha", "fingerprints"):
+            self.assertIn(token, claim_text)
+            self.assertIn(token, skill_text)
+        for token in ("wily-workspace.yaml", "manifest-only", ".wily/coordination.yaml takes precedence"):
+            self.assertIn(token, workspace_text)
+        for token in ("parent-owned coordination", ".wily/coordination.yaml", "active_mode", "claim_snapshot", "land --dry-run", "local-only"):
+            self.assertIn(token, prompt)
+
     def test_replan_skill_routes_natural_language_work_to_task_addition(self) -> None:
         replan = (ROOT / "skills" / "wily-replan" / "SKILL.md").read_text(encoding="utf-8")
         command = (ROOT / "commands" / "replan.md").read_text(encoding="utf-8")

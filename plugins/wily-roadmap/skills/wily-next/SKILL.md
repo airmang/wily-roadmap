@@ -17,6 +17,13 @@ python3 <plugin-root>/scripts/wily.py next [--mine|--json]
 
 - Read-only: does not mutate `.wily/`.
 - `--mine` filters by the current git author actor mapping.
+- Parent-owned coordination mode is active when `.wily/coordination.yaml`
+  exists. `wily next --json` includes `active_mode` and returns the parent task.
+- Inside a registered child repo with its own `.wily/`, use the child-local
+  project instead of the parent coordination project.
+- In parent-owned coordination mode, `.wily/coordination.yaml` keeps `next` on
+  the parent task ledger, JSON includes `active_mode`, and commands run inside a
+  registered child repo with its own `.wily/` use the child-local project.
 
 ## Response Style
 

@@ -1,0 +1,16 @@
+{"ts": "2026-05-21T03:39:21.953777Z", "actor": "wily", "cp": "Baseline and red-test map", "event": "start", "note": "git status --short --branch`; package and repo guidance read"}
+{"ts": "2026-05-21T03:41:40.063419Z", "actor": "wily", "cp": "Baseline and red-test map", "event": "done", "note": "Red test command failed as expected on missing `wily.coordination` / `wily.scope"}
+{"ts": "2026-05-21T03:41:40.063419Z", "actor": "wily", "cp": "Project context, coordination config, and scope core", "event": "start"}
+{"ts": "2026-05-21T03:43:33.677056Z", "actor": "wily", "cp": "Project context, coordination config, and scope core", "event": "done", "note": "coordination or scope`: 11 passed; `coordination or scope or workspace`: 18 passed"}
+{"ts": "2026-05-21T03:43:33.677056Z", "actor": "wily", "cp": "Task model and claim snapshot", "event": "start"}
+{"ts": "2026-05-21T03:47:19.885990Z", "actor": "wily", "cp": "Task model and claim snapshot", "event": "done", "note": "coordination or scope or claim`: 20 passed"}
+{"ts": "2026-05-21T03:47:19.885990Z", "actor": "wily", "cp": "Coordination lifecycle commands", "event": "start"}
+{"ts": "2026-05-21T03:50:12.320289Z", "actor": "wily", "cp": "Coordination lifecycle commands", "event": "done", "note": "Focused coordination lifecycle: 2 passed; broad lifecycle selector: 67 passed"}
+{"ts": "2026-05-21T03:50:12.320289Z", "actor": "wily", "cp": "Land preflight", "event": "start"}
+{"ts": "2026-05-21T03:53:51.548707Z", "actor": "wily", "cp": "Land preflight", "event": "done", "note": "Coordination land preflight: 6 passed; broader lifecycle selector: 73 passed"}
+{"ts": "2026-05-21T03:53:51.548707Z", "actor": "wily", "cp": "Land commit execution", "event": "start"}
+{"ts": "2026-05-21T03:57:00.791554Z", "actor": "wily", "cp": "Land commit execution", "event": "done", "note": "Focused coordination commit slice: 13 passed; broader lifecycle selector: 78 passed"}
+{"ts": "2026-05-21T03:57:00.791554Z", "actor": "wily", "cp": "Docs and skills", "event": "start"}
+{"ts": "2026-05-21T04:03:18.697377Z", "actor": "wily", "cp": "Docs and skills", "event": "done", "note": "test_v3_surface.py`: 24 passed; full v3 tests: 154 passed"}
+{"ts": "2026-05-21T04:03:18.697377Z", "actor": "wily", "cp": "Regression and manual smoke", "event": "start"}
+{"ts": "2026-05-21T04:17:28.808304Z", "actor": "wily", "cp": "Regression and manual smoke", "event": "done", "note": "python3 -m pytest ...test_v3_core.py ...test_v3_surface.py`: 160 passed; `python3 agent-handoffs/wily-parent-coordination-mode-smoke.py`: 7 PASS lines"}

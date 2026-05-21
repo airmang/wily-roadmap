@@ -5,9 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..config import load_actors, load_tasks, repo_mode
+from ..coordination import resolve_project_context
 from ..models import TaskStatus
 from ..observation import fetch_observation_remote, list_commits_since_fork, list_remote_commits, observation_base
-from ..paths import WilyPaths, WilyRootNotFound, find_wily_root
+from ..paths import WilyRootNotFound
 from ..progress import cp_summary
 from ..ui.watch_render import render_watch
 from . import _common
@@ -32,11 +33,12 @@ def main(args: list[str]) -> int:
     if ui is None:
         return _common.EXIT_USAGE
     try:
-        root = find_wily_root(Path.cwd())
+        context = resolve_project_context(Path.cwd())
     except WilyRootNotFound as exc:
         _common.emit_error(str(exc))
         return _common.EXIT_FAILURE
-    paths = WilyPaths(root)
+    root = context.paths.root
+    paths = context.paths
     project_title, tasks = load_tasks(paths)
     actors = load_actors(paths)
     mode = repo_mode(paths)
@@ -55,6 +57,7 @@ def main(args: list[str]) -> int:
         _common.emit_json(
             {
                 "project_title": project_title,
+                "active_mode": context.active_mode,
                 "mode": mode,
                 "tasks": [task.to_dict() for task in tasks],
                 "actors": [{"id": actor.id, **actor.to_dict()} for actor in actors],
@@ -72,7 +75,7 @@ def main(args: list[str]) -> int:
                 actors=actors,
                 observed_commits=observed,
                 cp_summaries=summaries,
-                mode=mode,
+                mode=context.active_mode if context.active_mode == "coordination" else mode,
                 ui=ui,
                 compact=compact,
                 show_timeline=show_timeline,

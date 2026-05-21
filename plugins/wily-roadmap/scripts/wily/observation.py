@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import fnmatch
+import hashlib
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable, Mapping
 
 from .models import Actor, Task
 
@@ -175,3 +176,126 @@ def git_config_identity(repo: Path) -> tuple[str, str]:
     email = _git(repo, "config", "user.email", check=False).stdout.strip()
     name = _git(repo, "config", "user.name", check=False).stdout.strip()
     return email, name
+
+
+def claim_snapshot_for_repos(
+    repos: Iterable[tuple[str, Path]],
+    *,
+    exclude_paths_by_repo: Mapping[str, Iterable[str]] | None = None,
+) -> dict[str, Any]:
+    exclude_paths_by_repo = exclude_paths_by_repo or {}
+    return {
+        "schema": "wily-claim-snapshot-v1",
+        "repos": {repo_id: repo_snapshot(path, exclude_paths=exclude_paths_by_repo.get(repo_id)) for repo_id, path in repos},
+    }
+
+
+def repo_snapshot(repo: Path, *, exclude_paths: Iterable[str] | None = None) -> dict[str, Any]:
+    repo = repo.resolve()
+    if not _is_git_repo(repo):
+        return {
+            "path": str(repo),
+            "git_available": False,
+            "branch": None,
+            "sha": None,
+            "dirty": False,
+            "changed_files": [],
+            "fingerprints": {},
+        }
+    branch = _git(repo, "branch", "--show-current", check=False).stdout.strip() or None
+    sha_result = _git(repo, "rev-parse", "HEAD", check=False)
+    sha = sha_result.stdout.strip() if sha_result.returncode == 0 else None
+    changed = worktree_changed_files(repo, exclude_paths=exclude_paths)
+    return {
+        "path": str(repo),
+        "git_available": True,
+        "branch": branch,
+        "sha": sha,
+        "dirty": bool(changed),
+        "changed_files": changed,
+        "fingerprints": {path: file_fingerprint(repo / path) for path in changed},
+    }
+
+
+def worktree_changed_files(repo: Path, *, exclude_paths: Iterable[str] | None = None) -> list[str]:
+    exclusions = _normalize_exclude_paths(exclude_paths)
+    out = _git(repo, "status", "--porcelain=v2", check=False).stdout
+    files: list[str] = []
+    for line in out.splitlines():
+        if not line.strip():
+            continue
+        if line.startswith("? "):
+            path = line[2:]
+            if _is_excluded(path, exclusions):
+                continue
+            files.extend(_expand_untracked(repo, path, exclusions))
+            continue
+        parts = line.split("\t")
+        head = parts[0].split()
+        if line.startswith("1 ") and len(head) >= 9:
+            files.append(" ".join(head[8:]))
+        elif line.startswith("2 ") and len(parts) >= 2:
+            files.append(parts[0].split()[-1])
+    return _dedupe([file for file in files if not _is_excluded(file, exclusions)])
+
+
+def file_fingerprint(path: Path) -> dict[str, Any]:
+    try:
+        stat = path.stat()
+    except OSError:
+        return {"kind": "missing"}
+    if not path.is_file():
+        return {"kind": "other", "size": stat.st_size, "mtime_ns": stat.st_mtime_ns}
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    return {
+        "kind": "file",
+        "sha256": digest,
+        "size": stat.st_size,
+        "mtime_ns": stat.st_mtime_ns,
+    }
+
+
+def _is_git_repo(repo: Path) -> bool:
+    result = _git(repo, "rev-parse", "--show-toplevel", check=False)
+    return result.returncode == 0
+
+
+def _expand_untracked(root: Path, path: str, exclude_paths: Iterable[str]) -> list[str]:
+    full_path = root / path
+    if not full_path.is_dir():
+        return [path]
+    return [
+        item.relative_to(root).as_posix()
+        for item in sorted(full_path.rglob("*"))
+        if item.is_file() and not _is_excluded(item.relative_to(root).as_posix(), exclude_paths)
+    ]
+
+
+def _normalize_exclude_paths(paths: Iterable[str] | None) -> list[str]:
+    if not paths:
+        return []
+    result: list[str] = []
+    for path in paths:
+        normalized = path.replace("\\", "/").strip("/")
+        if normalized:
+            result.append(normalized)
+    return result
+
+
+def _is_excluded(path: str, exclude_paths: Iterable[str]) -> bool:
+    normalized = path.replace("\\", "/").strip("/")
+    for exclude in exclude_paths:
+        if normalized == exclude or normalized.startswith(f"{exclude}/"):
+            return True
+    return False
+
+
+def _dedupe(files: list[str]) -> list[str]:
+    result: list[str] = []
+    seen: set[str] = set()
+    for file in files:
+        if file in seen:
+            continue
+        result.append(file)
+        seen.add(file)
+    return result

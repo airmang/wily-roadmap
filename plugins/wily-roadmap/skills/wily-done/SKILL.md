@@ -21,6 +21,13 @@ python3 <plugin-root>/scripts/wily.py done <id> [--note <text>|--observed|--forc
 - If scope drift exists, default behavior blocks done and asks the user to choose either `--add-scope` or `--stub-drift`.
 - `--add-scope` records outside-scope files on the current task before closing it.
 - `--stub-drift` creates or reuses a `drift: <summary>` helper task so the drift is tracked without duplicate stubs.
+- Parent-owned coordination mode is active when `.wily/coordination.yaml`
+  exists. Done uses `claim_snapshot` fingerprints and reports repo-qualified
+  changed files; JSON includes `active_mode`.
+- In parent-owned coordination mode, `.wily/coordination.yaml` makes `done`
+  compare current child repo dirty fingerprints against `claim_snapshot`.
+- Changed files are reported with repo-qualified scope such as
+  `roadmap:src/app.py`, and status-style JSON views expose `active_mode`.
 
 ## Response Style
 

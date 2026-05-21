@@ -25,6 +25,12 @@ python3 <plugin-root>/scripts/wily.py cp <task-id> <start|done|note|import-statu
 - Custom Workflow interface contract: this command is the manual bridge for the cp automation gap.
 - `wily cp <id> import-status` reads `.wily/handoffs/<id>/status.md` by default.
 - Import is idempotent for existing checkpoint/event pairs.
+- Parent-owned coordination mode is active when `.wily/coordination.yaml`
+  exists. Import into the parent task progress ledger; JSON project views expose
+  `active_mode`.
+- In parent-owned coordination mode, `.wily/coordination.yaml` keeps checkpoint
+  events on the parent task ledger, and status-style JSON views expose
+  `active_mode`.
 
 ## Response Style
 

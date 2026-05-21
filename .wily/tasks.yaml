@@ -625,3 +625,61 @@ tasks:
   claim_at: '2026-05-20T12:23:23Z'
   done_at: '2026-05-20T13:17:29Z'
   blocker: null
+- id: T29
+  title: Wily parent-owned coordination mode complete
+  intent: Parent .wily ledger can own tasks while registered child Git repositories
+    own implementation files, with claim snapshots and safe local-only multi-repo
+    land.
+  acceptance: Parent-owned coordination claim/done/cp/status/next/watch and land preflight/commit
+    behavior are implemented, documented, and verified by full v3 tests plus reproducible
+    smoke fixtures.
+  scope:
+  - .wily/tasks.yaml
+  - .wily/tasks/T29/progress.jsonl
+  - .wily/tasks/T29/result.md
+  - agent-handoffs/wily-coordination-project-design-grill.md
+  - agent-handoffs/wily-parent-coordination-mode-execution-package.md
+  - agent-handoffs/wily-parent-coordination-mode-progress.md
+  - agent-handoffs/wily-parent-coordination-mode-requirements.md
+  - agent-handoffs/wily-parent-coordination-mode-smoke.py
+  - agent-handoffs/wily-parent-coordination-mode-status.md
+  - agent-handoffs/wily-parent-coordination-mode-verification.md
+  - plugins/wily-roadmap/.codex-plugin/plugin.json
+  - plugins/wily-roadmap/README.md
+  - plugins/wily-roadmap/commands/claim.md
+  - plugins/wily-roadmap/commands/cp.md
+  - plugins/wily-roadmap/commands/done.md
+  - plugins/wily-roadmap/commands/land.md
+  - plugins/wily-roadmap/commands/next.md
+  - plugins/wily-roadmap/commands/status.md
+  - plugins/wily-roadmap/commands/watch.md
+  - plugins/wily-roadmap/commands/workspace.md
+  - plugins/wily-roadmap/scripts/wily/coordination.py
+  - plugins/wily-roadmap/scripts/wily/scope.py
+  - plugins/wily-roadmap/scripts/wily/cli/claim.py
+  - plugins/wily-roadmap/scripts/wily/cli/done.py
+  - plugins/wily-roadmap/scripts/wily/cli/land.py
+  - plugins/wily-roadmap/scripts/wily/cli/next.py
+  - plugins/wily-roadmap/scripts/wily/cli/status.py
+  - plugins/wily-roadmap/scripts/wily/models.py
+  - plugins/wily-roadmap/scripts/wily/observation.py
+  - plugins/wily-roadmap/scripts/wily/transitions.py
+  - plugins/wily-roadmap/skills/wily-claim/SKILL.md
+  - plugins/wily-roadmap/skills/wily-cp/SKILL.md
+  - plugins/wily-roadmap/skills/wily-done/SKILL.md
+  - plugins/wily-roadmap/skills/wily-execute/SKILL.md
+  - plugins/wily-roadmap/skills/wily-land/SKILL.md
+  - plugins/wily-roadmap/skills/wily-next/SKILL.md
+  - plugins/wily-roadmap/skills/wily-status/SKILL.md
+  - plugins/wily-roadmap/skills/wily-watch/SKILL.md
+  - plugins/wily-roadmap/skills/wily-workspace/SKILL.md
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  - plugins/wily-roadmap/tests/v3/test_v3_surface.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 64dda1f23ec920127dd31087c966f2693f1cb031
+  claim_at: '2026-05-20T13:23:18Z'
+  done_at: '2026-05-21T04:25:48Z'
+  blocker: null

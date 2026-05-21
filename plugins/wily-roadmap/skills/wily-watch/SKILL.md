@@ -29,6 +29,12 @@ python3 <plugin-root>/scripts/wily.py watch [--once|--here|--interval N] [--ui a
 - Parallel hints use optional task metadata: `parallel_lane`, `priority`, and `capacity_hint`.
 - Scope overlap is advisory only. Phrase it as `scope conflict` / `충돌 가능`, never as an automatic safety guarantee.
 - Worker capacity is displayed as `작업자 여력` and should be treated as a scheduling signal, not a lock.
+- Parent-owned coordination mode is active when `.wily/coordination.yaml`
+  exists. Watch renders the parent task list, JSON includes `active_mode`, and
+  repo-qualified scope keeps child repo paths unambiguous.
+- `watch --json` forwards status-style JSON including `active_mode`.
+- In parent-owned coordination mode, `.wily/coordination.yaml` makes watch render
+  the parent task ledger while child repos stay work targets.
 
 ## Korean UI
 

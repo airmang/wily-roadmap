@@ -22,6 +22,19 @@ python3 <plugin-root>/scripts/wily.py workspace <init|show-config|status|next|wa
 - `wily workspace next` aggregates ready tasks without claiming them.
 - `wily workspace watch --once` prints one aggregate snapshot; without `--once`, it redraws when child `.wily/.touch` files change.
 - Missing or invalid child repos should be reported as per-repo errors, not as a reason to create parent Wily state.
+- Mode precedence: `.wily/coordination.yaml takes precedence` as parent-owned
+  coordination mode; `wily-workspace.yaml` and `.wily-workspace.yaml` remain
+  manifest-only views.
+- Parent-owned coordination mode is not manifest-only. The parent `.wily/tasks.yaml`
+  owns tasks, child repos are work targets, repo-qualified scope uses
+  `parent:docs/**`, `roadmap:src/**`, or `{repo, path}`, and status-style JSON
+  exposes `active_mode`.
+- `wily-workspace.yaml` / `.wily-workspace.yaml` is manifest-only mode.
+- Parent-owned coordination mode is separate and active when
+  `.wily/coordination.yaml` exists; that file takes precedence for lifecycle
+  commands.
+- Coordination mode parent tasks may use repo-qualified scope, `claim_snapshot`,
+  and JSON `active_mode`.
 
 ## Response Style
 

@@ -6,9 +6,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ..config import load_actors, load_tasks, save_tasks
+from ..coordination import ProjectContext, nested_repo_exclusions, resolve_project_context
 from ..models import Actor
-from ..observation import git_config_identity, head_sha, match_actor
-from ..paths import WilyPaths, WilyRootNotFound, find_wily_root, touch_wily
+from ..observation import claim_snapshot_for_repos, git_config_identity, head_sha, match_actor
+from ..paths import WilyPaths, WilyRootNotFound, touch_wily
 from ..progress import init_progress
 from ..transitions import TransitionError, apply_claim
 from . import _common
@@ -37,11 +38,12 @@ def main(args: list[str]) -> int:
         return _common.EXIT_USAGE
     task_id = positional[0]
     try:
-        root = find_wily_root(Path.cwd())
+        context = resolve_project_context(Path.cwd())
     except WilyRootNotFound as exc:
         _common.emit_error(str(exc))
         return _common.EXIT_FAILURE
-    paths = WilyPaths(root)
+    root = context.paths.root
+    paths = context.paths
     project_title, tasks = load_tasks(paths)
     email, name = git_config_identity(root)
     actors = load_actors(paths)
@@ -64,7 +66,16 @@ def main(args: list[str]) -> int:
         return _common.EXIT_TRANSITION
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     try:
-        updated = apply_claim(task, actor=actor.id, sha=head_sha(root), at=now, force=force)
+        claim_sha = None if context.active_mode == "coordination" else head_sha(root)
+        claim_snapshot = _claim_snapshot(context) if context.active_mode == "coordination" else None
+        updated = apply_claim(
+            task,
+            actor=actor.id,
+            sha=claim_sha,
+            at=now,
+            claim_snapshot=claim_snapshot,
+            force=force,
+        )
     except TransitionError as exc:
         _common.emit_error(str(exc))
         return _common.EXIT_TRANSITION
@@ -79,9 +90,27 @@ def main(args: list[str]) -> int:
         return _common.EXIT_OK
     _common.emit_text(f"{task_id}: {task.status.value} -> in_progress")
     _common.emit_text(f"actor: {actor.id} ({email or '-'})")
-    _common.emit_text(f"claim_sha: {(updated.claim_sha or '')[:7]}")
+    if updated.claim_sha:
+        _common.emit_text(f"claim_sha: {updated.claim_sha[:7]}")
+    elif updated.claim_snapshot:
+        _common.emit_text("claim_snapshot: recorded")
+    else:
+        _common.emit_text("claim_sha: -")
     _common.emit_text(f"progress.jsonl initialized: {paths.progress_jsonl(task_id).relative_to(root)}")
     return _common.EXIT_OK
+
+
+def _claim_snapshot(context: ProjectContext) -> dict[str, object]:
+    if context.coordination is None:
+        return claim_snapshot_for_repos([("root", context.root)])
+    exclude_paths_by_repo = {
+        repo.id: nested_repo_exclusions(context.coordination, repo)
+        for repo in context.coordination.all_repos
+    }
+    return claim_snapshot_for_repos(
+        ((repo.id, repo.path) for repo in context.coordination.all_repos),
+        exclude_paths_by_repo=exclude_paths_by_repo,
+    )
 
 
 def _missing_plan_fields(root: Path, task) -> list[str]:

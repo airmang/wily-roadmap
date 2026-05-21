@@ -8,7 +8,8 @@ description: Use when the user asks an agent to execute a Wily task end-to-end v
 When the user says "T03 cw로 진행해줘" or asks to process the next Wily task, orchestrate the command sequence.
 
 1. Run `wily status` or `wily next` to confirm the task.
-2. Run `wily claim <id>` to record actor, timestamp, claim SHA, and progress file.
+2. Run `wily claim <id>` to record actor, timestamp, legacy claim SHA or
+   coordination `claim_snapshot`, and progress file.
 3. Run `wily go <id>` and pass the emitted block to `custom-workflow-skillset:plan-goal-runner`.
 4. During custom-workflow, record every checkpoint in Wily with `wily cp <id> start <cp-name>` and `wily cp <id> done <cp-name>` so `.wily/tasks/<id>/progress.jsonl` drives `wily watch`.
 5. Custom Workflow interface contract: custom-workflow does not update Wily by itself; the explicit `wily cp` calls close the cp automation gap between custom-workflow and the Wily task ledger.
@@ -19,6 +20,20 @@ When the user says "T03 cw로 진행해줘" or asks to process the next Wily tas
 9. Compare the result against task acceptance and report scope drift.
 10. Run `wily done <id>` only after verification.
 11. Run `wily land <id>` only after explicit user approval.
+
+## Parent-Owned Coordination Mode
+
+- `.wily/coordination.yaml` enables parent-owned coordination mode, where the
+  parent `.wily/tasks.yaml` owns tasks and registered child repos are work
+  targets.
+- In this mode, `wily claim` records `claim_snapshot` instead of a fake parent
+  `claim_sha`. The snapshot includes each repo's branch, sha, dirty files, and
+  fingerprints for dirty or untracked files.
+- Status-style JSON exposes `active_mode`; commands run inside a registered
+  child repo with its own `.wily/` use that child-local project.
+- Use `wily land --dry-run <id>` before coordination land. Mixed files block by
+  default unless `--include-mixed` or `--include <repo:path>` explicitly includes
+  them. Coordination land is local-only and `--push` is rejected.
 
 ## Custom Workflow interface contract
 

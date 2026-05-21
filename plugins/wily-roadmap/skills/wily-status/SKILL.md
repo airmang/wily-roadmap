@@ -18,6 +18,13 @@ python3 <plugin-root>/scripts/wily.py status [--json] [--ui auto|rich|ascii]
 - Read-only: does not mutate `.wily/`.
 - Exit codes: 0 all done, 1 active work remains, 2 blocked task exists.
 - Non-JSON output uses the same Rich-capable renderer as `wily watch`.
+- Parent-owned coordination mode is active when `.wily/coordination.yaml`
+  exists. JSON includes `active_mode`; manifest-only multi-repo views stay under
+  `wily workspace status`.
+- Status-style JSON includes `active_mode`.
+- In parent-owned coordination mode, `.wily/coordination.yaml` shows the parent
+  `.wily/tasks.yaml` even when the parent is not Git; child repos remain work
+  targets.
 
 ## Response Style
 

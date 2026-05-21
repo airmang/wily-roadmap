@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from typing import Iterable
+from typing import Any, Iterable
 
 from .models import Task, TaskStatus
 
@@ -20,8 +20,9 @@ def apply_claim(
     task: Task,
     *,
     actor: str,
-    sha: str,
+    sha: str | None,
     at: str,
+    claim_snapshot: dict[str, Any] | None = None,
     force: bool = False,
 ) -> Task:
     if task.status == TaskStatus.DONE:
@@ -35,6 +36,7 @@ def apply_claim(
         status=TaskStatus.IN_PROGRESS,
         actor=actor,
         claim_sha=sha,
+        claim_snapshot=claim_snapshot,
         claim_at=at,
         blocker=None,
     )

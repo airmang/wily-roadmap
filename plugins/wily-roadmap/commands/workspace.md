@@ -9,3 +9,18 @@ The manifest is not a source of truth; child repos keep their own `.wily/tasks.y
 and do not claim, start, block, or complete child repo tasks.
 
 `wily workspace init` writes only the manifest and does not create parent `.wily/`.
+
+Mode precedence: `wily-workspace.yaml` / `.wily-workspace.yaml` is
+manifest-only mode and the manifest is not a source of truth. If parent
+`.wily/coordination.yaml` exists, parent-owned coordination mode takes
+precedence for lifecycle commands; parent tasks may use repo-qualified scope,
+`claim_snapshot`, and JSON `active_mode`.
+
+Mode precedence:
+- `.wily/coordination.yaml` takes precedence as parent-owned coordination mode.
+- `wily-workspace.yaml` and `.wily-workspace.yaml` remain manifest-only views.
+
+Parent-owned coordination mode is not manifest-only: the parent `.wily/tasks.yaml`
+owns tasks, child repos are registered work targets, repo-qualified scope uses
+forms like `parent:docs/**`, `roadmap:src/**`, or `{repo, path}`, and
+status-style JSON exposes `active_mode`.
