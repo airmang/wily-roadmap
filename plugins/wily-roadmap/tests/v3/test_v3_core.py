@@ -239,6 +239,8 @@ class CoreModelTest(unittest.TestCase):
             payload = build_snapshot_payload(root, repo="R-W-LAB/demo", actor="wily")
 
             self.assertEqual(payload["payload_version"], "board_v3_snapshot_v1")
+            self.assertEqual(payload["active_mode"], "single_repo")
+            self.assertNotIn("coordination", payload)
             self.assertEqual(payload["repo"], "R-W-LAB/demo")
             self.assertTrue(payload["remote_url"].endswith("R-W-LAB/demo.git"))
             self.assertEqual(payload["remote"]["raw_url"], "git@github.com:R-W-LAB/demo.git")
@@ -290,6 +292,167 @@ class CoreModelTest(unittest.TestCase):
             self.assertIn("Local project notes.", payload["project_md"])
             self.assertEqual(payload["snapshot_sha"], snapshot_sha(payload))
             self.assertTrue(payload["observed_commits"])
+
+    def test_agent_snapshot_includes_parent_coordination_contract_for_board(self) -> None:
+        from wily.agent.snapshot import build_snapshot_payload, snapshot_sha
+        from wily.observation import claim_snapshot_for_repos
+
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            roadmap = parent / "wily-roadmap"
+            board = parent / "wily-board"
+            scratch = parent / "scratch"
+            for repo_root, remote in (
+                (roadmap, "git@github.com:R-W-LAB/wily-roadmap.git"),
+                (board, "git@github.com:R-W-LAB/wily-board.git"),
+                (scratch, "git@github.com:R-W-LAB/scratch.git"),
+            ):
+                repo_root.mkdir()
+                _git_repo(repo_root)
+                subprocess.run(["git", "branch", "-M", "main"], cwd=repo_root, check=True)
+                subprocess.run(["git", "remote", "add", "origin", remote], cwd=repo_root, check=True)
+            (parent / ".wily").mkdir()
+            (parent / ".wily" / "coordination.yaml").write_text(
+                "\n".join(
+                    [
+                        "schema: wily-coordination-v1",
+                        "title: Wily Plugin Parent",
+                        "parent:",
+                        "  id: parent",
+                        "  title: Coordination Parent",
+                        "  path: .",
+                        "repos:",
+                        "  - id: roadmap",
+                        "    title: Wily Roadmap",
+                        "    path: ./wily-roadmap",
+                        "  - id: board",
+                        "    title: Wily Board",
+                        "    path: ./wily-board",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            src = roadmap / "src"
+            src.mkdir()
+            for index in range(6):
+                (src / f"{index:02d}.py").write_text(f"print({index})\n", encoding="utf-8")
+            (board / "server.py").write_text("print('board')\n", encoding="utf-8")
+            snapshot = claim_snapshot_for_repos([("parent", parent), ("roadmap", roadmap), ("board", board)])
+            paths = WilyPaths(parent)
+            save_actors(paths, [Actor(id="wily", display="Wily")])
+            save_tasks(
+                paths,
+                "Parent Roadmap",
+                [
+                    Task(
+                        id="T01",
+                        title="Ship parent coordination",
+                        status=TaskStatus.IN_PROGRESS,
+                        actor="wily",
+                        depends_on=["T00"],
+                        scope=["roadmap:src/**", {"repo": "parent", "path": "agent-handoffs/**"}],
+                        claim_snapshot=snapshot,
+                    )
+                ],
+            )
+
+            payload = build_snapshot_payload(parent, repo="R-W-LAB/wily-plugin", actor="wily")
+
+            self.assertEqual(payload["payload_version"], "board_v3_snapshot_v1")
+            self.assertEqual(payload["active_mode"], "coordination")
+            coordination = payload["coordination"]
+            self.assertEqual(coordination["schema"], "wily-coordination-snapshot-v1")
+            self.assertEqual(coordination["title"], "Wily Plugin Parent")
+            self.assertEqual(coordination["manifest_path"], str((parent / ".wily" / "coordination.yaml").resolve()))
+            self.assertEqual(coordination["display"], {"default_owner": "parent", "child_default_visibility": "nested"})
+            self.assertEqual(
+                coordination["parent"],
+                {
+                    "id": "parent",
+                    "title": "Coordination Parent",
+                    "path": str(parent.resolve()),
+                    "project_id": payload["project_id"],
+                    "repo_slug": "R-W-LAB/wily-plugin",
+                    "display_role": "owner",
+                },
+            )
+            children = {child["id"]: child for child in coordination["children"]}
+            self.assertEqual(set(children), {"roadmap", "board"})
+            self.assertNotIn("scratch", children)
+            self.assertEqual(children["roadmap"]["title"], "Wily Roadmap")
+            self.assertEqual(children["roadmap"]["path"], str(roadmap.resolve()))
+            self.assertEqual(children["roadmap"]["repo_slug"], "R-W-LAB/wily-roadmap")
+            self.assertEqual(children["roadmap"]["remote"]["slug"], "R-W-LAB/wily-roadmap")
+            self.assertEqual(children["roadmap"]["branch"], "main")
+            self.assertEqual(
+                children["roadmap"]["display"],
+                {"default_visibility": "nested", "owned_by_parent": True, "direct_route": "scoped_parent_view"},
+            )
+            roadmap_entries = {entry["id"]: entry for entry in coordination["task_roadmap"]}
+            task = roadmap_entries["T01"]
+            self.assertEqual(task["title"], "Ship parent coordination")
+            self.assertEqual(task["status"], "in_progress")
+            self.assertEqual(task["depends_on"], ["T00"])
+            self.assertEqual(task["actor"], "wily")
+            self.assertEqual(
+                task["scope"],
+                [
+                    {"repo": "roadmap", "path": "src/**", "source": "roadmap:src/**"},
+                    {"repo": "parent", "path": "agent-handoffs/**", "source": {"repo": "parent", "path": "agent-handoffs/**"}},
+                ],
+            )
+            self.assertEqual([repo["id"] for repo in task["target_repos"]], ["roadmap", "parent"])
+            self.assertEqual(task["target_repos"][0]["repo_slug"], "R-W-LAB/wily-roadmap")
+            self.assertEqual(task["claim_snapshot_summary"]["parent"]["git_available"], False)
+            roadmap_summary = task["claim_snapshot_summary"]["roadmap"]
+            self.assertEqual(roadmap_summary["git_available"], True)
+            self.assertEqual(roadmap_summary["branch"], "main")
+            self.assertTrue(roadmap_summary["sha"])
+            self.assertEqual(roadmap_summary["dirty"], True)
+            self.assertEqual(roadmap_summary["changed_file_count"], 6)
+            self.assertEqual(roadmap_summary["changed_files_sample"], [f"src/{index:02d}.py" for index in range(5)])
+            self.assertNotIn("fingerprints", roadmap_summary)
+            self.assertEqual(payload["snapshot_sha"], snapshot_sha(payload))
+
+    def test_agent_snapshot_keeps_manifest_workspace_compatible_without_coordination_display_hints(self) -> None:
+        from wily.agent.snapshot import build_snapshot_payload
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            child = root / "child"
+            child.mkdir()
+            _git_repo(root)
+            subprocess.run(["git", "branch", "-M", "main"], cwd=root, check=True)
+            (root / "wily-workspace.yaml").write_text(
+                "\n".join(
+                    [
+                        "schema: wily-workspace-v1",
+                        "title: Manifest Only",
+                        "repos:",
+                        "  - id: root",
+                        "    path: .",
+                        "    title: Root Repo",
+                        "  - id: child",
+                        "    path: ./child",
+                        "    title: Child Repo",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            paths = WilyPaths(root)
+            paths.wily_dir.mkdir()
+            save_tasks(paths, "Manifest Root", [Task(id="T01", title="Workspace task")])
+
+            payload = build_snapshot_payload(root, repo="R-W-LAB/root", actor="wily")
+
+            self.assertEqual(payload["active_mode"], "single_repo")
+            self.assertEqual(payload["workspace"]["title"], "Manifest Only")
+            self.assertEqual(payload["workspace"]["repo"]["id"], "root")
+            self.assertNotIn("coordination", payload)
+            self.assertNotIn("display", payload["workspace"])
 
     def test_agent_recovery_imports_missing_status_events_without_downgrading_ledger(self) -> None:
         from wily.agent.recovery import recover_status_boards

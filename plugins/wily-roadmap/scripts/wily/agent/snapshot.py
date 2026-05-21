@@ -12,9 +12,11 @@ import subprocess
 from typing import Any
 
 from wily.config import load_actors, load_tasks, repo_mode
+from wily.coordination import CoordinationConfig, CoordinationRepo, ProjectContext, resolve_project_context
 from wily.models import Actor, Task
+from wily.scope import normalize_scope_entries
 from wily.progress import cp_summary, read_events
-from wily.paths import WilyPaths
+from wily.paths import WilyPaths, WilyRootNotFound
 from wily.workspace import WorkspaceManifestError, discover_workspace_manifest, load_workspace
 
 CLIENT_VERSION = "wily-agent/0.1.0"
@@ -41,7 +43,9 @@ def build_snapshot_payload(
     sync_health: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     root = path.resolve()
-    paths = WilyPaths(root)
+    context = project_context_or_default(root)
+    root = context.root
+    paths = context.paths
     project_title, tasks = load_tasks(paths)
     actors = load_actors(paths)
     remote_url = git_remote_url(root)
@@ -88,6 +92,7 @@ def build_snapshot_payload(
     health = sync_health or empty_sync_health()
     payload: dict[str, Any] = {
         "payload_version": "board_v3_snapshot_v1",
+        "active_mode": context.active_mode,
         "repo": repo,
         "project_id": project,
         "remote_url": remote_url,
@@ -114,8 +119,166 @@ def build_snapshot_payload(
         "client_version": CLIENT_VERSION,
         "captured_at": captured_at,
     }
+    if context.coordination is not None:
+        payload["coordination"] = coordination_snapshot(
+            context,
+            tasks=tasks,
+            parent_project_id=project,
+            parent_repo_slug=repo_slug,
+        )
     payload["snapshot_sha"] = snapshot_sha(payload)
     return payload
+
+
+def project_context_or_default(root: Path) -> ProjectContext:
+    try:
+        return resolve_project_context(root)
+    except WilyRootNotFound:
+        return ProjectContext(active_mode="single_repo", paths=WilyPaths(root))
+
+
+def coordination_snapshot(
+    context: ProjectContext,
+    *,
+    tasks: list[Task],
+    parent_project_id: str,
+    parent_repo_slug: str,
+) -> dict[str, Any]:
+    coordination = context.coordination
+    if coordination is None:
+        return {}
+    return {
+        "schema": "wily-coordination-snapshot-v1",
+        "title": coordination.title,
+        "manifest_path": str(coordination.manifest_path),
+        "parent": coordination_parent_payload(coordination, project_id=parent_project_id, repo_slug=parent_repo_slug),
+        "children": [coordination_child_payload(repo) for repo in coordination.repos],
+        "display": {"default_owner": "parent", "child_default_visibility": "nested"},
+        "task_roadmap": [
+            coordination_task_payload(
+                task,
+                coordination=coordination,
+                parent_repo_slug=parent_repo_slug,
+            )
+            for task in tasks
+        ],
+    }
+
+
+def coordination_parent_payload(coordination: CoordinationConfig, *, project_id: str, repo_slug: str) -> dict[str, Any]:
+    parent = coordination.parent
+    return {
+        "id": parent.id,
+        "title": coordination_repo_title(parent, fallback=coordination.title),
+        "path": str(parent.path),
+        "project_id": project_id,
+        "repo_slug": repo_slug,
+        "display_role": "owner",
+    }
+
+
+def coordination_child_payload(repo: CoordinationRepo) -> dict[str, Any]:
+    remote_url = git_remote_url(repo.path)
+    remote = normalize_remote(remote_url, root=repo.path)
+    return {
+        "id": repo.id,
+        "title": coordination_repo_title(repo),
+        "path": str(repo.path),
+        "repo_slug": remote["slug"] or repo.id,
+        "remote": remote,
+        "branch": git_branch(repo.path),
+        "display": {
+            "default_visibility": "nested",
+            "owned_by_parent": True,
+            "direct_route": "scoped_parent_view",
+        },
+    }
+
+
+def coordination_task_payload(
+    task: Task,
+    *,
+    coordination: CoordinationConfig,
+    parent_repo_slug: str,
+) -> dict[str, Any]:
+    normalized_scope = normalize_scope_entries(task.scope, default_repo=coordination.parent.id, coordination=True)
+    return {
+        "id": task.id,
+        "title": task.title,
+        "status": task.status.value,
+        "depends_on": list(task.depends_on),
+        "actor": task.actor,
+        "scope": [
+            {
+                "repo": entry.repo,
+                "path": entry.path,
+                "source": entry.source,
+            }
+            for entry in normalized_scope
+        ],
+        "target_repos": target_repo_summaries(
+            normalized_scope,
+            coordination=coordination,
+            parent_repo_slug=parent_repo_slug,
+        ),
+        "claim_snapshot_summary": claim_snapshot_summary(task.claim_snapshot, coordination=coordination),
+    }
+
+
+def target_repo_summaries(
+    normalized_scope: list[Any],
+    *,
+    coordination: CoordinationConfig,
+    parent_repo_slug: str,
+) -> list[dict[str, Any]]:
+    repos = {repo.id: repo for repo in coordination.all_repos}
+    summaries: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for entry in normalized_scope:
+        if entry.repo in seen or entry.repo not in repos:
+            continue
+        seen.add(entry.repo)
+        summaries.append(target_repo_summary(repos[entry.repo], coordination=coordination, parent_repo_slug=parent_repo_slug))
+    return summaries
+
+
+def target_repo_summary(repo: CoordinationRepo, *, coordination: CoordinationConfig, parent_repo_slug: str) -> dict[str, Any]:
+    if repo.id == coordination.parent.id:
+        repo_slug = parent_repo_slug
+    else:
+        remote = normalize_remote(git_remote_url(repo.path), root=repo.path)
+        repo_slug = remote["slug"] or repo.id
+    return {
+        "id": repo.id,
+        "title": coordination_repo_title(repo, fallback=coordination.title if repo.id == coordination.parent.id else ""),
+        "path": str(repo.path),
+        "repo_slug": repo_slug,
+    }
+
+
+def claim_snapshot_summary(claim_snapshot: dict[str, Any] | None, *, coordination: CoordinationConfig) -> dict[str, Any]:
+    if not isinstance(claim_snapshot, dict):
+        return {}
+    repos = claim_snapshot.get("repos") if isinstance(claim_snapshot.get("repos"), dict) else {}
+    summary: dict[str, Any] = {}
+    for repo in coordination.all_repos:
+        repo_snapshot = repos.get(repo.id)
+        if not isinstance(repo_snapshot, dict):
+            continue
+        changed_files = sorted(str(path) for path in repo_snapshot.get("changed_files") or [])
+        summary[repo.id] = {
+            "git_available": bool(repo_snapshot.get("git_available")),
+            "branch": repo_snapshot.get("branch"),
+            "sha": repo_snapshot.get("sha"),
+            "dirty": bool(repo_snapshot.get("dirty")),
+            "changed_file_count": len(changed_files),
+            "changed_files_sample": changed_files[:5],
+        }
+    return summary
+
+
+def coordination_repo_title(repo: CoordinationRepo, *, fallback: str = "") -> str:
+    return repo.title or fallback or repo.path.name or repo.id
 
 
 def snapshot_sha(payload: dict[str, Any]) -> str:

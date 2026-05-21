@@ -6,7 +6,8 @@ The workspace manifest can be `wily-workspace.yaml` or `.wily-workspace.yaml`.
 The manifest is not a source of truth; child repos keep their own `.wily/tasks.yaml`.
 
 `wily workspace status` and `wily workspace next` are read-only aggregate views
-and do not claim, start, block, or complete child repo tasks.
+and do not claim, start, block, or complete child repo tasks. Missing or invalid
+child repos are reported as per-repo errors.
 
 `wily workspace init` writes only the manifest and does not create parent `.wily/`.
 

@@ -18,6 +18,8 @@ python3 <plugin-root>/scripts/wily.py workspace <init|show-config|status|next|wa
 - The manifest can be `wily-workspace.yaml` or `.wily-workspace.yaml`.
 - The manifest is not a source of truth; each child repo keeps its own `.wily/tasks.yaml`.
 - `wily workspace init` writes only the manifest and does not create parent `.wily/`.
+- `wily workspace status` and `wily workspace next` are read-only aggregate views
+  and do not claim, start, block, or complete child repo tasks.
 - `wily workspace status` shows per-repo progress, active tasks, ready tasks, blocked tasks, and per-repo errors.
 - `wily workspace next` aggregates ready tasks without claiming them.
 - `wily workspace watch --once` prints one aggregate snapshot; without `--once`, it redraws when child `.wily/.touch` files change.
