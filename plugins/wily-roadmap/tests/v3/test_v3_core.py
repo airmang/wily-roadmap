@@ -6,7 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
@@ -1086,6 +1086,120 @@ class CoreModelTest(unittest.TestCase):
 
             with chdir_compat(root):
                 self.assertEqual(doctor_cmd.main([]), 0)
+
+    def test_doctor_reports_invalid_coordination_config(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp)
+            paths = WilyPaths(parent)
+            paths.wily_dir.mkdir()
+            save_tasks(paths, "Parent Project", [])
+            (paths.wily_dir / "coordination.yaml").write_text("schema: wrong\nrepos: []\n", encoding="utf-8")
+
+            with chdir_compat(parent):
+                stdout = StringIO()
+                with redirect_stdout(stdout):
+                    self.assertEqual(doctor_cmd.main(["--json"]), 2)
+
+            payload = json.loads(stdout.getvalue())
+            diagnostics = payload["diagnostics"]
+            self.assertTrue(any(item["code"] == "coordination-config" and item["level"] == "fail" for item in diagnostics))
+
+    def test_doctor_reports_malformed_coordination_config_without_crashing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp)
+            paths = WilyPaths(parent)
+            paths.wily_dir.mkdir()
+            save_tasks(paths, "Parent Project", [])
+            (paths.wily_dir / "coordination.yaml").write_text("schema: [\n", encoding="utf-8")
+
+            with chdir_compat(parent):
+                stdout = StringIO()
+                with redirect_stdout(stdout):
+                    self.assertEqual(doctor_cmd.main(["--json"]), 2)
+
+            diagnostics = json.loads(stdout.getvalue())["diagnostics"]
+            self.assertTrue(any(item["code"] == "coordination-config" and item["level"] == "fail" for item in diagnostics))
+
+    def test_doctor_aggregates_coordination_parent_and_child_diagnostics(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp)
+            _git_repo(parent)
+            _write_coordination(parent)
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            for repo in (parent, child):
+                (repo / ".venv").mkdir()
+                hook = repo / ".git" / "hooks" / "pre-commit"
+                hook.write_text("python wily.py replan drift-guard --from-hook\n", encoding="utf-8")
+
+            parent_paths = WilyPaths(parent)
+            child_paths = WilyPaths(child)
+            save_tasks(parent_paths, "Parent Project", [Task(id="T01", title="Parent task", depends_on=["T99"])])
+            save_tasks(child_paths, "Child Project", [Task(id="C01", title="Child task", depends_on=["C99"])])
+            child_paths.task_dir("C77").mkdir(parents=True)
+
+            with chdir_compat(parent):
+                stdout = StringIO()
+                with redirect_stdout(stdout):
+                    self.assertEqual(doctor_cmd.main(["--json"]), 2)
+
+            diagnostics = json.loads(stdout.getvalue())["diagnostics"]
+            broken = [item for item in diagnostics if item["code"] == "broken-depends-on"]
+            self.assertEqual({item["repo"] for item in broken}, {"parent", "roadmap"})
+            self.assertTrue(any(item["repo"] == "parent" and "T01" in item["message"] for item in broken))
+            self.assertTrue(any(item["repo"] == "roadmap" and "C01" in item["message"] for item in broken))
+            self.assertTrue(any(item["code"] == "orphan-task-dir" and item["repo"] == "roadmap" for item in diagnostics))
+
+    def test_doctor_reports_missing_coordination_repo_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp)
+            _git_repo(parent)
+            _write_coordination(parent, child_path="./missing-child")
+            paths = WilyPaths(parent)
+            (parent / ".venv").mkdir()
+            (parent / ".git" / "hooks" / "pre-commit").write_text("python wily.py replan drift-guard --from-hook\n", encoding="utf-8")
+            save_tasks(paths, "Parent Project", [])
+
+            with chdir_compat(parent):
+                stdout = StringIO()
+                with redirect_stdout(stdout):
+                    self.assertEqual(doctor_cmd.main(["--json"]), 2)
+
+            diagnostics = json.loads(stdout.getvalue())["diagnostics"]
+            self.assertTrue(
+                any(item["code"] == "coordination-repo-path" and item["repo"] == "roadmap" and item["level"] == "fail" for item in diagnostics)
+            )
+
+    def test_doctor_warns_for_coordination_legacy_handoffs_and_missing_child_hook(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp)
+            _git_repo(parent)
+            _write_coordination(parent)
+            child = parent / "wily-roadmap"
+            child.mkdir()
+            _git_repo(child)
+            for repo in (parent, child):
+                (repo / ".venv").mkdir()
+                save_tasks(WilyPaths(repo), f"{repo.name} Project", [])
+            parent_hook = parent / ".git" / "hooks" / "pre-commit"
+            parent_hook.write_text("python wily.py replan drift-guard --from-hook\n", encoding="utf-8")
+            (parent / "agent-handoffs").mkdir()
+            (parent / "agent-handoffs" / "t01-status.md").write_text("# status\n", encoding="utf-8")
+
+            with chdir_compat(parent):
+                stdout = StringIO()
+                with redirect_stdout(stdout):
+                    self.assertEqual(doctor_cmd.main(["--json"]), 1)
+
+            diagnostics = json.loads(stdout.getvalue())["diagnostics"]
+            self.assertTrue(
+                any(item["code"] == "legacy-handoff-location" and item["repo"] == "parent" for item in diagnostics)
+            )
+            self.assertTrue(
+                any(item["code"] == "pre-commit-hook" and item["repo"] == "roadmap" for item in diagnostics)
+            )
+            self.assertFalse(any(item["code"] == "pre-commit-hook" and item["repo"] == "parent" and item["level"] == "warn" for item in diagnostics))
 
     def test_cp_import_status_converts_custom_workflow_board_idempotently(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
