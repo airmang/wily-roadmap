@@ -46,6 +46,14 @@ perform the local daemon action on the user's behalf.
 - `run` and `dev` run the foreground daemon path for debugging.
 - Foreground and launchd runs publish Board v3 snapshots, heartbeats,
   status-board recovery metadata, and local sync-health state.
+- Snapshot payloads use `board_v3_snapshot_v1`. Each snapshot includes current
+  task, current checkpoint, checkpoint timeline, task list, dependencies, actor,
+  and R-W-LAB remote-derived project id.
+- Board display fields include current task, current checkpoint, checkpoint
+  timeline, task list, dependencies, actor, R-W-LAB, and project id.
+- All snapshots include `active_mode`; parent coordination snapshots use
+  optional coordination fields such as `task_roadmap` and
+  `claim_snapshot_summary`.
 
 ## Guardrails
 

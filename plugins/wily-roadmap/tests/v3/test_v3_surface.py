@@ -57,6 +57,12 @@ class V3SurfaceTest(unittest.TestCase):
         for token in ("status-board recovery", "sync-health", "Board v3 snapshots", "heartbeats"):
             self.assertIn(token, command)
             self.assertIn(token, skill)
+        for token in ("current task", "current checkpoint", "checkpoint timeline", "task list", "dependencies", "actor", "R-W-LAB", "project id"):
+            self.assertIn(token, command)
+            self.assertIn(token, skill)
+        for token in ("board_v3_snapshot_v1", "active_mode", "optional coordination", "task_roadmap", "claim_snapshot_summary"):
+            self.assertIn(token, command)
+            self.assertIn(token, skill)
 
     def test_land_surface_documents_ledger_closure_guard(self) -> None:
         command = (ROOT / "commands" / "land.md").read_text(encoding="utf-8")
@@ -83,6 +89,18 @@ class V3SurfaceTest(unittest.TestCase):
         self.assertIn("snapshots and heartbeats", readme)
         self.assertIn("live-*` commands are not a Wily Board v3 reflection mechanism", readme)
         self.assertIn("wily cp", readme)
+        for token in (
+            "repo-local `.wily/` ledger remains authoritative",
+            "Board v3 is a cache/reflection",
+            "board_v3_snapshot_v1",
+            "optional `coordination`",
+            "top-level `active_mode`",
+            "`active_mode`",
+            "`task_roadmap`",
+            "`claim_snapshot_summary`",
+            "`child_default_visibility`",
+        ):
+            self.assertIn(token, readme)
 
     def test_workspace_surface_documents_manifest_only_contract(self) -> None:
         command = (ROOT / "commands" / "workspace.md").read_text(encoding="utf-8")
@@ -96,6 +114,9 @@ class V3SurfaceTest(unittest.TestCase):
                 self.assertIn(".wily-workspace.yaml", text)
                 self.assertIn("manifest is not a source of truth", text)
                 self.assertIn("does not create parent `.wily/`", text)
+                self.assertIn("read-only aggregate views", text)
+                self.assertIn("do not claim, start, block, or complete", text)
+                self.assertIn("per-repo errors", text)
                 self.assertIn("wily workspace status", text)
                 self.assertIn("wily workspace next", text)
         self.assertIn("$wily-workspace", prompt)
@@ -110,6 +131,19 @@ class V3SurfaceTest(unittest.TestCase):
         workspace_text = (ROOT / "commands" / "workspace.md").read_text(encoding="utf-8") + (ROOT / "skills" / "wily-workspace" / "SKILL.md").read_text(encoding="utf-8")
 
         for token in (".wily/coordination.yaml", "parent-owned coordination mode", "repo-qualified scope", "claim_snapshot"):
+            self.assertIn(token, readme)
+        for token in (
+            "parent `.wily/tasks.yaml` owns tasks",
+            "child repos own work files",
+            "board_v3_snapshot_v1",
+            "optional `coordination`",
+            "`task_roadmap`",
+            "`target_repos`",
+            "`claim_snapshot_summary`",
+            "`changed_file_count`",
+            "`changed_files_sample`",
+            "`child_default_visibility`",
+        ):
             self.assertIn(token, readme)
         for token in ("parent-owned coordination mode", ".wily/coordination.yaml", "active_mode"):
             self.assertIn(token, command_text)

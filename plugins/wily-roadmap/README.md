@@ -62,9 +62,12 @@ repos:
 The manifest is not a source of truth; each child repo keeps its own
 `.wily/tasks.yaml`. `wily workspace init` writes only the manifest and does not create parent `.wily/`.
 
-Manifest-only mode is read-only aggregation. Parent-owned coordination mode is
+Manifest-only mode provides read-only aggregate views. These views do not
+claim, start, block, or complete child repo tasks, and missing or invalid child
+repos are reported as per-repo errors. Parent-owned coordination mode is
 separate: a parent `.wily/coordination.yaml` plus parent `.wily/tasks.yaml`
 means the parent owns tasks while registered child Git repos own task files.
+Manifest-only commands do not claim, start, block, or complete child repo tasks.
 When both exist, `.wily/coordination.yaml` takes precedence for lifecycle
 commands; `wily-workspace.yaml` remains a manifest-only view.
 
@@ -117,6 +120,15 @@ Parent-owned coordination mode uses repo-qualified scope such as
 `parent:docs/**`, `roadmap:src/**`, or structured `{repo, path}` entries. Plain
 legacy scope strings are treated as parent scope for compatibility.
 
+In parent-owned coordination mode, parent `.wily/tasks.yaml` owns tasks and
+child repos own work files. Board-facing agent snapshots still use
+`board_v3_snapshot_v1`. Every snapshot includes top-level `active_mode`;
+coordination is expressed as optional `coordination` fields instead of a new
+payload type. Those optional fields include `task_roadmap`, normalized `scope`,
+`target_repos`, `claim_snapshot_summary`, `changed_file_count`,
+`changed_files_sample`, and display hints such as `child_default_visibility` so
+Board can nest registered child repos under the parent owner.
+
 `wily claim` in coordination mode records a `claim_snapshot` instead of a fake
 parent `claim_sha`. The snapshot includes each repo's branch, sha, dirty files,
 and fingerprints for dirty or untracked files. `wily done` and `wily land`
@@ -143,6 +155,15 @@ and sends best-effort snapshots and heartbeats to Wily Board when local config
 is present. As of 2026-05-20, the local `wily-board` repo is deleted for a
 fresh rebuild, so Board sync is unavailable until a rebuilt Board URL is
 configured.
+
+Wily Roadmap's repo-local `.wily/` ledger remains authoritative. Board v3 is a cache/reflection fed by `wily-agent` snapshots and heartbeats; Board state must not replace the Wily task lifecycle source of truth.
+
+Agent snapshots use `board_v3_snapshot_v1`. Each snapshot includes `active_mode`,
+current task, current checkpoint, checkpoint timeline, task list, dependencies,
+actor, R-W-LAB remote-derived project id, status-board recovery metadata, and
+local sync-health. Parent coordination snapshots add optional `coordination`
+fields with `task_roadmap`, `target_repos`, `claim_snapshot_summary`,
+`changed_file_count`, `changed_files_sample`, and `child_default_visibility`.
 
 Typical onboarding:
 

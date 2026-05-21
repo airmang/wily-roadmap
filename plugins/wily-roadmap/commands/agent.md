@@ -37,3 +37,9 @@ not fail normal Wily task commands.
 Each snapshot includes status-board recovery metadata from task-related Custom
 Workflow boards and local sync-health fields for the last successful push, last
 failure reason, and pending snapshot marker.
+
+Board v3 snapshot payloads use `board_v3_snapshot_v1`. Each snapshot includes
+current task, current checkpoint, checkpoint timeline, task list, dependencies,
+actor, and R-W-LAB remote-derived project id. All snapshots include
+`active_mode`; parent coordination snapshots use optional coordination fields
+such as `task_roadmap` and `claim_snapshot_summary`.
