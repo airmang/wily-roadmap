@@ -53,6 +53,14 @@ def build_snapshot_payload(
     repo_slug = remote["slug"] or repo or root.name
     project = project_id(remote["normalized_url"], slug=repo_slug)
     captured_at = utc_now()
+    branch = git_branch(root)
+    checkout_id = checkout_identity(root)
+    checkout = {
+        "checkout_id": checkout_id,
+        "worktree_id": checkout_id,
+        "branch": branch,
+        "local_path": str(root),
+    }
     active_task = current_task(tasks)
     task_progress = {
         task.id: {
@@ -83,6 +91,10 @@ def build_snapshot_payload(
         "repo_slug": repo_slug,
         "actor": actor_payload,
         "machine": machine,
+        "checkout_id": checkout_id,
+        "worktree_id": checkout_id,
+        "branch": branch,
+        "local_path": str(root),
         "current_task_id": active_task.id if active_task else None,
         "current_cp": current_cp,
         "status": "active" if active_task else "idle",
@@ -98,7 +110,10 @@ def build_snapshot_payload(
         "remote_url": remote_url,
         "remote": remote,
         "repo_slug": repo_slug,
-        "branch": git_branch(root),
+        "branch": branch,
+        "checkout_id": checkout_id,
+        "worktree_id": checkout_id,
+        "checkout": checkout,
         "workspace": workspace_metadata(root),
         "machine": machine,
         "actor": actor_payload,
@@ -296,19 +311,36 @@ def project_id(normalized_url: str, *, slug: str = "") -> str:
     return identity if slug else hashlib.sha1(identity.encode("utf-8")).hexdigest()
 
 
+def checkout_identity(root: Path) -> str:
+    worktree_path = git_worktree_path(root) or str(root.resolve())
+    material = worktree_path.encode("utf-8")
+    return f"checkout_{hashlib.sha1(material).hexdigest()[:16]}"
+
+
+def git_worktree_path(root: Path) -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", "--path-format=absolute", "--show-toplevel"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.stdout.strip() if result.returncode == 0 and result.stdout.strip() else ""
+
+
 def normalize_remote(raw_url: str, *, repo: str = "", root: Path | None = None) -> dict[str, str]:
     raw = raw_url.strip()
     host = ""
     owner = ""
     name = ""
-    match = re.match(r"git@([^:]+):(.+)$", raw)
+    match = re.match(r"git@([^:]+):(.+)$", raw, flags=re.IGNORECASE)
     if match:
-        host, path = match.group(1), match.group(2)
+        host, path = match.group(1).lower(), match.group(2)
         owner, name = _owner_name(path)
     if not owner:
-        match = re.match(r"(?:https?|ssh|git)://(?:git@)?([^/]+)/(.+)$", raw)
+        match = re.match(r"(?:https?|ssh|git)://(?:git@)?([^/]+)/(.+)$", raw, flags=re.IGNORECASE)
         if match:
-            host, path = match.group(1), match.group(2)
+            host, path = match.group(1).lower(), match.group(2)
             owner, name = _owner_name(path)
     if not owner and repo and "/" in repo:
         owner, name = _owner_name(repo)

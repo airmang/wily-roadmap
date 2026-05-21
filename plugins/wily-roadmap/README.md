@@ -160,8 +160,13 @@ Wily Roadmap's repo-local `.wily/` ledger remains authoritative. Board v3 is a c
 
 Agent snapshots use `board_v3_snapshot_v1`. Each snapshot includes `active_mode`,
 current task, current checkpoint, checkpoint timeline, task list, dependencies,
-actor, R-W-LAB remote-derived project id, status-board recovery metadata, and
-local sync-health. Parent coordination snapshots add optional `coordination`
+actor, R-W-LAB remote-derived project id, stable checkout identity, branch/local
+path, status-board recovery metadata, and local sync-health. The checkout
+identity is a deterministic `checkout_<hash>` of the resolved git worktree path
+and is sent as both `checkout_id` and `worktree_id` for Board display; it is not
+part of `project_id`, so same-remote checkouts still converge to one Board
+project. Heartbeats repeat the checkout id, branch, and local path so Board can
+show active and stale checkouts using server ingest time. Parent coordination snapshots add optional `coordination`
 fields with `task_roadmap`, `target_repos`, `claim_snapshot_summary`,
 `changed_file_count`, `changed_files_sample`, and `child_default_visibility`.
 
