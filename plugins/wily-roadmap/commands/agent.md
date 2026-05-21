@@ -34,9 +34,14 @@ heartbeats when logged in to a rebuilt Board. Missing config, Board downtime,
 invalid tokens, the current Board rebuild gap, or legacy signature errors must
 not fail normal Wily task commands.
 
-Each snapshot includes status-board recovery metadata from task-related Custom
-Workflow boards and local sync-health fields for the last successful push, last
-failure reason, and pending snapshot marker.
+The daemon treats registered repositories as read-only while syncing. Each
+snapshot includes status-board recovery metadata from task-related Custom
+Workflow boards, but daemon snapshot/heartbeat publishing must not backfill or
+modify `.wily/tasks/*/progress.jsonl`. To write checkpoint backfill events, run
+`wily cp <task-id> import-status <status-path>` explicitly.
+
+Snapshots also include local sync-health fields for the last successful push,
+last failure reason, and pending snapshot marker.
 
 Board v3 snapshot payloads use `board_v3_snapshot_v1`. Each snapshot includes
 current task, current checkpoint, checkpoint timeline, task list, dependencies,

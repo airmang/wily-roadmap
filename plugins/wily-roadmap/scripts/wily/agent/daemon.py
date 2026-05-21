@@ -109,7 +109,7 @@ def publish_repo_heartbeat(
     try:
         board_repo = repo.repo or config.repo
         health_path = sync_health_path or default_paths().sync_health_path
-        recovery_report = recover_status_boards(repo.path, actor=config.actor)
+        recovery_report = recover_status_boards(repo.path, actor=config.actor, write=False)
         snapshot_payload = build_snapshot_payload(
             repo.path,
             repo=board_repo,
@@ -158,6 +158,7 @@ def publish_repo_heartbeat(
         "task_id": task_id,
         "snapshot": snapshot_result,
         "heartbeat": heartbeat_result,
+        "recovery": recovery_report,
         "sync_health": health,
     }
 

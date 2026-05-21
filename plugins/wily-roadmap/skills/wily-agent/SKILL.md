@@ -46,6 +46,9 @@ perform the local daemon action on the user's behalf.
 - `run` and `dev` run the foreground daemon path for debugging.
 - Foreground and launchd runs publish Board v3 snapshots, heartbeats,
   status-board recovery metadata, and local sync-health state.
+- Foreground and launchd sync paths read registered repositories without
+  mutating `.wily/tasks/*/progress.jsonl`; checkpoint backfill writes require an
+  explicit `wily cp <task-id> import-status <status-path>` command.
 - Snapshot payloads use `board_v3_snapshot_v1`. Each snapshot includes current
   task, current checkpoint, checkpoint timeline, task list, dependencies, actor,
   and R-W-LAB remote-derived project id.

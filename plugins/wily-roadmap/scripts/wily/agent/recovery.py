@@ -18,24 +18,35 @@ def empty_recovery_report() -> dict[str, Any]:
     return {
         "source_paths": [],
         "imported_count": 0,
+        "would_import_count": 0,
         "skipped_duplicate_count": 0,
+        "dry_run": False,
         "warnings": [],
         "tasks": {},
     }
 
 
-def recover_status_boards(root: Path, *, actor: str = "", ts: str = "") -> dict[str, Any]:
+def recover_status_boards(root: Path, *, actor: str = "", ts: str = "", write: bool = True) -> dict[str, Any]:
     root = root.resolve()
     paths = WilyPaths(root)
     _title, tasks = load_tasks(paths)
     event_ts = ts or utc_now()
     report = empty_recovery_report()
+    report["dry_run"] = not write
     for task in tasks:
-        task_report = _recover_task(root, paths, task, actor=actor or task.actor or task.assignee or "unknown", ts=event_ts)
+        task_report = _recover_task(
+            root,
+            paths,
+            task,
+            actor=actor or task.actor or task.assignee or "unknown",
+            ts=event_ts,
+            write=write,
+        )
         if task_report["status_boards"] or task_report["warnings"]:
             report["tasks"][task.id] = task_report
             report["source_paths"].extend(board["source_path"] for board in task_report["status_boards"])
             report["imported_count"] += task_report["imported_count"]
+            report["would_import_count"] += task_report["would_import_count"]
             report["skipped_duplicate_count"] += task_report["skipped_duplicate_count"]
             report["warnings"].extend(task_report["warnings"])
     if report["imported_count"]:
@@ -43,10 +54,11 @@ def recover_status_boards(root: Path, *, actor: str = "", ts: str = "") -> dict[
     return report
 
 
-def _recover_task(root: Path, paths: WilyPaths, task: Task, *, actor: str, ts: str) -> dict[str, Any]:
+def _recover_task(root: Path, paths: WilyPaths, task: Task, *, actor: str, ts: str, write: bool) -> dict[str, Any]:
     task_report: dict[str, Any] = {
         "status_boards": [],
         "imported_count": 0,
+        "would_import_count": 0,
         "skipped_duplicate_count": 0,
         "warnings": [],
     }
@@ -69,6 +81,7 @@ def _recover_task(root: Path, paths: WilyPaths, task: Task, *, actor: str, ts: s
         "source_path": str(source),
         "rows": rows,
         "imported_count": 0,
+        "would_import_count": 0,
         "skipped_duplicate_count": 0,
         "warnings": [],
     }
@@ -89,6 +102,15 @@ def _recover_task(root: Path, paths: WilyPaths, task: Task, *, actor: str, ts: s
             task_report["skipped_duplicate_count"] += len(proposed)
             continue
         for event in proposed:
+            if not write:
+                if _has_event(existing, event):
+                    board_summary["skipped_duplicate_count"] += 1
+                    task_report["skipped_duplicate_count"] += 1
+                else:
+                    existing.append(event)
+                    board_summary["would_import_count"] += 1
+                    task_report["would_import_count"] += 1
+                continue
             if append_event_once(paths, task.id, event):
                 existing.append(event)
                 board_summary["imported_count"] += 1
@@ -189,6 +211,10 @@ def _events_for_row(row: dict[str, str], *, actor: str, ts: str) -> list[CpEvent
 
 def _has_terminal_event(events: list[CpEvent], cp: str) -> bool:
     return any(event.cp == cp and event.event in {"done", "cancel"} for event in events)
+
+
+def _has_event(events: list[CpEvent], event: CpEvent) -> bool:
+    return any(existing.cp == event.cp and existing.event == event.event for existing in events)
 
 
 def _contradicts_task_status(task: Task, status: str) -> bool:

@@ -586,6 +586,27 @@ class CoreModelTest(unittest.TestCase):
             self.assertEqual(second["sync_health"]["last_successful_push"], health["last_successful_push"])
 
     def test_agent_recovery_imported_by_daemon_uses_non_empty_timestamp(self) -> None:
+        from wily.agent.recovery import recover_status_boards
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _git_repo(root)
+            paths = WilyPaths(root)
+            paths.wily_dir.mkdir()
+            save_tasks(paths, "demo", [Task(id="T01", title="First", status=TaskStatus.IN_PROGRESS, actor="wily")])
+            status = root / "agent-handoffs" / "t01-demo-status.md"
+            status.parent.mkdir()
+            status.write_text("| Checkpoint | Status | Evidence |\n| --- | --- | --- |\n| Plan | DONE | recovered |\n", encoding="utf-8")
+
+            report = recover_status_boards(root, actor="wily")
+
+            events = read_events(paths, "T01")
+            self.assertTrue(events)
+            self.assertTrue(all(event.ts for event in events))
+            self.assertEqual(report["imported_count"], 2)
+            self.assertEqual(report["would_import_count"], 0)
+
+    def test_agent_daemon_status_recovery_does_not_dirty_progress_ledger(self) -> None:
         from wily.agent import daemon
         from wily.agent.registry import RegisteredRepo
 
@@ -610,10 +631,11 @@ class CoreModelTest(unittest.TestCase):
                     sync_health_path=root / "sync-health.json",
                 )
 
-            events = read_events(paths, "T01")
             self.assertEqual(result["snapshot"]["sent"], True)
-            self.assertTrue(events)
-            self.assertTrue(all(event.ts for event in events))
+            self.assertEqual(read_events(paths, "T01"), [])
+            self.assertEqual(result["sync_health"]["last_failure_reason"], "")
+            self.assertEqual(result["recovery"]["imported_count"], 0)
+            self.assertEqual(result["recovery"]["would_import_count"], 2)
 
     def test_agent_recovery_ignores_non_checkpoint_status_tables(self) -> None:
         from wily.agent.recovery import recover_status_boards
