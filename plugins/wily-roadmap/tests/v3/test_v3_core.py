@@ -1314,7 +1314,7 @@ class CoreModelTest(unittest.TestCase):
 
             self.assertEqual([(event.cp, event.event) for event in read_events(paths, "T01")], [("Plan", "start"), ("Plan", "done")])
 
-    def test_migrate_legacy_handoffs_moves_files_under_wily_handoffs(self) -> None:
+    def test_migrate_legacy_handoffs_copies_files_under_wily_handoffs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             paths = WilyPaths(root)
@@ -1322,13 +1322,16 @@ class CoreModelTest(unittest.TestCase):
             legacy = root / "agent-handoffs"
             legacy.mkdir()
             (legacy / "t09-demo-status.md").write_text("status\n", encoding="utf-8")
+            (legacy / "t09-demo-progress.md").write_text("progress\n", encoding="utf-8")
             (legacy / "notes.md").write_text("notes\n", encoding="utf-8")
 
-            moved = migrate_legacy_handoffs(paths)
+            copied = migrate_legacy_handoffs(paths)
 
-            self.assertEqual(moved, 2)
-            self.assertFalse((legacy / "t09-demo-status.md").exists())
-            self.assertEqual((paths.handoff_dir("T09") / "t09-demo-status.md").read_text(encoding="utf-8"), "status\n")
+            self.assertEqual(copied, 3)
+            self.assertTrue((legacy / "t09-demo-status.md").exists())
+            self.assertTrue((legacy / "t09-demo-progress.md").exists())
+            self.assertEqual(paths.handoff_status_md("T09").read_text(encoding="utf-8"), "status\n")
+            self.assertEqual((paths.handoff_dir("T09") / "t09-demo-progress.md").read_text(encoding="utf-8"), "progress\n")
             self.assertEqual((paths.handoff_dir("legacy") / "notes.md").read_text(encoding="utf-8"), "notes\n")
             self.assertEqual(migrate_legacy_handoffs(paths), 0)
 
@@ -3373,7 +3376,8 @@ class CliLifecycleTest(unittest.TestCase):
             for text in (agents_text, claude_text):
                 self.assertIn("## Wily Roadmap", text)
                 self.assertIn("Treat `.wily/` as the local project/task ledger.", text)
-                self.assertIn("wily cp <id> import-status agent-handoffs/<slug>-status.md", text)
+                self.assertIn("wily cp <id> import-status .wily/handoffs/<id>/status.md", text)
+                self.assertNotIn("agent-handoffs/<slug>-status.md", text)
                 self.assertIn("## Agent Behavior", text)
                 self.assertIn("Keep edits surgical; do not refactor unrelated code.", text)
             self.assertIn("Keep this project-specific rule.", agents_text)
@@ -3405,7 +3409,47 @@ class CliLifecycleTest(unittest.TestCase):
             self.assertIn("User-owned section must remain.", text)
             self.assertIn("<!-- wily-roadmap:start -->", text)
             self.assertIn("<!-- wily-roadmap:end -->", text)
+            self.assertEqual(text.count("<!-- wily-roadmap:start -->"), 1)
+            self.assertEqual(text.count("<!-- wily-roadmap:end -->"), 1)
             self.assertNotIn("old managed text", text)
+
+            init_cmd._upsert_agent_instruction_sections(path)
+            text = path.read_text(encoding="utf-8")
+            self.assertEqual(text.count("<!-- wily-roadmap:start -->"), 1)
+            self.assertEqual(text.count("<!-- wily-roadmap:end -->"), 1)
+
+    def test_init_instruction_upsert_deduplicates_repeated_managed_blocks(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "CLAUDE.md"
+            path.write_text(
+                "\n".join(
+                    [
+                        "# Guide",
+                        "",
+                        "Keep this.",
+                        "",
+                        "<!-- wily-roadmap:start -->",
+                        "old managed text",
+                        "<!-- wily-roadmap:end -->",
+                        "",
+                        "<!-- wily-roadmap:start -->",
+                        "older duplicate managed text",
+                        "<!-- wily-roadmap:end -->",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            init_cmd._upsert_agent_instruction_sections(path)
+
+            text = path.read_text(encoding="utf-8")
+            self.assertIn("Keep this.", text)
+            self.assertEqual(text.count("<!-- wily-roadmap:start -->"), 1)
+            self.assertEqual(text.count("<!-- wily-roadmap:end -->"), 1)
+            self.assertEqual(text.count("## Wily Roadmap"), 1)
+            self.assertIn(".wily/handoffs/<id>/status.md", text)
+            self.assertNotIn("old managed text", text)
+            self.assertNotIn("older duplicate managed text", text)
 
     def test_init_instruction_upsert_migrates_legacy_wily_sections_to_markers(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

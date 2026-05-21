@@ -530,7 +530,7 @@ AGENT_INSTRUCTION_SECTIONS = """## Wily Roadmap
 
 - Treat `.wily/` as the local project/task ledger.
 - Prefer `wily next`, `wily claim <id>`, `wily go <id>`, `wily done <id>`, and `wily watch` for Wily-managed work.
-- When using Custom Workflow, sync checkpoint status back with `wily cp <id> import-status agent-handoffs/<slug>-status.md`.
+- When using Custom Workflow, sync checkpoint status back with `wily cp <id> import-status .wily/handoffs/<id>/status.md`.
 - Keep remote or destructive actions approval-first.
 
 ## Agent Behavior
@@ -562,17 +562,28 @@ def _upsert_agent_instruction_sections(path: Path) -> None:
     existing = path.read_text(encoding="utf-8") if path.exists() else ""
     managed = f"{WILY_MANAGED_START}\n{AGENT_INSTRUCTION_SECTIONS.strip()}\n{WILY_MANAGED_END}"
     if WILY_MANAGED_START in existing and WILY_MANAGED_END in existing:
-        cleaned = _replace_managed_block(existing, managed).strip()
+        cleaned = _remove_managed_blocks(existing).strip()
     else:
         cleaned = _remove_legacy_managed_sections(existing).strip()
     parts = [part for part in (cleaned, managed) if part]
     path.write_text("\n\n".join(parts) + "\n", encoding="utf-8")
 
 
-def _replace_managed_block(text: str, replacement: str) -> str:
-    before, _, rest = text.partition(WILY_MANAGED_START)
-    _old, _, after = rest.partition(WILY_MANAGED_END)
-    return before.rstrip() + "\n\n" + replacement + "\n" + after.lstrip("\n")
+def _remove_managed_blocks(text: str) -> str:
+    lines = text.splitlines()
+    output: list[str] = []
+    index = 0
+    while index < len(lines):
+        if lines[index].strip() == WILY_MANAGED_START:
+            index += 1
+            while index < len(lines) and lines[index].strip() != WILY_MANAGED_END:
+                index += 1
+            if index < len(lines):
+                index += 1
+            continue
+        output.append(lines[index])
+        index += 1
+    return "\n".join(output)
 
 
 def _remove_legacy_managed_sections(text: str) -> str:

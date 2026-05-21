@@ -19,7 +19,7 @@ This repository publishes Wily Roadmap as a Codex plugin marketplace. Keep marke
 
 - Treat `.wily/` as the local project/task ledger.
 - Prefer `wily next`, `wily claim <id>`, `wily go <id>`, `wily done <id>`, and `wily watch` for Wily-managed work.
-- When using Custom Workflow, sync checkpoint status back with `wily cp <id> import-status agent-handoffs/<slug>-status.md`.
+- When using Custom Workflow, sync checkpoint status back with `wily cp <id> import-status .wily/handoffs/<id>/status.md`.
 - Keep remote or destructive actions approval-first.
 
 ## Agent Behavior

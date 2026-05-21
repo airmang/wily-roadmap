@@ -1,0 +1,5 @@
+repo	classification	source	evidence
+/Users/wilycastle/Code/projects/DIVE-2	migrated	corrected discovery	dry-run/apply/status/next/diff-check all exit 0 in original run
+/Users/wilycastle/Code/projects/Digit	migrated	corrected discovery	dry-run/apply/status/next/diff-check all exit 0 in original run
+/Users/wilycastle/Code/projects/hwpx	skipped	corrected discovery	git status exit 128 in original run; not usable as a git repository for required procedure
+/Users/wilycastle/Code/projects/wily-plugin/wily-roadmap	migrated	corrected discovery	dry-run/apply/status/next/diff-check all exit 0 in original run

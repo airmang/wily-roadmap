@@ -1,0 +1,922 @@
+Batch migration run started: 2026-05-18 09:08:23 KST
+Wily binary: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily
+
+
+===== CANDIDATE: /Users/wilycastle/Code/projects/DIVE-2 =====
+$ git status --short
+exit=0
+ M dive/package.json
+ M dive/src-tauri/src/agent/event.rs
+ M dive/src-tauri/src/agent/mod.rs
+ M dive/src-tauri/src/ipc/mod.rs
+ M dive/src-tauri/src/ipc/workspace_plan.rs
+ M dive/src-tauri/tests/agent_loop.rs
+ M dive/src-tauri/tests/workspace_plan_ipc.rs
+ M dive/src/components/product/RoadmapRail.tsx
+ M dive/src/components/product/useProductShellController.ts
+ M dive/src/components/settings/ProviderModelSelector.tsx
+ M dive/src/components/shell/Sidebar.tsx
+ M dive/src/features/planning/usePlan.ts
+ M dive/src/features/planning/usePlanInterviewLLM.ts
+ M dive/src/features/roadmap/usePlanRoadmap.ts
+ M dive/src/hooks/useChatSession.ts
+ M dive/src/i18n/en.json
+ M dive/src/i18n/ko.json
+ M dive/src/lib/error-classify.ts
+?? agent-handoffs/
+?? dive/scripts/verify-audit-fixes.mjs
+?? dive/src/components/product/PlanDraftRecoveryScreen.tsx
+Pre-schema: legacy-or-unspecified
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
+exit=0
+Migration mode: dry-run
+Target schema: wily-roadmap-v2
+Would write backup: .wily/backups/20260518000825-wily-roadmap-v2
+Would write reports: .wily/migrations/20260518000825-wily-roadmap-v2.md, .wily/migrations/20260518000825-wily-roadmap-v2.json
+Would change: .wily/roadmap.yaml
+Would change: .wily/stages/s01-completed-foundation-baseline/stage.yaml
+Would change: .wily/stages/s02-phase10-hardening-complete/stage.yaml
+Would change: .wily/stages/s03-connected-provider-mac-e2e-qa/stage.yaml
+Would change: .wily/stages/s04-external-release-blockers/stage.yaml
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
+exit=0
+Migration mode: apply
+Target schema: wily-roadmap-v2
+Backup: .wily/backups/20260518000825-wily-roadmap-v2
+Report: .wily/migrations/20260518000825-wily-roadmap-v2.md
+Report: .wily/migrations/20260518000825-wily-roadmap-v2.json
+Migration applied.
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily status
+exit=0
+ Wily Roadmap - vunknown                                                   ~ 2s
+[####################------] 3/4 - 75%
+ -------------------------------------------------------------------------------
+ Stage S01 ---------------------------------------------------------------------
+ * S01  완료 기준선 보존 - Phase 1-9   1/1 phase   @wily
+   \- * p01  완료 기준선 보존 - Phase 1-9   @wily
+ Stage S02 ---------------------------------------------------------------------
+ * S02  완료된 Phase 10 출시 하드닝   1/1 phase   @wily
+   \- * p01  완료된 Phase 10 출시 하드닝   @wily
+ Stage S03 ---------------------------------------------------------------------
+ * S03  Connected-provider Mac beginner E2E QA 완료   1/1 phase   @wily
+   \- * p01  Connected-provider Mac beginner E2E QA 완료   @wily
+ Stage S04 ---------------------------------------------------------------------
+ x S04  외부 릴리스 블로커 - Wi…itHub Release, 서명 결정   0/1 phase   p01 bloc…
+   \- x p01  외부 릴리스 블로커 - Win…GitHub Release, 서명 결정   @release-owner
+ -------------------------------------------------------------------------------
+ git: 28 changed - DIVE-2 - ^C to stop
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily next
+exit=0
+Active stage: S04 - 외부 릴리스 블로커 - Windows 스모크, GitHub Release, 서명 결정
+Active phase: p01 - 외부 릴리스 블로커 - Windows 스모크, GitHub Release, 서명 결정
+$ git diff --check
+exit=0
+
+RESULT: migrated
+
+===== CANDIDATE: /Users/wilycastle/Code/projects/Digit =====
+$ git status --short
+exit=0
+?? wily
+Pre-schema: legacy-or-unspecified
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
+exit=0
+Migration mode: dry-run
+Target schema: wily-roadmap-v2
+Would write backup: .wily/backups/20260518000825-wily-roadmap-v2
+Would write reports: .wily/migrations/20260518000825-wily-roadmap-v2.md, .wily/migrations/20260518000825-wily-roadmap-v2.json
+Would change: .wily/roadmap.yaml
+Would change: .wily/stages/p00-foundation/stage.yaml
+Would change: .wily/stages/p01-wily-hit-core/stage.yaml
+Would change: .wily/stages/p02-right-terrain/stage.yaml
+Would change: .wily/stages/p03-wily-economy/stage.yaml
+Would change: .wily/stages/p04-right-layers-elevator/stage.yaml
+Would change: .wily/stages/p05-wily-caisson/stage.yaml
+Would change: .wily/stages/p06-wily-gem-rare/stage.yaml
+Would change: .wily/stages/p07-right-season-infra/stage.yaml
+Would change: .wily/stages/p08-right-core/stage.yaml
+Would change: .wily/stages/p09-right-cycle-mythic-lock/stage.yaml
+Would change: .wily/stages/p10-wily-mythic-preserve/stage.yaml
+Would change: .wily/stages/p11-shared-asset-swap/stage.yaml
+Would change: .wily/stages/p12-shared-launch/stage.yaml
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
+exit=0
+Migration mode: apply
+Target schema: wily-roadmap-v2
+Backup: .wily/backups/20260518000825-wily-roadmap-v2
+Report: .wily/migrations/20260518000825-wily-roadmap-v2.md
+Report: .wily/migrations/20260518000825-wily-roadmap-v2.json
+Migration applied.
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily status
+exit=0
+ Wily Roadmap - vunknown                                                   ~ 2s
+[########------------------] 4/13 - 31%
+ -------------------------------------------------------------------------------
+ * 4 stages done v
+ Stage p04-right-layers-elevator -----------------------------------------------
+ > p04-right-layers-elevator    MVP 1 Right Sta…이터 / MaxDepth   0/1 phase   p…
+   \- > p01  MVP 1 Right Stage: 층 구조 + 엘리베이터 / MaxDepth   @right
+ Stage p05-wily-caisson --------------------------------------------------------
+ Stage p06-wily-gem-rare -------------------------------------------------------
+ Stage p07-right-season-infra --------------------------------------------------
+ Stage p08-right-core ----------------------------------------------------------
+ Stage p09-right-cycle-mythic-lock ---------------------------------------------
+ Stage p10-wily-mythic-preserve ------------------------------------------------
+ Stage p11-shared-asset-swap ---------------------------------------------------
+ Stage p12-shared-launch -------------------------------------------------------
+ -------------------------------------------------------------------------------
+ git: 17 changed - Digit - ^C to stop
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily next
+exit=0
+Next stage: p04-right-layers-elevator - MVP 1 Right Stage: 층 구조 + 엘리베이터 / MaxDepth
+Depends on: p02-right-terrain
+Stage path: /Users/wilycastle/Code/projects/Digit/.wily/stages/p04-right-layers-elevator
+Next phase: p04-right-layers-elevator/p01 - MVP 1 Right Stage: 층 구조 + 엘리베이터 / MaxDepth
+Phase path: /Users/wilycastle/Code/projects/Digit/.wily/stages/p04-right-layers-elevator/phases/p01-mvp-1-right-stage-maxdepth
+
+# Wily Stage Context
+
+Stage: p04-right-layers-elevator - MVP 1 Right Stage: 층 구조 + 엘리베이터 / MaxDepth
+
+## Stage
+
+# Stage p04-right-layers-elevator: MVP 1 Right Stage: 층 구조 + 엘리베이터 / MaxDepth
+
+## Purpose
+
+Right이 MVP1 월드 기반인 6개 층, MaxDepth, 엘리베이터, 표면귀환, Unstuck을 한 Stage로 완성한다.
+
+## Dependencies
+
+- Status: `ready`
+- Owner: `right`
+- Depends on: p02-right-terrain
+- Execution mode: `direct`
+- Decomposition status: `none`
+- Allocation unit: `stage`
+- Legacy phase path: `phases/p04-right-layers-elevator`
+
+## Write Scope
+
+- `src/shared/data/LayerData.lua`
+- `src/shared/data/BlockData.lua`
+- `src/server/world/TerrainService.lua`
+- `src/server/world/LayerService.lua`
+- `src/server/world/MaxDepthService.lua`
+- `src/server/world/ElevatorService.lua`
+- `src/server/world/ElevatorModels.lua`
+- `src/server/services/UnstuckService.lua`
+- `src/StarterGui/Effects/LayerEnterBanner.lua`
+- `src/StarterGui/Elevator/ElevatorPanel.lua`
+- `src/StarterGui/HUD/ReturnToSurfaceButton.lua`
+- `src/server/ServerMain.server.lua`
+- `src/client/ClientMain.client.lua`
+- `tests/p04.lua`
+
+## Expected Output
+
+Complete the behavioral outcome described in the preserved legacy phase detail below while keeping work inside the declared write scope unless the contracts require a coordinated update.
+
+## Known Risks
+
+- This Stage was migrated from the legacy phase-only Wily roadmap. Historical sessions still reference the legacy phase path.
+- Shared mount files such as `ServerMain.server.lua` and `ClientMain.client.lua` must keep phase-specific mount regions isolated.
+
+## Acceptance Criteria
+
+- 5개 층 전환에서 각각 다른 톤
+- 깊이 10/30/60/100/150m 통과 즉시 해금
+- 미해금 층 텔레포트 거부
+- 표면 귀환 쿨다운 5~10s
+- Unstuck 1s 내 복귀
+- 스펙 §9 표면→코어 권장 레벨/도구 표 일치
+
+## Legacy Phase Detail
+
+# p04-right-layers-elevator — MVP 1 Right 종합: 층 구조 + 엘리베이터 / MaxDepth (Right 단독, p03과 병렬)
+
+- 상태: ready
+- 소유: **Right**
+- 선행 의존: p02-right-terrain
+- 병렬 그룹: after-p02-A
+
+## 요약
+
+6개 층 풀시드, 층별 지형 차별, 5종 층 전환 연출, MaxDepth, 엘리베이터 5종, 표면귀환, Unstuck까지.
+
+## 목적
+
+Right이 한 번에 길게 끌어가는 가장 큰 월드 단위. 깊이/층 컨텍스트를 한 사람이 일관되게 처리해 엘리베이터/MaxDepth까지 자연스러운 연결을 만든다.
+
+## 작업 순서 (마일스톤)
+
+한 사람이 위에서 아래로 진행하면 자연스럽게 끝난다.
+
+1. LayerData 풀시드 (6개 층, 스펙 §9 표)
+2. BlockData 6종 풀시드 (Dirt/Rock/Ore/Crystal/Ruin/Core)
+3. TerrainService 층별 분기: 깊이에 따라 다른 BlockData
+4. LayerEnterBanner 5종 톤 (Rock/Ore/Crystal/Ruin/Core)
+5. LayerService: 깊이→층 매핑 단일 진실 소스(LayerData.layerForDepth 래퍼)
+6. MaxDepthService: DepthUpdated → maxDepthReached 갱신 + 임계 통과 시 해금 신호
+7. ElevatorModels: 5종 모델(각 층 시작점에 배치) + ElevatorPoint 태그
+8. ElevatorService: 해금 검증 + 텔레포트
+9. UnstuckService: 캐릭터를 스폰 근처로 안전 복귀
+10. ElevatorPanel UI (해금 층 목록 + 텔레포트 버튼)
+11. ReturnToSurfaceButton + 8s 쿨다운
+12. ServerMain/ClientMain '-- Phase 04 mount' 영역
+13. tests/p04.lua: 깊이 통과 해금 / 미해금 거부 / 쿨다운 / Unstuck
+
+## 작성 / 수정 대상 파일
+
+- `src/shared/data/LayerData.lua (풀시드)`
+- `src/shared/data/BlockData.lua (6종 풀시드)`
+- `src/server/world/TerrainService.lua (층별 분기 확장)`
+- `src/server/world/LayerService.lua`
+- `src/server/world/MaxDepthService.lua`
+- `src/server/world/ElevatorService.lua`
+- `src/server/world/ElevatorModels.lua`
+- `src/server/services/UnstuckService.lua`
+- `src/StarterGui/Effects/LayerEnterBanner.lua (5종 톤 확장)`
+- `src/StarterGui/Elevator/ElevatorPanel.lua`
+- `src/StarterGui/HUD/ReturnToSurfaceButton.lua`
+- `src/server/ServerMain.server.lua (Phase 04 mount)`
+- `src/client/ClientMain.client.lua (Phase 04 mount)`
+- `tests/p04.lua`
+
+## 사용하는 계약 (외부에서 받음)
+
+- DepthUpdated/LayerEntered(p02)
+- BlockData/LayerData 골격(p00)
+
+## 발행/노출하는 계약 (외부로 내보냄)
+
+- ElevatorTeleport/ReturnToSurface/UnstuckRequest(C2S)
+- ElevatorPoint 태그
+- MaxDepth 갱신 hook
+
+## 수락 기준
+
+- 5개 층 전환에서 각각 다른 톤
+- 깊이 10/30/60/100/150m 통과 즉시 해금
+- 미해금 층 텔레포트 거부
+- 표면 귀환 쿨다운 5~10s
+- Unstuck 1s 내 복귀
+- 스펙 §9 표면→코어 권장 레벨/도구 표 일치
+
+## 머지 노트
+
+BlockData/LayerData를 풀시드로 채움. p03은 이 파일을 안 손댐. p05(심해병)는 이 phase의 LayerData/BlockData를 읽기만 함.
+
+## 참고
+
+- 전체 로드맵: `../../roadmap.md`
+- 인터페이스 단일 진실 소스: `../../../docs/contracts.md`
+
+## Prompt
+
+# Execution Prompt
+
+Execute Wily Stage `p04-right-layers-elevator`: MVP 1 Right Stage: 층 구조 + 엘리베이터 / MaxDepth
+
+Read first:
+- `.wily/stages/p04-right-layers-elevator/stage.md`
+- `docs/contracts.md`
+- `docs/dev-setup.md`
+
+Constraints:
+- Owner: `right`
+- Depends on: p02-right-terrain
+- Keep changes inside the Stage write scope unless a contract update is required.
+- Do not start or complete unrelated Stages.
+- Preserve existing legacy `.wily/phases/**` and session history.
+
+Expected result:
+- Implement the Stage behavior described in `stage.md`.
+- Run the verification listed in `verification.md`.
+- Record changed files and verification evidence in the Wily session before completion.
+
+## Verification
+
+# Verification
+
+## Acceptance Criteria
+
+- 5개 층 전환에서 각각 다른 톤
+- 깊이 10/30/60/100/150m 통과 즉시 해금
+- 미해금 층 텔레포트 거부
+- 표면 귀환 쿨다운 5~10s
+- Unstuck 1s 내 복귀
+- 스펙 §9 표면→코어 권장 레벨/도구 표 일치
+
+## Concrete Checks
+
+- Run the repo-appropriate Roblox/Rojo sync or build smoke from `docs/dev-setup.md`.
+- Review or run `tests/p04_feel_loop.lua` in the project test harness.
+- Confirm `docs/contracts.md` is updated in the same change if any RemoteEvent, Signal, Tag, or schema contract changes.
+
+## Handoff
+
+# Handoff
+
+Stage: `p04-right-layers-elevator` — MVP 1 Right Stage: 층 구조 + 엘리베이터 / MaxDepth
+
+Start from `.wily/stages/p04-right-layers-elevator/stage.md`. This Stage was migrated from legacy phase `p04-right-layers-elevator` at `phases/p04-right-layers-elevator`; do not edit the legacy phase folder except for explicit archival maintenance.
+
+Current status: `ready`
+Owner: `right`
+Dependencies: p02-right-terrain
+
+Use `$wily-start p04-right-layers-elevator` before implementation and `$wily-complete p04-right-layers-elevator` only after verification evidence is recorded.
+
+## Notes
+
+# Notes
+
+- Migrated from legacy phase-only roadmap on 2026-05-15.
+- Legacy path retained: `phases/p04-right-layers-elevator`.
+- Historical sessions were not moved.
+Approval required before implementation.
+$ git diff --check
+exit=0
+
+RESULT: migrated
+
+===== CANDIDATE: /Users/wilycastle/Code/projects/hwpx =====
+$ git status --short
+exit=128
+fatal: not a git repository (or any of the parent directories): .git
+RESULT: skipped (git status failed; skipped because candidate is not usable as a git repository for the required procedure)
+
+===== CANDIDATE: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap =====
+$ git status --short
+exit=0
+ M .wily/roadmap.yaml
+ M .wily/status.md
+ M plugins/wily-roadmap/README.md
+ M plugins/wily-roadmap/commands/block.md
+ M plugins/wily-roadmap/commands/complete.md
+ M plugins/wily-roadmap/commands/next.md
+ M plugins/wily-roadmap/commands/run.md
+ M plugins/wily-roadmap/commands/start.md
+ M plugins/wily-roadmap/scripts/wily.py
+ M plugins/wily-roadmap/scripts/wily_runner.py
+ M plugins/wily-roadmap/scripts/wily_state_summary.py
+ M plugins/wily-roadmap/scripts/wily_watch_ui.py
+ M plugins/wily-roadmap/skills/wily-block/SKILL.md
+ M plugins/wily-roadmap/skills/wily-complete/SKILL.md
+ M plugins/wily-roadmap/skills/wily-next/SKILL.md
+ M plugins/wily-roadmap/skills/wily-run/SKILL.md
+ M plugins/wily-roadmap/skills/wily-start/SKILL.md
+ M plugins/wily-roadmap/skills/wily-workflow/SKILL.md
+ M plugins/wily-roadmap/skills/wily-workflow/references/board-operations.md
+ M plugins/wily-roadmap/skills/wily-workflow/references/board-reflection-contract.md
+ M plugins/wily-roadmap/skills/wily-workflow/references/commit-policy.md
+ M plugins/wily-roadmap/skills/wily-workflow/references/routing-policy.md
+ M plugins/wily-roadmap/skills/wily-workflow/references/runner-adapter-contract.md
+ M plugins/wily-roadmap/tests/test_wily_cli.py
+ M plugins/wily-roadmap/tests/test_wily_state_summary.py
+?? .playwright-mcp/
+?? .wily/revisions/2026-05-17-132403-replan-26.md
+?? .wily/revisions/2026-05-17-204434-replan-27.md
+?? .wily/revisions/2026-05-17-205537-replan-28.md
+?? .wily/stages/s25-wily-board-ui-polish-usability/
+?? .wily/stages/s26-wily-roadmap-plugin-improvement-cleanup/
+?? .wily/stages/s27-wily-roadmap-large-refactor/
+?? agent-handoffs/batch-migrate-wily-v2-execution-package.md
+?? agent-handoffs/batch-migrate-wily-v2-progress.md
+?? agent-handoffs/batch-migrate-wily-v2-run.log
+?? agent-handoffs/batch-migrate-wily-v2-status.md
+?? agent-handoffs/batch-migrate-wily-v2-summary.tsv
+?? agent-handoffs/batch-migrate-wily-v2-verification.md
+?? agent-handoffs/board-live-local-state-execution-package.md
+?? agent-handoffs/board-live-local-state-progress.md
+?? agent-handoffs/board-live-local-state-requirements.md
+?? agent-handoffs/board-live-local-state-status.md
+?? agent-handoffs/board-live-local-state-verification.md
+?? agent-handoffs/p6-bridge-durable-sync-handoff.md
+?? agent-handoffs/s27-refactor-contract-requirements.md
+?? agent-handoffs/s27-refactor-execution-package.md
+?? agent-handoffs/s27-refactor-progress.md
+?? agent-handoffs/s27-refactor-status.md
+?? agent-handoffs/s27-refactor-verification.md
+?? docs/superpowers/specs/2026-05-17-s27-refactor-design.md
+?? plugins/wily-roadmap/scripts/wily_projection.py
+?? plugins/wily-roadmap/skills/wily-workflow/references/stage-phase-v2-contract.md
+?? plugins/wily-roadmap/tests/fixtures/
+Pre-schema: legacy-or-unspecified
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
+exit=0
+Migration mode: dry-run
+Target schema: wily-roadmap-v2
+Would write backup: .wily/backups/20260518000825-wily-roadmap-v2
+Would write reports: .wily/migrations/20260518000825-wily-roadmap-v2.md, .wily/migrations/20260518000825-wily-roadmap-v2.json
+Would change: .wily/roadmap.yaml
+Would change: .wily/stages/s01-settle-korean-response-style-update/stage.yaml
+Would change: .wily/stages/s02-harden-command-skill-consistency/stage.yaml
+Would change: .wily/stages/s03-korean-stage-based-dag-status-output/stage.yaml
+Would change: .wily/stages/s04-stage-04-improve-init-roadmap-authoring-harden-l/stage.yaml
+Would change: .wily/stages/s05-plugin-discovery-and-release-polish/stage.yaml
+Would change: .wily/stages/s06-stage-06-skill-claude-code/stage.yaml
+Would change: .wily/stages/s07-github-issues/stage.yaml
+Would change: .wily/stages/s08-stage-08-watch-pane-stage-wily-state-git/stage.yaml
+Would change: .wily/stages/s09-stage-09-runner-adapter-custom-workflow-manifest/stage.yaml
+Would change: .wily/stages/s10-stage-10-zip-bootstrap-github-self-update-codex/stage.yaml
+Would change: .wily/stages/s11-custom-workflow-bundled-runner/stage.yaml
+Would change: .wily/stages/s12-watch-pane/stage.yaml
+Would change: .wily/stages/s13-roadmap-yaml/stage.yaml
+Would change: .wily/stages/s14-stage-14-stage-phase-stage-skill-codex-watch-pan/stage.yaml
+Would change: .wily/stages/s15-wily-board-external-dashboard/stage.yaml
+Would change: .wily/stages/s16-wily-board-live-local-work-overlay/stage.yaml
+Would change: .wily/stages/s17-wily-board-heartbeat-freshness/stage.yaml
+Would change: .wily/stages/s18-wily-board-collaboration-ops/stage.yaml
+Would change: .wily/stages/s19-wily-board-critical-path-risk-view/stage.yaml
+Would change: .wily/stages/s20-wily-board-simple-personal-shared-visibility/stage.yaml
+Would change: .wily/stages/s21-wily-board-ui-redesign/stage.yaml
+Would change: .wily/stages/s22-wily-roadmap-realtime-activity-heartbeat/stage.yaml
+Would change: .wily/stages/s23-wily-board-live-draft-topology-overlay/stage.yaml
+Would change: .wily/stages/s24-s21-realtime-board-bridge-e2e/stage.yaml
+Would change: .wily/stages/s25-wily-board-ui-polish-usability/stage.yaml
+Would change: .wily/stages/s26-wily-roadmap-plugin-improvement-cleanup/stage.yaml
+Would change: .wily/stages/s27-wily-roadmap-large-refactor/stage.yaml
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
+exit=0
+Migration mode: apply
+Target schema: wily-roadmap-v2
+Backup: .wily/backups/20260518000825-wily-roadmap-v2
+Report: .wily/migrations/20260518000825-wily-roadmap-v2.md
+Report: .wily/migrations/20260518000825-wily-roadmap-v2.json
+Migration applied.
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily status
+exit=0
+ Wily Roadmap - vunknown                                                   ~ 2s
+[########################--] 25/27 - 93%
+ -------------------------------------------------------------------------------
+ ! Board bridge: failed - complete at 2026-05-17T15:11:18Z (network error: [Errn
+ * 13 stages done v
+ Stage 14 (s14) ----------------------------------------------------------------
+   \- - 14-2  스마트폰 Codex 앱용 …로 watch pane 레이아웃   @codex   task cance…
+ Stage 25 (s25) ----------------------------------------------------------------
+ - s25  Wily Board UI polish and usability improvements   0/4 phases   25-1 sup…
+   +- - 25-1  UI audit and improvement backlog   @codex   task inspect the curr…
+   +- - 25-2  Hub and MY DESK scanability pass   needs 25-1   @codex   task imp…
+   +- - 25-3  Repo detail and checkpoint row polish   needs 25-1   @codex   tas…
+   \- - 25-4  Responsive QA and pro…ction rollout evidence   needs 25-2 25-3   …
+ Stage 26 (s26) ----------------------------------------------------------------
+ - s26  Wily Roadmap plugin 개선 및 정리   needs s25   @codex   task 플러그인 c…
+ -------------------------------------------------------------------------------
+ git: 77 changed - wily-roadmap - ^C to stop
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily next
+exit=0
+Next phase: none
+$ git diff --check
+exit=0
+
+RESULT: migrated
+
+===== CANDIDATE: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2 =====
+$ git status --short
+exit=0
+ M ../../../../../../.wily/roadmap.yaml
+ M ../../../../../../.wily/stages/s01-settle-korean-response-style-update/stage.yaml
+ M ../../../../../../.wily/stages/s02-harden-command-skill-consistency/stage.yaml
+ M ../../../../../../.wily/stages/s03-korean-stage-based-dag-status-output/stage.yaml
+ M ../../../../../../.wily/stages/s04-stage-04-improve-init-roadmap-authoring-harden-l/stage.yaml
+ M ../../../../../../.wily/stages/s05-plugin-discovery-and-release-polish/stage.yaml
+ M ../../../../../../.wily/stages/s06-stage-06-skill-claude-code/stage.yaml
+ M ../../../../../../.wily/stages/s07-github-issues/stage.yaml
+ M ../../../../../../.wily/stages/s08-stage-08-watch-pane-stage-wily-state-git/stage.yaml
+ M ../../../../../../.wily/stages/s09-stage-09-runner-adapter-custom-workflow-manifest/stage.yaml
+ M ../../../../../../.wily/stages/s10-stage-10-zip-bootstrap-github-self-update-codex/stage.yaml
+ M ../../../../../../.wily/stages/s11-custom-workflow-bundled-runner/stage.yaml
+ M ../../../../../../.wily/stages/s12-watch-pane/stage.yaml
+ M ../../../../../../.wily/stages/s13-roadmap-yaml/stage.yaml
+ M ../../../../../../.wily/stages/s14-stage-14-stage-phase-stage-skill-codex-watch-pan/stage.yaml
+ M ../../../../../../.wily/stages/s15-wily-board-external-dashboard/stage.yaml
+ M ../../../../../../.wily/stages/s16-wily-board-live-local-work-overlay/stage.yaml
+ M ../../../../../../.wily/stages/s17-wily-board-heartbeat-freshness/stage.yaml
+ M ../../../../../../.wily/stages/s18-wily-board-collaboration-ops/stage.yaml
+ M ../../../../../../.wily/stages/s19-wily-board-critical-path-risk-view/stage.yaml
+ M ../../../../../../.wily/stages/s20-wily-board-simple-personal-shared-visibility/stage.yaml
+ M ../../../../../../.wily/stages/s21-wily-board-ui-redesign/stage.yaml
+ M ../../../../../../.wily/stages/s22-wily-roadmap-realtime-activity-heartbeat/stage.yaml
+ M ../../../../../../.wily/stages/s23-wily-board-live-draft-topology-overlay/stage.yaml
+ M ../../../../../../.wily/stages/s24-s21-realtime-board-bridge-e2e/stage.yaml
+ M ../../../../../../.wily/status.md
+ M ../../../../README.md
+ M ../../../../commands/block.md
+ M ../../../../commands/complete.md
+ M ../../../../commands/next.md
+ M ../../../../commands/run.md
+ M ../../../../commands/start.md
+ M ../../../../scripts/wily.py
+ M ../../../../scripts/wily_runner.py
+ M ../../../../scripts/wily_state_summary.py
+ M ../../../../scripts/wily_watch_ui.py
+ M ../../../../skills/wily-block/SKILL.md
+ M ../../../../skills/wily-complete/SKILL.md
+ M ../../../../skills/wily-next/SKILL.md
+ M ../../../../skills/wily-run/SKILL.md
+ M ../../../../skills/wily-start/SKILL.md
+ M ../../../../skills/wily-workflow/SKILL.md
+ M ../../../../skills/wily-workflow/references/board-operations.md
+ M ../../../../skills/wily-workflow/references/board-reflection-contract.md
+ M ../../../../skills/wily-workflow/references/commit-policy.md
+ M ../../../../skills/wily-workflow/references/routing-policy.md
+ M ../../../../skills/wily-workflow/references/runner-adapter-contract.md
+ M ../../../test_wily_cli.py
+ M ../../../test_wily_state_summary.py
+?? ../../../../../../.playwright-mcp/
+?? ../../../../../../.wily/revisions/2026-05-17-132403-replan-26.md
+?? ../../../../../../.wily/revisions/2026-05-17-204434-replan-27.md
+?? ../../../../../../.wily/revisions/2026-05-17-205537-replan-28.md
+?? ../../../../../../.wily/stages/s25-wily-board-ui-polish-usability/
+?? ../../../../../../.wily/stages/s26-wily-roadmap-plugin-improvement-cleanup/
+?? ../../../../../../.wily/stages/s27-wily-roadmap-large-refactor/
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-execution-package.md
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-progress.md
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-run.log
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-status.md
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-summary.tsv
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-verification.md
+?? ../../../../../../agent-handoffs/board-live-local-state-execution-package.md
+?? ../../../../../../agent-handoffs/board-live-local-state-progress.md
+?? ../../../../../../agent-handoffs/board-live-local-state-requirements.md
+?? ../../../../../../agent-handoffs/board-live-local-state-status.md
+?? ../../../../../../agent-handoffs/board-live-local-state-verification.md
+?? ../../../../../../agent-handoffs/p6-bridge-durable-sync-handoff.md
+?? ../../../../../../agent-handoffs/s27-refactor-contract-requirements.md
+?? ../../../../../../agent-handoffs/s27-refactor-execution-package.md
+?? ../../../../../../agent-handoffs/s27-refactor-progress.md
+?? ../../../../../../agent-handoffs/s27-refactor-status.md
+?? ../../../../../../agent-handoffs/s27-refactor-verification.md
+?? ../../../../../../docs/superpowers/specs/2026-05-17-s27-refactor-design.md
+?? ../../../../scripts/wily_projection.py
+?? ../../../../skills/wily-workflow/references/stage-phase-v2-contract.md
+?? ../../
+Pre-schema: wily-roadmap-v2
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
+exit=0
+Migration mode: dry-run
+Target schema: wily-roadmap-v2
+Would write backup: .wily/backups/20260518000826-wily-roadmap-v2
+Would write reports: .wily/migrations/20260518000826-wily-roadmap-v2.md, .wily/migrations/20260518000826-wily-roadmap-v2.json
+Would change: .wily/roadmap.yaml
+Would change: .wily/stages/s01-foundation/stage.yaml
+Would change: .wily/stages/s02-refactor/stage.yaml
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
+not run: dry-run succeeded; apply skipped because roadmap_schema already equals wily-roadmap-v2 before this run
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily status
+exit=0
+ Wily Roadmap - vunknown                                                   ~ 2s
+[#############-------------] 1/2 - 50%
+ -------------------------------------------------------------------------------
+ Stage 1 (s01) -----------------------------------------------------------------
+ * s01  Foundation   1/1 phase   @codex
+   \- * p01  Foundation   @codex
+ Stage 2 (s02) -----------------------------------------------------------------
+ > s02  Refactor   0/1 phase   p01 pending   @codex
+   \- o p01  Refactor   needs s01/p01   @codex
+ -------------------------------------------------------------------------------
+ git: - - already-v2 - ^C to stop
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily next
+exit=0
+Next stage: s02 - Refactor
+Depends on: s01
+Stage path: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2/.wily/stages/s02-refactor
+Next phase: s02/p01 - Refactor
+Phase path: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/already-v2/.wily/stages/s02-refactor/phases/p01-refactor
+
+# Wily Stage Context
+
+Stage: s02 - Refactor
+
+## Stage
+
+Missing.
+
+## Prompt
+
+Missing.
+
+## Verification
+
+Missing.
+
+## Handoff
+
+Missing.
+
+## Notes
+
+Missing.
+Approval required before implementation.
+$ git diff --check
+exit=0
+
+RESULT: already v2
+
+===== CANDIDATE: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy =====
+$ git status --short
+exit=0
+ M ../../../../../../.wily/roadmap.yaml
+ M ../../../../../../.wily/stages/s01-settle-korean-response-style-update/stage.yaml
+ M ../../../../../../.wily/stages/s02-harden-command-skill-consistency/stage.yaml
+ M ../../../../../../.wily/stages/s03-korean-stage-based-dag-status-output/stage.yaml
+ M ../../../../../../.wily/stages/s04-stage-04-improve-init-roadmap-authoring-harden-l/stage.yaml
+ M ../../../../../../.wily/stages/s05-plugin-discovery-and-release-polish/stage.yaml
+ M ../../../../../../.wily/stages/s06-stage-06-skill-claude-code/stage.yaml
+ M ../../../../../../.wily/stages/s07-github-issues/stage.yaml
+ M ../../../../../../.wily/stages/s08-stage-08-watch-pane-stage-wily-state-git/stage.yaml
+ M ../../../../../../.wily/stages/s09-stage-09-runner-adapter-custom-workflow-manifest/stage.yaml
+ M ../../../../../../.wily/stages/s10-stage-10-zip-bootstrap-github-self-update-codex/stage.yaml
+ M ../../../../../../.wily/stages/s11-custom-workflow-bundled-runner/stage.yaml
+ M ../../../../../../.wily/stages/s12-watch-pane/stage.yaml
+ M ../../../../../../.wily/stages/s13-roadmap-yaml/stage.yaml
+ M ../../../../../../.wily/stages/s14-stage-14-stage-phase-stage-skill-codex-watch-pan/stage.yaml
+ M ../../../../../../.wily/stages/s15-wily-board-external-dashboard/stage.yaml
+ M ../../../../../../.wily/stages/s16-wily-board-live-local-work-overlay/stage.yaml
+ M ../../../../../../.wily/stages/s17-wily-board-heartbeat-freshness/stage.yaml
+ M ../../../../../../.wily/stages/s18-wily-board-collaboration-ops/stage.yaml
+ M ../../../../../../.wily/stages/s19-wily-board-critical-path-risk-view/stage.yaml
+ M ../../../../../../.wily/stages/s20-wily-board-simple-personal-shared-visibility/stage.yaml
+ M ../../../../../../.wily/stages/s21-wily-board-ui-redesign/stage.yaml
+ M ../../../../../../.wily/stages/s22-wily-roadmap-realtime-activity-heartbeat/stage.yaml
+ M ../../../../../../.wily/stages/s23-wily-board-live-draft-topology-overlay/stage.yaml
+ M ../../../../../../.wily/stages/s24-s21-realtime-board-bridge-e2e/stage.yaml
+ M ../../../../../../.wily/status.md
+ M ../../../../README.md
+ M ../../../../commands/block.md
+ M ../../../../commands/complete.md
+ M ../../../../commands/next.md
+ M ../../../../commands/run.md
+ M ../../../../commands/start.md
+ M ../../../../scripts/wily.py
+ M ../../../../scripts/wily_runner.py
+ M ../../../../scripts/wily_state_summary.py
+ M ../../../../scripts/wily_watch_ui.py
+ M ../../../../skills/wily-block/SKILL.md
+ M ../../../../skills/wily-complete/SKILL.md
+ M ../../../../skills/wily-next/SKILL.md
+ M ../../../../skills/wily-run/SKILL.md
+ M ../../../../skills/wily-start/SKILL.md
+ M ../../../../skills/wily-workflow/SKILL.md
+ M ../../../../skills/wily-workflow/references/board-operations.md
+ M ../../../../skills/wily-workflow/references/board-reflection-contract.md
+ M ../../../../skills/wily-workflow/references/commit-policy.md
+ M ../../../../skills/wily-workflow/references/routing-policy.md
+ M ../../../../skills/wily-workflow/references/runner-adapter-contract.md
+ M ../../../test_wily_cli.py
+ M ../../../test_wily_state_summary.py
+?? ../../../../../../.playwright-mcp/
+?? ../../../../../../.wily/revisions/2026-05-17-132403-replan-26.md
+?? ../../../../../../.wily/revisions/2026-05-17-204434-replan-27.md
+?? ../../../../../../.wily/revisions/2026-05-17-205537-replan-28.md
+?? ../../../../../../.wily/stages/s25-wily-board-ui-polish-usability/
+?? ../../../../../../.wily/stages/s26-wily-roadmap-plugin-improvement-cleanup/
+?? ../../../../../../.wily/stages/s27-wily-roadmap-large-refactor/
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-execution-package.md
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-progress.md
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-run.log
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-status.md
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-summary.tsv
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-verification.md
+?? ../../../../../../agent-handoffs/board-live-local-state-execution-package.md
+?? ../../../../../../agent-handoffs/board-live-local-state-progress.md
+?? ../../../../../../agent-handoffs/board-live-local-state-requirements.md
+?? ../../../../../../agent-handoffs/board-live-local-state-status.md
+?? ../../../../../../agent-handoffs/board-live-local-state-verification.md
+?? ../../../../../../agent-handoffs/p6-bridge-durable-sync-handoff.md
+?? ../../../../../../agent-handoffs/s27-refactor-contract-requirements.md
+?? ../../../../../../agent-handoffs/s27-refactor-execution-package.md
+?? ../../../../../../agent-handoffs/s27-refactor-progress.md
+?? ../../../../../../agent-handoffs/s27-refactor-status.md
+?? ../../../../../../agent-handoffs/s27-refactor-verification.md
+?? ../../../../../../docs/superpowers/specs/2026-05-17-s27-refactor-design.md
+?? ../../../../scripts/wily_projection.py
+?? ../../../../skills/wily-workflow/references/stage-phase-v2-contract.md
+?? ../../
+Pre-schema: legacy-or-unspecified
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
+exit=0
+Migration mode: dry-run
+Target schema: wily-roadmap-v2
+- s01/p01 <- legacy-build
+- s02/p01 <- legacy-refactor
+Would write backup: .wily/backups/20260518000826-wily-roadmap-v2
+Would write reports: .wily/migrations/20260518000826-wily-roadmap-v2.md, .wily/migrations/20260518000826-wily-roadmap-v2.json
+Would change: .wily/roadmap.yaml
+Would change: .wily/stages/s01-foundation/stage.yaml
+Would change: .wily/stages/s02-refactor/stage.yaml
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
+exit=0
+Migration mode: apply
+Target schema: wily-roadmap-v2
+- s01/p01 <- legacy-build
+- s02/p01 <- legacy-refactor
+Backup: .wily/backups/20260518000826-wily-roadmap-v2
+Report: .wily/migrations/20260518000826-wily-roadmap-v2.md
+Report: .wily/migrations/20260518000826-wily-roadmap-v2.json
+Migration applied.
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily status
+exit=0
+ Wily Roadmap - vunknown                                                   ~ 2s
+[#############-------------] 1/2 - 50%
+ -------------------------------------------------------------------------------
+ Stage 1 (s01) -----------------------------------------------------------------
+ * s01  Foundation   1/1 phase   @codex
+   \- * p01  Legacy build   @codex
+ Stage 2 (s02) -----------------------------------------------------------------
+ > s02  Refactor   0/1 phase   p01 pending   @codex
+   \- o p01  Legacy refactor   needs s01/p01   @codex
+ -------------------------------------------------------------------------------
+ git: - - mixed-legacy - ^C to stop
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily next
+exit=0
+Next stage: s02 - Refactor
+Depends on: s01
+Stage path: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy/.wily/stages/s02-refactor
+Next phase: s02/p01 - Legacy refactor
+Phase path: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/mixed-legacy/.wily/stages/s02-refactor/phases/p01-legacy-refactor
+
+# Wily Stage Context
+
+Stage: s02 - Refactor
+
+## Stage
+
+Missing.
+
+## Prompt
+
+Missing.
+
+## Verification
+
+Missing.
+
+## Handoff
+
+Missing.
+
+## Notes
+
+Missing.
+Approval required before implementation.
+$ git diff --check
+exit=0
+
+RESULT: migrated
+
+===== CANDIDATE: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only =====
+$ git status --short
+exit=0
+ M ../../../../../../.wily/roadmap.yaml
+ M ../../../../../../.wily/stages/s01-settle-korean-response-style-update/stage.yaml
+ M ../../../../../../.wily/stages/s02-harden-command-skill-consistency/stage.yaml
+ M ../../../../../../.wily/stages/s03-korean-stage-based-dag-status-output/stage.yaml
+ M ../../../../../../.wily/stages/s04-stage-04-improve-init-roadmap-authoring-harden-l/stage.yaml
+ M ../../../../../../.wily/stages/s05-plugin-discovery-and-release-polish/stage.yaml
+ M ../../../../../../.wily/stages/s06-stage-06-skill-claude-code/stage.yaml
+ M ../../../../../../.wily/stages/s07-github-issues/stage.yaml
+ M ../../../../../../.wily/stages/s08-stage-08-watch-pane-stage-wily-state-git/stage.yaml
+ M ../../../../../../.wily/stages/s09-stage-09-runner-adapter-custom-workflow-manifest/stage.yaml
+ M ../../../../../../.wily/stages/s10-stage-10-zip-bootstrap-github-self-update-codex/stage.yaml
+ M ../../../../../../.wily/stages/s11-custom-workflow-bundled-runner/stage.yaml
+ M ../../../../../../.wily/stages/s12-watch-pane/stage.yaml
+ M ../../../../../../.wily/stages/s13-roadmap-yaml/stage.yaml
+ M ../../../../../../.wily/stages/s14-stage-14-stage-phase-stage-skill-codex-watch-pan/stage.yaml
+ M ../../../../../../.wily/stages/s15-wily-board-external-dashboard/stage.yaml
+ M ../../../../../../.wily/stages/s16-wily-board-live-local-work-overlay/stage.yaml
+ M ../../../../../../.wily/stages/s17-wily-board-heartbeat-freshness/stage.yaml
+ M ../../../../../../.wily/stages/s18-wily-board-collaboration-ops/stage.yaml
+ M ../../../../../../.wily/stages/s19-wily-board-critical-path-risk-view/stage.yaml
+ M ../../../../../../.wily/stages/s20-wily-board-simple-personal-shared-visibility/stage.yaml
+ M ../../../../../../.wily/stages/s21-wily-board-ui-redesign/stage.yaml
+ M ../../../../../../.wily/stages/s22-wily-roadmap-realtime-activity-heartbeat/stage.yaml
+ M ../../../../../../.wily/stages/s23-wily-board-live-draft-topology-overlay/stage.yaml
+ M ../../../../../../.wily/stages/s24-s21-realtime-board-bridge-e2e/stage.yaml
+ M ../../../../../../.wily/status.md
+ M ../../../../README.md
+ M ../../../../commands/block.md
+ M ../../../../commands/complete.md
+ M ../../../../commands/next.md
+ M ../../../../commands/run.md
+ M ../../../../commands/start.md
+ M ../../../../scripts/wily.py
+ M ../../../../scripts/wily_runner.py
+ M ../../../../scripts/wily_state_summary.py
+ M ../../../../scripts/wily_watch_ui.py
+ M ../../../../skills/wily-block/SKILL.md
+ M ../../../../skills/wily-complete/SKILL.md
+ M ../../../../skills/wily-next/SKILL.md
+ M ../../../../skills/wily-run/SKILL.md
+ M ../../../../skills/wily-start/SKILL.md
+ M ../../../../skills/wily-workflow/SKILL.md
+ M ../../../../skills/wily-workflow/references/board-operations.md
+ M ../../../../skills/wily-workflow/references/board-reflection-contract.md
+ M ../../../../skills/wily-workflow/references/commit-policy.md
+ M ../../../../skills/wily-workflow/references/routing-policy.md
+ M ../../../../skills/wily-workflow/references/runner-adapter-contract.md
+ M ../../../test_wily_cli.py
+ M ../../../test_wily_state_summary.py
+?? ../../../../../../.playwright-mcp/
+?? ../../../../../../.wily/revisions/2026-05-17-132403-replan-26.md
+?? ../../../../../../.wily/revisions/2026-05-17-204434-replan-27.md
+?? ../../../../../../.wily/revisions/2026-05-17-205537-replan-28.md
+?? ../../../../../../.wily/stages/s25-wily-board-ui-polish-usability/
+?? ../../../../../../.wily/stages/s26-wily-roadmap-plugin-improvement-cleanup/
+?? ../../../../../../.wily/stages/s27-wily-roadmap-large-refactor/
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-execution-package.md
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-progress.md
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-run.log
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-status.md
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-summary.tsv
+?? ../../../../../../agent-handoffs/batch-migrate-wily-v2-verification.md
+?? ../../../../../../agent-handoffs/board-live-local-state-execution-package.md
+?? ../../../../../../agent-handoffs/board-live-local-state-progress.md
+?? ../../../../../../agent-handoffs/board-live-local-state-requirements.md
+?? ../../../../../../agent-handoffs/board-live-local-state-status.md
+?? ../../../../../../agent-handoffs/board-live-local-state-verification.md
+?? ../../../../../../agent-handoffs/p6-bridge-durable-sync-handoff.md
+?? ../../../../../../agent-handoffs/s27-refactor-contract-requirements.md
+?? ../../../../../../agent-handoffs/s27-refactor-execution-package.md
+?? ../../../../../../agent-handoffs/s27-refactor-progress.md
+?? ../../../../../../agent-handoffs/s27-refactor-status.md
+?? ../../../../../../agent-handoffs/s27-refactor-verification.md
+?? ../../../../../../docs/superpowers/specs/2026-05-17-s27-refactor-design.md
+?? ../../../../scripts/wily_projection.py
+?? ../../../../skills/wily-workflow/references/stage-phase-v2-contract.md
+?? ../../
+Pre-schema: legacy-or-unspecified
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --dry-run
+exit=0
+Migration mode: dry-run
+Target schema: wily-roadmap-v2
+- s01/p01 <- 01
+- s02/p01 <- 02
+Would write backup: .wily/backups/20260518000827-wily-roadmap-v2
+Would write reports: .wily/migrations/20260518000827-wily-roadmap-v2.md, .wily/migrations/20260518000827-wily-roadmap-v2.json
+Would change: .wily/roadmap.yaml
+Would change: .wily/stages/s01-audit/stage.yaml
+Would change: .wily/stages/s02-build/stage.yaml
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily migrate-state --to wily-roadmap-v2 --apply
+exit=0
+Migration mode: apply
+Target schema: wily-roadmap-v2
+- s01/p01 <- 01
+- s02/p01 <- 02
+Backup: .wily/backups/20260518000827-wily-roadmap-v2
+Report: .wily/migrations/20260518000827-wily-roadmap-v2.md
+Report: .wily/migrations/20260518000827-wily-roadmap-v2.json
+Migration applied.
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily status
+exit=0
+ Wily Roadmap - vunknown                                                   ~ 2s
+[#############-------------] 1/2 - 50%
+ -------------------------------------------------------------------------------
+ Stage 1 (s01) -----------------------------------------------------------------
+ * s01  Audit   1/1 phase   @codex
+   \- * p01  Audit   @codex
+ Stage 2 (s02) -----------------------------------------------------------------
+ > s02  Build   0/1 phase   p01 pending   @codex
+   \- o p01  Build   needs s01/p01   @codex
+ -------------------------------------------------------------------------------
+ git: - - v1-only - ^C to stop
+$ /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/wily next
+exit=0
+Next stage: s02 - Build
+Depends on: s01
+Stage path: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only/.wily/stages/s02-build
+Next phase: s02/p01 - Build
+Phase path: /Users/wilycastle/Code/projects/wily-plugin/wily-roadmap/plugins/wily-roadmap/tests/fixtures/migration/v1-only/.wily/stages/s02-build/phases/p01-build
+
+# Wily Stage Context
+
+Stage: s02 - Build
+
+## Stage
+
+Missing.
+
+## Prompt
+
+Missing.
+
+## Verification
+
+Missing.
+
+## Handoff
+
+Missing.
+
+## Notes
+
+Missing.
+Approval required before implementation.
+$ git diff --check
+exit=0
+
+RESULT: migrated
+
+Batch migration run ended: 2026-05-18 09:08:27 KST

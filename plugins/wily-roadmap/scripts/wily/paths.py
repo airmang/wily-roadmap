@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import re
+import shutil
 
 
 class WilyRootNotFound(Exception):
@@ -92,20 +93,15 @@ def migrate_legacy_handoffs(paths: WilyPaths) -> int:
     legacy_dir = paths.root / "agent-handoffs"
     if not legacy_dir.is_dir():
         return 0
-    moved = 0
+    copied = 0
     for source in sorted(path for path in legacy_dir.rglob("*") if path.is_file()):
-        task_id = _handoff_task_id(source.name)
-        destination = paths.handoff_dir(task_id) / source.name
+        destination = _legacy_handoff_destination(paths, source.name)
         destination.parent.mkdir(parents=True, exist_ok=True)
         if destination.exists():
             continue
-        source.rename(destination)
-        moved += 1
-    try:
-        legacy_dir.rmdir()
-    except OSError:
-        pass
-    return moved
+        shutil.copy2(source, destination)
+        copied += 1
+    return copied
 
 
 def touch_wily(paths: WilyPaths) -> None:
@@ -121,3 +117,17 @@ def _handoff_task_id(name: str) -> str:
     if match:
         return f"T{match.group(1)}"
     return "legacy"
+
+
+def _legacy_handoff_destination(paths: WilyPaths, name: str) -> Path:
+    task_id = _handoff_task_id(name)
+    if task_id == "legacy":
+        return paths.handoff_dir("legacy") / name
+    if _is_status_handoff(name):
+        return paths.handoff_status_md(task_id)
+    return paths.handoff_dir(task_id) / name
+
+
+def _is_status_handoff(name: str) -> bool:
+    lower = name.lower()
+    return lower == "status.md" or lower.endswith("-status.md")
