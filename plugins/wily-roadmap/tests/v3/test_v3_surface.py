@@ -20,7 +20,7 @@ class V3SurfaceTest(unittest.TestCase):
     def test_plugin_manifest_exposes_v3_only(self) -> None:
         data = json.loads((ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
         self.assertEqual(data["skills"], "./skills/")
-        self.assertEqual(data["version"], "3.0.1")
+        self.assertTrue(data["version"].startswith("3."), data["version"])
         manifest_text = json.dumps(data).lower()
         self.assertNotIn("stage", manifest_text)
         self.assertNotIn("wily-" + "board-sync", manifest_text)
@@ -34,7 +34,8 @@ class V3SurfaceTest(unittest.TestCase):
         data = json.loads(MARKETPLACE.read_text(encoding="utf-8"))
         plugin = data["plugins"][0]
         self.assertEqual(plugin["source"]["path"], "./plugins/wily-roadmap")
-        self.assertEqual(plugin["version"], "3.0.1")
+        manifest = json.loads((ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
+        self.assertEqual(plugin["version"], manifest["version"])
 
     def test_skill_directories_are_exactly_v3(self) -> None:
         dirs = {path.name for path in (ROOT / "skills").iterdir() if path.is_dir()}
