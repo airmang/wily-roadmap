@@ -377,6 +377,7 @@ class CoreModelTest(unittest.TestCase):
             self.assertEqual(coordination["title"], "Wily Plugin Parent")
             self.assertEqual(coordination["manifest_path"], str((parent / ".wily" / "coordination.yaml").resolve()))
             self.assertEqual(coordination["display"], {"default_owner": "parent", "child_default_visibility": "nested"})
+            self.assertEqual(coordination["visibility"], {"kind": "collab", "owner": "R-W-LAB"})
             self.assertEqual(
                 coordination["parent"],
                 {
@@ -425,6 +426,38 @@ class CoreModelTest(unittest.TestCase):
             self.assertEqual(roadmap_summary["changed_files_sample"], [f"src/{index:02d}.py" for index in range(5)])
             self.assertNotIn("fingerprints", roadmap_summary)
             self.assertEqual(payload["snapshot_sha"], snapshot_sha(payload))
+
+    def test_agent_snapshot_serializes_personal_coordination_visibility(self) -> None:
+        from wily.agent.snapshot import build_snapshot_payload
+
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            _git_repo(parent)
+            paths = WilyPaths(parent)
+            paths.wily_dir.mkdir(exist_ok=True)
+            (paths.wily_dir / "coordination.yaml").write_text(
+                "\n".join(
+                    [
+                        "schema: wily-coordination-v1",
+                        "title: Personal Parent",
+                        "visibility:",
+                        "  kind: personal",
+                        "  owner: Julirsia",
+                        "parent:",
+                        "  id: parent",
+                        "  path: .",
+                        "repos: []",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            save_tasks(paths, "Personal Parent", [Task(id="T01", title="Private workspace task")])
+
+            payload = build_snapshot_payload(parent, repo="Julirsia/private-parent", actor="wily")
+
+            self.assertEqual(payload["coordination"]["visibility"], {"kind": "personal", "owner": "Julirsia"})
 
     def test_agent_snapshot_keeps_manifest_workspace_compatible_without_coordination_display_hints(self) -> None:
         from wily.agent.snapshot import build_snapshot_payload
@@ -1535,6 +1568,39 @@ class CoreModelTest(unittest.TestCase):
             self.assertEqual(config.parent.path, parent.resolve())
             self.assertEqual([repo.id for repo in config.repos], ["roadmap"])
             self.assertEqual(config.repos[0].path, child.resolve())
+            self.assertEqual(config.visibility.kind, "collab")
+            self.assertEqual(config.visibility.owner, "R-W-LAB")
+
+    def test_coordination_config_parses_personal_visibility(self) -> None:
+        from wily.coordination import load_coordination_config
+
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "workspace"
+            parent.mkdir()
+            wily_dir = parent / ".wily"
+            wily_dir.mkdir()
+            (wily_dir / "coordination.yaml").write_text(
+                "\n".join(
+                    [
+                        "schema: wily-coordination-v1",
+                        "title: Personal Parent",
+                        "visibility:",
+                        "  kind: personal",
+                        "  owner: Julirsia",
+                        "parent:",
+                        "  id: parent",
+                        "  path: .",
+                        "repos: []",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            config = load_coordination_config(wily_dir / "coordination.yaml")
+
+            self.assertEqual(config.visibility.kind, "personal")
+            self.assertEqual(config.visibility.owner, "Julirsia")
 
     def test_coordination_context_prefers_parent_mode_but_child_wily_wins_inside_child_repo(self) -> None:
         from wily.coordination import resolve_project_context

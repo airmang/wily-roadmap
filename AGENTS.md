@@ -17,7 +17,13 @@ This repository publishes Wily Roadmap as a Codex plugin marketplace. Keep marke
 
 ## Wily Roadmap
 
-- Treat `.wily/` as the local project/task ledger.
+- When working from `/Users/wilycastle/Code/projects/wily-plugin`, treat the
+  parent `.wily/tasks.yaml` as the Wily coordination task ledger.
+- This child repo's `.wily/tasks.yaml` is intentionally empty and exists only as
+  a compatibility shim; archived child tasks live under
+  `.wily/archive/coordination-disabled-2026-05-22/`.
+- New work for this repository should be planned in the parent coordination
+  ledger with `wily-roadmap:` repo-qualified scope.
 - Prefer `wily next`, `wily claim <id>`, `wily go <id>`, `wily done <id>`, and `wily watch` for Wily-managed work.
 - When using Custom Workflow, sync checkpoint status back with `wily cp <id> import-status .wily/handoffs/<id>/status.md`.
 - Keep remote or destructive actions approval-first.

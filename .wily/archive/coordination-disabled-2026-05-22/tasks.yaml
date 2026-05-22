@@ -1,0 +1,831 @@
+schema: wily-v3
+project_title: 'wily-roadmap v3: 로컬 우선 에이전트 작업을 위한 프로젝트 및 태스크 관리자'
+tasks:
+- id: T01
+  title: 이 저장소의 Wily v3 안정화
+  intent: 이 저장소에 v3 재설계를 적용하고, 이후 작업은 v3 명령만 사용한다.
+  acceptance: wily watch가 프로젝트를 보여준다. tasks.yaml과 actors.yaml이 존재한다. v2 아카이브가 보존되어
+    있다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/*
+  - plugins/wily-roadmap/skills/*
+  - .wily/*
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: null
+  claim_sha: null
+  claim_at: null
+  done_at: '2026-05-18T13:42:41Z'
+  blocker: null
+- id: T02
+  title: 반응형 레이아웃과 상태 그룹, 작업자 활동, 체크포인트 타임라인을 갖춘 차세대 watch UI 구현
+  intent: ''
+  acceptance: ''
+  scope: []
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: fc95e4b296e998742252094ed88213eac34aaba6
+  claim_at: '2026-05-18T13:55:29Z'
+  done_at: '2026-05-18T14:08:48Z'
+  blocker: null
+- id: T03
+  title: wily-replan 자연어 요청을 태스크 추가로 라우팅
+  intent: 사용자가 -replan 뒤에 자연어 작업 요청을 주면 구현하지 않고 Roadmap Task를 추가하거나 수정하도록 스킬 계약을 명확히
+    한다.
+  acceptance: wily-replan 스킬과 명령 문서가 자연어 작업 요청을 Task 추가/수정으로 처리하고 구현을 금지한다고 명시한다.
+    표면 테스트가 이 계약을 검증한다.
+  scope:
+  - plugins/wily-roadmap/skills/wily-replan/SKILL.md
+  - plugins/wily-roadmap/commands/replan.md
+  - plugins/wily-roadmap/tests/v3/test_v3_surface.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: c114abd1909a6e4124d3c3e07b40ee1e824188f2
+  claim_at: '2026-05-18T14:29:46Z'
+  done_at: '2026-05-18T14:30:08Z'
+  blocker: null
+- id: T04
+  title: 고급 병렬 작업 모델과 watch 시각화 및 한글 UI 지침 추가
+  intent: wily-watch가 단순 ready 목록을 넘어서 병렬 lane, 우선순위, 작업자 수용량, scope 충돌 가능성을 반영해 동시에
+    진행 가능한 작업을 시각적으로 제안하고, 플러그인 지침에 한글 UI 작성 기준을 명시한다.
+  acceptance: 태스크 모델이 선택적 병렬 메타데이터를 지원한다. watch 출력이 병렬 착수 가능 lane, 의존 대기, scope 충돌
+    경고, 작업자별 진행 여력을 구분해 표시한다. 기존 tasks.yaml과 하위 호환된다. 한글 UI 작성 지침이 관련 skill 또는 command
+    문서에 추가된다. 테스트가 스키마 하위 호환성, 병렬 분류, 충돌 표시, 한글 문구 계약을 검증한다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/models.py
+  - plugins/wily-roadmap/scripts/wily/config.py
+  - plugins/wily-roadmap/scripts/wily/ui/watch_render.py
+  - plugins/wily-roadmap/scripts/wily/ui/watch_activity.py
+  - plugins/wily-roadmap/skills/wily-watch/SKILL.md
+  - plugins/wily-roadmap/commands/watch.md
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  - plugins/wily-roadmap/tests/v3/test_v3_surface.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: c114abd1909a6e4124d3c3e07b40ee1e824188f2
+  claim_at: '2026-05-18T14:43:10Z'
+  done_at: '2026-05-18T14:55:08Z'
+  blocker: null
+- id: T05
+  title: custom workflow 체크포인트를 Wily Roadmap 진행 기록에 반영
+  intent: T04 수행 당시 custom-workflow 실행 패키지와 상태 보드에는 checkpoint가 기록됐지만 .wily/tasks/T04/progress.jsonl과
+    watch checkpoint 표시에는 반영되지 않은 원인을, 실제 수행 기록과 Roadmap 상태를 대조해 규명하고 Wily 진행 기록으로
+    자동 또는 명시적으로 동기화되도록 고친다.
+  acceptance: T04의 agent-handoffs 기록과 .wily/tasks/T04/progress.jsonl/result.md를 대조한
+    원인 분석이 문서화된다. custom-workflow checkpoint가 Wily cp event로 기록되지 않는 계약/도구 간 단절이 테스트로
+    재현된다. 이후 custom-workflow 기반 실행에서 checkpoint가 watch에 보이는 Wily 진행 기록으로 남도록 구현 또는
+    명령/스킬 계약이 수정된다. 기존 progress.jsonl 포맷과 watch 출력은 하위 호환된다. 테스트와 watch smoke가 통과한다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/progress.py
+  - plugins/wily-roadmap/scripts/wily/cli/cp.py
+  - plugins/wily-roadmap/scripts/wily/cli/__main__.py
+  - plugins/wily-roadmap/scripts/wily/cli/_common.py
+  - plugins/wily-roadmap/scripts/wily/cli/go.py
+  - plugins/wily-roadmap/scripts/wily/cli/done.py
+  - plugins/wily-roadmap/scripts/wily/ui/watch_render.py
+  - plugins/wily-roadmap/commands/cp.md
+  - plugins/wily-roadmap/skills/wily-cp/SKILL.md
+  - plugins/wily-roadmap/skills/wily-execute/SKILL.md
+  - plugins/wily-roadmap/skills/wily-go/SKILL.md
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  - plugins/wily-roadmap/tests/v3/test_v3_surface.py
+  - agent-handoffs/t05-custom-workflow-cp-analysis.md
+  - .wily/tasks/T04/progress.jsonl
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 296db49920e5ae8a1f64370705a70c52d167a7f7
+  claim_at: '2026-05-18T15:01:27Z'
+  done_at: '2026-05-18T15:12:54Z'
+  blocker: null
+- id: T06
+  title: 'pre-commit drift guard: 비계획 작업 자동 stub 등록'
+  intent: replan 없이 시작한 작업도 커밋 직전에 감지해 tasks.yaml에 stub task로 자동 등록한다. 깜빡 케이스를 잡는
+    1차 안전망.
+  acceptance: 'git pre-commit hook이 (a) 활성 claim 없음 또는 (b) 변경 파일이 claim scope 밖일 때
+    trigger된다. stub task가 ''drift: <요약>'' 제목, status=in_progress, scope=변경 파일로 자동
+    생성되고 커밋은 통과한다. hook 설치는 opt-in ($wily-init/별도 명령). intent/acceptance는 비워두고 사용자가
+    이후 $wily-replan revise-task로 채운다.'
+  scope:
+  - plugins/wily-roadmap/scripts/wily/cli/replan.py
+  - plugins/wily-roadmap/scripts/wily/hooks
+  - plugins/wily-roadmap/scripts/wily.py
+  depends_on: []
+  status: done
+  assignee: null
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T01:06:13Z'
+  done_at: '2026-05-19T01:12:12Z'
+  blocker: null
+- id: T07
+  title: 'wily-done reconciliation: scope 밖 변경 잡는 2차 그물'
+  intent: $wily-done 시점에 task scope 밖 파일이 만져졌는지 확인하고, drift가 있으면 보조 task 등록을 강제한다.
+    pre-commit hook을 빠져나간 경우의 마지막 안전망.
+  acceptance: $wily-done 실행 시 마지막 claim 이후 변경된 파일 목록과 task scope를 비교한다. scope 밖 변경이
+    있으면 done을 차단하면서 (1) 기존 task에 scope 추가, (2) 새 보조 task 등록 중 하나를 선택하도록 프롬프트한다. T06
+    stub과 중복 등록되지 않도록 draft 상태 task와도 교차 검사한다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/cli/done.py
+  - plugins/wily-roadmap/scripts/wily/cli/replan.py
+  depends_on:
+  - T06
+  status: done
+  assignee: null
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T01:12:12Z'
+  done_at: '2026-05-19T01:12:12Z'
+  blocker: null
+- id: T08
+  title: wily init 후 best-effort agent 자동 등록과 registry watcher 갱신
+  intent: wily init commit 직후 repo에 .wily/가 생성되면 wily-agent register <repo>를 best-effort로
+    시도하고, 등록 실패가 init 자체를 실패시키지 않도록 .wily 초기화와 보드 동기화를 분리한다. 동시에 실행 중인 wily-agent
+    daemon이 registry 변경을 감지해 새 repo watcher를 즉시 또는 주기적으로 붙이도록 보완한다.
+  acceptance: wily init commit 완료 후 wily-agent register <repo>가 설치/설정된 환경에서 자동 호출된다.
+    등록 성공 또는 이미 등록됨은 조용히 통과한다. wily-agent 미설치, 미로그인, 설정 없음, register 실패는 init을 실패시키지
+    않고 수동 등록 필요 안내만 출력한다. daemon은 registry 변경 감시 또는 주기적 갱신으로 새 repo watcher를 붙인다.
+    init 자동 등록과 daemon watcher 갱신의 성공/실패 경로가 테스트로 검증된다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/cli/init.py
+  - plugins/wily-roadmap/scripts/wily/cli/__main__.py
+  - plugins/wily-roadmap/scripts/wily/paths.py
+  - plugins/wily-roadmap/skills/wily-init/SKILL.md
+  - plugins/wily-roadmap/commands/init.md
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  - plugins/wily-roadmap/tests/v3/test_v3_surface.py
+  - wily-agent registry/daemon watcher code if present in the active workspace
+  depends_on:
+  - T09
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T02:52:11Z'
+  done_at: '2026-05-19T02:55:22Z'
+  blocker: null
+- id: T09
+  title: wily-agent를 wily-roadmap 플러그인 내장 daemon으로 패키징하고 wily agent 명령으로 설치/관리
+  intent: wily-agent를 별도 임시 설치물이 아니라 wily-roadmap 플러그인에 포함된 배포/관리 대상 daemon으로 정리한다.
+    플러그인 업그레이드 후 협업자가 wily agent install/configure/start/status/check 명령으로 heartbeat
+    agent를 설치하고 운영할 수 있게 한다.
+  acceptance: wily-roadmap 플러그인 안에 wily-agent 소스/패키징 또는 설치 가능한 launcher가 포함된다. wily
+    agent install/configure/start/stop/status/check 명령이 제공된다. macOS launchd 기반 daemon
+    시작/중지와 foreground/dev 실행 경로가 문서화된다. daemon은 등록된 .wily repo를 감시하고 Wily Board에 signed
+    heartbeat/live events를 best-effort로 보낸다. Board 비가용, secret 오류, agent 미설치는 기존 Wily
+    명령을 실패시키지 않는다. 협업자 온보딩 문서와 smoke test가 플러그인 업그레이드 후 설치 흐름을 검증한다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/cli/agent.py
+  - plugins/wily-roadmap/scripts/wily/cli/__main__.py
+  - plugins/wily-roadmap/scripts/wily/agent
+  - plugins/wily-roadmap/commands/agent.md
+  - plugins/wily-roadmap/skills/wily-agent/SKILL.md
+  - plugins/wily-roadmap/.codex-plugin/plugin.json
+  - plugins/wily-roadmap/README.md
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  - plugins/wily-roadmap/tests/v3/test_v3_surface.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T02:39:28Z'
+  done_at: '2026-05-19T02:51:24Z'
+  blocker: null
+- id: T10
+  title: wily next 정렬을 watch와 통일하고 병렬 후보 노출
+  intent: wily next가 단일 ready 태스크만 반환하고 parallel_lane/priority/capacity_hint를 무시한다.
+    watch와 동일한 정렬 로직을 공유 모듈로 옮기고 --parallel/--all 옵션으로 동시에 착수 가능한 후보들을 반환한다.
+  acceptance: next와 watch가 같은 정렬 함수를 호출한다. --parallel 또는 --all 플래그가 동시에 착수 가능한 후보들을
+    출력한다. parallel_lane/priority/capacity_hint 정렬 결과와 의존성 미충족 분리가 테스트로 검증된다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/cli/next.py
+  - plugins/wily-roadmap/scripts/wily/ui/watch_render.py
+  - plugins/wily-roadmap/scripts/wily/scheduling.py
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T02:55:39Z'
+  done_at: '2026-05-19T02:57:39Z'
+  blocker: null
+- id: T11
+  title: claim과 go가 빈 intent 또는 acceptance를 통과시키지 않도록 가드
+  intent: replan add가 만든 빈 intent/acceptance 태스크가 claim과 go까지 그대로 흐른다. claim 시점에 비어
+    있으면 --allow-empty 없이는 거부하고, go도 빈 acceptance면 stderr 경고를 강하게 노출한다.
+  acceptance: wily claim이 intent 또는 acceptance가 빈 태스크에 대해 --allow-empty 없이 EXIT_TRANSITION으로
+    거부한다. wily go가 빈 acceptance를 stderr 경고로 출력한다. 두 경로가 단위 테스트로 검증되고 기존 풀스펙 태스크는 그대로
+    동작한다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/cli/claim.py
+  - plugins/wily-roadmap/scripts/wily/cli/go.py
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T02:57:46Z'
+  done_at: '2026-05-19T02:59:33Z'
+  blocker: null
+- id: T12
+  title: 액터 미매칭 시 우회 경로와 친절한 안내 추가
+  intent: 현재 git author가 actors.yaml에 없으면 claim이 완전히 정지한다. --as <actor_id> 플래그와 wily
+    replan actor add 서브커맨드를 추가하고, 액터 미매칭 에러 메시지에 actors.yaml 추가용 yaml 스니펫과 다음 액션을
+    안내한다.
+  acceptance: wily claim --as <id>로 명시적 actor 지정이 가능하다. wily replan actor add <id>
+    --email=... 가 actors.yaml을 갱신한다. 액터 미매칭 에러 메시지가 yaml 스니펫과 다음 액션을 안내한다. 세 경로가 테스트로
+    검증된다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/cli/claim.py
+  - plugins/wily-roadmap/scripts/wily/cli/replan.py
+  - plugins/wily-roadmap/scripts/wily/config.py
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T02:59:44Z'
+  done_at: '2026-05-19T03:02:22Z'
+  blocker: null
+- id: T13
+  title: AC 리스트 모델과 done 시 항목별 검증 기록
+  intent: Task.acceptance가 단일 문자열이라 항목별 통과 여부를 기록할 수 없다. acceptance를 리스트로 모델링하고 done
+    시 --ac-check 1=pass,2=fail 같은 항목별 결과를 받아 result.md에 구조화 기록한다. 기존 단일 문자열 포맷과 하위
+    호환을 유지한다.
+  acceptance: Task.acceptance가 list[str] 또는 list[AcceptanceItem]을 지원한다. 기존 단일 문자열
+    acceptance는 1개짜리 리스트로 자동 변환된다. wily done --ac-check가 항목별 pass/fail을 받아 result.md에
+    기록한다. cp import-status가 AC 표를 발견하면 함께 임포트한다. tasks.yaml 하위 호환과 새 경로가 테스트로 검증된다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/models.py
+  - plugins/wily-roadmap/scripts/wily/cli/done.py
+  - plugins/wily-roadmap/scripts/wily/cli/go.py
+  - plugins/wily-roadmap/scripts/wily/progress.py
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T03:02:34Z'
+  done_at: '2026-05-19T03:06:00Z'
+  blocker: null
+- id: T14
+  title: wily land rename 파싱 보강과 push 플래그 대칭화
+  intent: _changed가 git status --porcelain v1을 line[3:]로 자르므로 rename(R) 변경에서 잘못된 경로가
+    add된다. push 확인이 sys.stdin 동기 prompt라 비대화 환경에서 매달린다. porcelain v2로 일원화하고 --push/--no-push
+    양쪽을 명시 지원한다.
+  acceptance: rename(R)/copy(C) 변경이 새 경로로 정확히 add된다. --push와 --no-push가 모두 지원되고 비대화
+    환경에서 명시 플래그 없이는 push를 시도하지 않는다. --force로 done 전 commit 시 trailer가 pre-done 사실을
+    표기한다. rename과 비대화 push 경로가 테스트로 검증된다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/cli/land.py
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T03:06:09Z'
+  done_at: '2026-05-19T03:07:39Z'
+  blocker: null
+- id: T15
+  title: 드리프트 가드 액터 필터와 stub 재사용 완화
+  intent: done의 changed_files_since가 모든 author 커밋을 잡아 협업 모드에서 동료 변경이 내 drift로 표시된다.
+    find_existing_drift_stub은 scope 완전 일치만 재사용해 stub이 폭증한다. 액터 필터와 부분집합 또는 시간 윈도우
+    재사용을 도입한다.
+  acceptance: done drift 비교가 현재 actor 커밋으로 한정된다. find_existing_drift_stub이 scope 부분집합
+    또는 24시간 이내 동일 actor stub을 재사용한다. 협업 모드 테스트가 동료 변경을 drift로 잡지 않는다. drift stub 재사용
+    동작이 테스트로 검증된다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/cli/done.py
+  - plugins/wily-roadmap/scripts/wily/hooks/drift_guard.py
+  - plugins/wily-roadmap/scripts/wily/observation.py
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T03:07:47Z'
+  done_at: '2026-05-19T03:09:13Z'
+  blocker: null
+- id: T16
+  title: cp import-status 파서 견고화와 cancel/reset 이벤트 추가
+  intent: events_from_status_board가 markdown 표 첫 두 셀만 본다. 양식이 다르면 조용히 빈 결과를 낸다. BLOCKED는
+    start만 emit해 영원히 in_progress로 남는다. cancel/reset 이벤트 종류와 --dry-run 가시화를 추가한다.
+  acceptance: cp import-status --dry-run이 인식 못한 라인을 stderr로 노출한다. EventKind에 cancel
+    또는 reset이 추가되어 BLOCKED 행이 영구 활성 cp로 남지 않는다. cp_summary가 새 이벤트를 반영해 정확한 in_progress
+    카운트를 낸다. 여러 status board 양식과 BLOCKED 경로가 테스트로 검증된다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/progress.py
+  - plugins/wily-roadmap/scripts/wily/cli/cp.py
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T03:09:20Z'
+  done_at: '2026-05-19T03:11:23Z'
+  blocker: null
+- id: T17
+  title: 에이전트 지침 섹션을 마커 기반 교체로 사용자 섹션 보존
+  intent: 'wily init commit이 root AGENTS.md와 CLAUDE.md에서 ## Wily Roadmap, ## Agent
+    Behavior 헤더를 무조건 제거 후 재삽입한다. 사용자가 같은 헤더로 자체 규칙을 갖고 있으면 사라진다. HTML 주석 마커로 wily
+    관리 영역만 교체하도록 바꾼다.'
+  acceptance: wily-managed start/end 주석 마커 안 영역만 교체된다. 마커 없는 동일 헤더의 사용자 섹션은 보존된다.
+    기존에 마커 없이 wily가 삽입했던 섹션도 1회 마이그레이션으로 마커가 추가된다. 사용자 섹션 보존과 마이그레이션이 테스트로 검증된다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/cli/init.py
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T03:11:35Z'
+  done_at: '2026-05-19T03:13:33Z'
+  blocker: null
+- id: T18
+  title: wily init quick 모드와 인터뷰 재개 안내 추가
+  intent: 13개 서브커맨드와 한 질문씩 진행이 인간과 에이전트 모두에게 길다. .wily/init/draft.yaml이 남아 다음 호출 시
+    무조건 재개되는데 cancel은 print_help에 없다. --quick으로 필수 항목만 받아 commit하는 경로와, 재개 시 진행률과
+    cancel 안내를 추가한다.
+  acceptance: 'wily init --quick이 purpose/users/success 등 필수 항목만 받고 즉시 commit한다. draft
+    재개 시 진행률(예: 3/6)과 cancel 명령 안내가 출력된다. wily init cancel이 print_help에 노출된다. quick
+    경로와 재개 안내가 테스트로 검증된다.'
+  scope:
+  - plugins/wily-roadmap/scripts/wily/cli/init.py
+  - plugins/wily-roadmap/scripts/wily/interview.py
+  - plugins/wily-roadmap/scripts/wily/questions.py
+  - plugins/wily-roadmap/scripts/wily/cli/_common.py
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T03:13:45Z'
+  done_at: '2026-05-19T03:16:37Z'
+  blocker: null
+- id: T19
+  title: CLI 도움말 보강과 REMOVED_COMMANDS 평문화
+  intent: print_help가 명령 이름만 나열한다. wily help <cmd>나 wily <cmd> --help가 없어 사용법은 잘못된
+    인자 때만 노출된다. REMOVED_COMMANDS 키가 live와 -worked를 연결한 부자연스러운 문자열로 적혀 있다. v3 안정 후엔
+    평문이 자연스럽다.
+  acceptance: wily help <command>가 해당 명령의 usage와 옵션 설명을 출력한다. 각 명령 모듈에 짧은 description과
+    usage가 노출된다. REMOVED_COMMANDS 키가 평문 문자열로 정리된다. help 출력과 removed 안내가 테스트로 검증된다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/cli/_common.py
+  - plugins/wily-roadmap/scripts/wily/cli/__main__.py
+  - plugins/wily-roadmap/scripts/wily/cli/init.py
+  - plugins/wily-roadmap/scripts/wily/cli/claim.py
+  - plugins/wily-roadmap/scripts/wily/cli/go.py
+  - plugins/wily-roadmap/scripts/wily/cli/done.py
+  - plugins/wily-roadmap/scripts/wily/cli/cp.py
+  - plugins/wily-roadmap/scripts/wily/cli/replan.py
+  - plugins/wily-roadmap/scripts/wily/cli/next.py
+  - plugins/wily-roadmap/scripts/wily/cli/watch.py
+  - plugins/wily-roadmap/scripts/wily/cli/status.py
+  - plugins/wily-roadmap/scripts/wily/cli/land.py
+  - plugins/wily-roadmap/scripts/wily/cli/block.py
+  - plugins/wily-roadmap/tests/v3/test_v3_surface.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T03:17:05Z'
+  done_at: '2026-05-19T03:21:02Z'
+  blocker: null
+- id: T20
+  title: CLI 플래그 처리 공통화 - --json과 value flag 일원화
+  intent: _extract_value, _missing_value_flag, _positionals가 done.py와 cp.py에 글자 단위로
+    동일하게 복붙됐다. --json 소비도 모듈마다 다르다. _common.py에 공통 헬퍼를 두고 모든 명령이 같은 함수를 호출하도록 정리한다.
+  acceptance: _extract_value/_missing_value_flag/_positionals가 _common.py 한 곳에 정의되고
+    done/cp/claim/replan 등이 이를 호출한다. --json이 모든 명령에서 동일한 방식으로 args에서 제거된다. 공통 헬퍼와
+    --json 일관성이 표면 테스트로 검증된다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/cli/_common.py
+  - plugins/wily-roadmap/scripts/wily/cli/done.py
+  - plugins/wily-roadmap/scripts/wily/cli/cp.py
+  - plugins/wily-roadmap/scripts/wily/cli/claim.py
+  - plugins/wily-roadmap/scripts/wily/cli/replan.py
+  - plugins/wily-roadmap/scripts/wily/cli/block.py
+  - plugins/wily-roadmap/scripts/wily/cli/next.py
+  - plugins/wily-roadmap/scripts/wily/cli/go.py
+  - plugins/wily-roadmap/tests/v3/test_v3_surface.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T03:21:10Z'
+  done_at: '2026-05-19T03:23:29Z'
+  blocker: null
+- id: T21
+  title: agent-handoffs 위치를 .wily/handoffs로 정착과 마이그레이션
+  intent: agent-handoffs/가 repo root에 누적되고 .wily/ 외부라 task 상태와 분리된다. .wily/handoffs/<task-id>/로
+    정착시키고 task done 시 archive 또는 cp import-status가 자동 매핑하도록 한다. 기존 파일은 1회 마이그레이션을
+    제공한다.
+  acceptance: 새 handoff 경로가 .wily/handoffs/<task-id>/ 아래에 자리잡는다. cp import-status가
+    task id에서 기본 경로를 추론한다. wily migrate-handoffs 또는 init 시 1회 마이그레이션이 동작한다. 기존 agent-handoffs/
+    경로도 하위 호환된다. 새 경로와 마이그레이션이 테스트로 검증된다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/paths.py
+  - plugins/wily-roadmap/scripts/wily/cli/cp.py
+  - plugins/wily-roadmap/scripts/wily/cli/init.py
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T03:23:39Z'
+  done_at: '2026-05-19T03:25:57Z'
+  blocker: null
+- id: T22
+  title: wily watch 이벤트 기반 갱신 - .wily/.touch mtime 트리거
+  intent: 2초 폴링이 매 tick에 git log/fetch와 모든 progress.jsonl를 읽는다. 협업 모드에서 stale 구간과
+    비용이 누적된다. mutating 명령이 .wily/.touch mtime을 갱신해 watch가 변화 시에만 redraw하도록 최적화한다.
+  acceptance: claim/done/cp/replan 등 mutating 명령이 .wily/.touch를 갱신한다. watch가 .touch
+    mtime을 폴링해 변화 없으면 redraw를 생략한다. 외부 fsevents 의존 없이 동작한다. mutating 명령의 touch 갱신과
+    watch idle 행동이 테스트로 검증된다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/cli/watch.py
+  - plugins/wily-roadmap/scripts/wily/cli/claim.py
+  - plugins/wily-roadmap/scripts/wily/cli/done.py
+  - plugins/wily-roadmap/scripts/wily/cli/cp.py
+  - plugins/wily-roadmap/scripts/wily/cli/replan.py
+  - plugins/wily-roadmap/scripts/wily/cli/block.py
+  - plugins/wily-roadmap/scripts/wily/paths.py
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T03:26:12Z'
+  done_at: '2026-05-19T03:28:35Z'
+  blocker: null
+- id: T23
+  title: 사용자 메시지 한국어/영어 일관화 i18n 모듈 도입
+  intent: 에러는 영어, watch UI는 한국어, init 메시지는 혼합이다. 스킬과 CLAUDE.md는 한국어 응답 가이드만 줄 뿐 실제
+    CLI 출력은 일관성이 없다. 사용자 메시지 i18n 모듈을 만들어 locale 단위로 일관화한다.
+  acceptance: 사용자 메시지가 단일 i18n 모듈에서 관리된다. WILY_LOCALE 환경변수 또는 config로 locale을 선택할
+    수 있고 기본값은 한국어다. 에러/성공/help 메시지가 동일 locale로 출력된다. 두 locale 출력이 테스트로 검증된다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/i18n.py
+  - plugins/wily-roadmap/scripts/wily/cli/_common.py
+  - plugins/wily-roadmap/scripts/wily/cli/init.py
+  - plugins/wily-roadmap/scripts/wily/cli/claim.py
+  - plugins/wily-roadmap/scripts/wily/cli/done.py
+  - plugins/wily-roadmap/scripts/wily/cli/cp.py
+  - plugins/wily-roadmap/scripts/wily/cli/replan.py
+  - plugins/wily-roadmap/scripts/wily/cli/next.py
+  - plugins/wily-roadmap/scripts/wily/cli/go.py
+  - plugins/wily-roadmap/scripts/wily/cli/block.py
+  - plugins/wily-roadmap/scripts/wily/cli/land.py
+  - plugins/wily-roadmap/tests/v3/test_v3_surface.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T03:28:55Z'
+  done_at: '2026-05-19T03:31:06Z'
+  blocker: null
+- id: T24
+  title: wily doctor 헬스체크 명령 추가
+  intent: .wily/ 상태(스키마, 고아 디렉터리, 깨진 depends_on 참조, in_progress인데 progress.jsonl 없음,
+    actors.yaml에 없는 actor가 claim_sha 보유 등)를 검증할 수단이 없다. pre-commit hook 설치 상태와 venv
+    상태도 점검할 수 없다. wily doctor를 추가해 일괄 점검한다.
+  acceptance: wily doctor가 스키마 검증, 고아 task 디렉터리, 깨진 depends_on, 누락 actor, hook 설치
+    상태, venv 상태를 점검한다. 종료 코드로 OK/경고/실패를 구분한다. --fix가 안전한 자동 수정을 시도한다. 각 진단 케이스가 테스트로
+    검증된다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/cli/doctor.py
+  - plugins/wily-roadmap/scripts/wily/cli/_common.py
+  - plugins/wily-roadmap/scripts/wily/cli/__main__.py
+  - plugins/wily-roadmap/scripts/wily/hooks/drift_guard.py
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T03:31:23Z'
+  done_at: '2026-05-19T03:35:10Z'
+  blocker: null
+- id: T25
+  title: wily-execute와 cp 자동화 갭 정리
+  intent: wily-execute 스킬은 checkpoint마다 wily cp 호출을 명시하지만 custom-workflow는 wily를 모른다.
+    호출자가 매번 잊지 않아야 한다. wily go 출력의 cp 호출 체크리스트를 더 강제력 있게 만들고, custom-workflow 측 wily
+    hook 옵션을 문서화한다.
+  acceptance: wily go 출력의 cp 호출 라인이 체크박스 형식과 명확한 순서로 강화된다. wily-execute 스킬이 cp 자동화
+    갭과 import-status 우회 시점을 명확히 안내한다. custom-workflow와의 인터페이스 계약이 문서화된다. 갱신된 goal
+    text와 스킬 본문이 표면 테스트로 검증된다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/cli/go.py
+  - plugins/wily-roadmap/skills/wily-execute/SKILL.md
+  - plugins/wily-roadmap/skills/wily-go/SKILL.md
+  - plugins/wily-roadmap/skills/wily-cp/SKILL.md
+  - plugins/wily-roadmap/tests/v3/test_v3_surface.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 8232b8771cb3dc7c83decfd94cee20ad4672920e
+  claim_at: '2026-05-19T03:35:22Z'
+  done_at: '2026-05-19T03:38:14Z'
+  blocker: null
+- id: T26
+  title: Wily Board 에이전트 가시성 요구사항과 계약 확정
+  intent: agent-handoffs/wily-board-agent-visibility-design-grill.md의 결정을 구현 가능한 요구사항으로
+    변환하고, Board API/DB/agent payload/React IA/한국어 UI/배포 경계를 확정한다.
+  acceptance: API/DB/agent payload 계약, status board import/recovery 규칙, React 감독 IA,
+    한국어 UI glossary, Azure 배포 요구사항이 handoff 또는 spec으로 정리된다. open question은 구현 차단 여부가
+    구분된다. 후속 구현 Task의 acceptance와 dependency가 검증 가능하게 정리된다. 구현 파일 변경 없이 요구사항 산출물만
+    남긴다.
+  scope:
+  - agent-handoffs/wily-board-agent-visibility-design-grill.md
+  - agent-handoffs/wily-board-agent-visibility-requirements.md
+  - docs/design/wily-board-mockup.html
+  - docs/superpowers/specs/*wily-board*
+  - docs/superpowers/plans/*wily-board*
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 14ee459e9ab58c45125776e7e9e8ceed5bb5fa68
+  claim_at: '2026-05-20T08:43:38Z'
+  done_at: '2026-05-20T12:17:34Z'
+  blocker: null
+- id: T27
+  title: workspace manifest multi-repo CLI 추가
+  intent: 부모 coordination workspace에 상태 복제용 .wily를 만들지 않고 wily-workspace.yaml manifest만
+    두어 여러 child repo의 Wily 상태를 읽기 전용으로 집계한다.
+  acceptance: wily workspace init/status/next/watch/show-config가 child repo .wily/tasks.yaml을
+    source of truth로 사용한다. status --json이 안정적인 manifest/repo summary payload를 출력한다.
+    invalid child repo는 per-repo error로 표시되고 전체 command는 crash하지 않는다. parent .wily/를
+    만들지 않는다. core/surface 테스트와 parent smoke가 통과한다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/workspace.py
+  - plugins/wily-roadmap/scripts/wily/cli/workspace.py
+  - plugins/wily-roadmap/scripts/wily/cli/_common.py
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  - plugins/wily-roadmap/tests/v3/test_v3_surface.py
+  - plugins/wily-roadmap/commands/workspace.md
+  - plugins/wily-roadmap/skills/wily-workspace/SKILL.md
+  - plugins/wily-roadmap/README.md
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: null
+  claim_at: '2026-05-20T00:00:00Z'
+  done_at: '2026-05-20T00:00:00Z'
+  blocker: null
+- id: T28
+  title: wily-agent snapshot heartbeat와 상태판 import recovery 구현
+  intent: wily-roadmap plugin의 wily-agent가 T26에서 확정된 Board 계약에 맞춰 .wily ledger와 Custom
+    Workflow status board를 읽고 snapshot/heartbeat payload를 생성한다. Board 서버/UI 구현은 sibling
+    wily-board repo 로드맵에서 수행한다.
+  acceptance: agent가 등록 repo의 .wily 변경을 감지해 current task, current CP, CP timeline,
+    task list, dependency, actor, R-W-LAB remote 기반 project id를 포함한 snapshot payload를
+    만든다. heartbeat는 누가 어떤 Task/CP를 잡고 있는지 표시할 만큼 충분하다. status board import가 ledger
+    누락 CP를 idempotent하게 복구한다. Board 비가용 시 실패 사유와 마지막 성공 시각을 로컬에 남기고 재연결 시 최신 snapshot으로
+    수렴한다. 단위 테스트와 foreground smoke가 통과한다.
+  scope:
+  - plugins/wily-roadmap/scripts/wily/agent/**
+  - plugins/wily-roadmap/scripts/wily/progress.py
+  - plugins/wily-roadmap/scripts/wily/cli/cp.py
+  - plugins/wily-roadmap/scripts/wily/cli/agent.py
+  - plugins/wily-roadmap/tests/v3/**
+  - plugins/wily-roadmap/skills/wily-agent/SKILL.md
+  - plugins/wily-roadmap/commands/agent.md
+  depends_on:
+  - T26
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 64dda1f23ec920127dd31087c966f2693f1cb031
+  claim_at: '2026-05-20T12:23:23Z'
+  done_at: '2026-05-20T13:17:29Z'
+  blocker: null
+- id: T29
+  title: Wily parent-owned coordination mode complete
+  intent: Parent .wily ledger can own tasks while registered child Git repositories
+    own implementation files, with claim snapshots and safe local-only multi-repo
+    land.
+  acceptance: Parent-owned coordination claim/done/cp/status/next/watch and land preflight/commit
+    behavior are implemented, documented, and verified by full v3 tests plus reproducible
+    smoke fixtures.
+  scope:
+  - .wily/tasks.yaml
+  - .wily/tasks/T29/progress.jsonl
+  - .wily/tasks/T29/result.md
+  - agent-handoffs/wily-coordination-project-design-grill.md
+  - agent-handoffs/wily-parent-coordination-mode-execution-package.md
+  - agent-handoffs/wily-parent-coordination-mode-progress.md
+  - agent-handoffs/wily-parent-coordination-mode-requirements.md
+  - agent-handoffs/wily-parent-coordination-mode-smoke.py
+  - agent-handoffs/wily-parent-coordination-mode-status.md
+  - agent-handoffs/wily-parent-coordination-mode-verification.md
+  - plugins/wily-roadmap/.codex-plugin/plugin.json
+  - plugins/wily-roadmap/README.md
+  - plugins/wily-roadmap/commands/claim.md
+  - plugins/wily-roadmap/commands/cp.md
+  - plugins/wily-roadmap/commands/done.md
+  - plugins/wily-roadmap/commands/land.md
+  - plugins/wily-roadmap/commands/next.md
+  - plugins/wily-roadmap/commands/status.md
+  - plugins/wily-roadmap/commands/watch.md
+  - plugins/wily-roadmap/commands/workspace.md
+  - plugins/wily-roadmap/scripts/wily/coordination.py
+  - plugins/wily-roadmap/scripts/wily/scope.py
+  - plugins/wily-roadmap/scripts/wily/cli/claim.py
+  - plugins/wily-roadmap/scripts/wily/cli/done.py
+  - plugins/wily-roadmap/scripts/wily/cli/land.py
+  - plugins/wily-roadmap/scripts/wily/cli/next.py
+  - plugins/wily-roadmap/scripts/wily/cli/status.py
+  - plugins/wily-roadmap/scripts/wily/models.py
+  - plugins/wily-roadmap/scripts/wily/observation.py
+  - plugins/wily-roadmap/scripts/wily/transitions.py
+  - plugins/wily-roadmap/skills/wily-claim/SKILL.md
+  - plugins/wily-roadmap/skills/wily-cp/SKILL.md
+  - plugins/wily-roadmap/skills/wily-done/SKILL.md
+  - plugins/wily-roadmap/skills/wily-execute/SKILL.md
+  - plugins/wily-roadmap/skills/wily-land/SKILL.md
+  - plugins/wily-roadmap/skills/wily-next/SKILL.md
+  - plugins/wily-roadmap/skills/wily-status/SKILL.md
+  - plugins/wily-roadmap/skills/wily-watch/SKILL.md
+  - plugins/wily-roadmap/skills/wily-workspace/SKILL.md
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  - plugins/wily-roadmap/tests/v3/test_v3_surface.py
+  depends_on: []
+  status: done
+  assignee: wily
+  actor: wily
+  claim_sha: 64dda1f23ec920127dd31087c966f2693f1cb031
+  claim_at: '2026-05-20T13:23:18Z'
+  done_at: '2026-05-21T04:25:48Z'
+  blocker: null
+- id: T30
+  title: 'drift: plugins/wily-roadmap/README.md (+2 files)'
+  intent: ''
+  acceptance: ''
+  scope:
+  - plugins/wily-roadmap/README.md
+  - plugins/wily-roadmap/scripts/wily/agent/snapshot.py
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  depends_on: []
+  status: in_progress
+  assignee: wily
+  actor: wily
+  claim_sha: cd17534d41834d053ced37f2b9973621ba5b7465
+  claim_at: '2026-05-21T13:52:13Z'
+  done_at: null
+  blocker: null
+- id: T31
+  title: 'drift: .wily/handoffs/T04/status.md (+116 files)'
+  intent: ''
+  acceptance: ''
+  scope:
+  - .wily/handoffs/T04/status.md
+  - .wily/handoffs/T04/t04-parallel-watch-execution-package.md
+  - .wily/handoffs/T04/t04-parallel-watch-progress.md
+  - .wily/handoffs/T04/t04-parallel-watch-verification.md
+  - .wily/handoffs/T05/status.md
+  - .wily/handoffs/T05/t05-custom-workflow-cp-analysis.md
+  - .wily/handoffs/T05/t05-custom-workflow-cp-sync-execution-package.md
+  - .wily/handoffs/T05/t05-custom-workflow-cp-sync-progress.md
+  - .wily/handoffs/T05/t05-custom-workflow-cp-sync-verification.md
+  - .wily/handoffs/T09/status.md
+  - .wily/handoffs/T09/t09-wily-agent-execution-package.md
+  - .wily/handoffs/T09/t09-wily-agent-progress.md
+  - .wily/handoffs/T09/t09-wily-agent-verification.md
+  - .wily/handoffs/T28/status.md
+  - .wily/handoffs/T28/t28-agent-snapshot-heartbeat-recovery-execution-package.md
+  - .wily/handoffs/T28/t28-agent-snapshot-heartbeat-recovery-progress.md
+  - .wily/handoffs/T28/t28-agent-snapshot-heartbeat-recovery-requirements.md
+  - .wily/handoffs/T28/t28-agent-snapshot-heartbeat-recovery-verification.md
+  - .wily/handoffs/legacy/09-4-runner-dispatch-helper-execution-package.md
+  - .wily/handoffs/legacy/09-4-runner-dispatch-helper-progress.md
+  - .wily/handoffs/legacy/09-4-runner-dispatch-helper-status.md
+  - .wily/handoffs/legacy/09-4-runner-dispatch-helper-verification.md
+  - .wily/handoffs/legacy/batch-migrate-wily-v2-corrected-candidates.tsv
+  - .wily/handoffs/legacy/batch-migrate-wily-v2-execution-package.md
+  - .wily/handoffs/legacy/batch-migrate-wily-v2-progress.md
+  - .wily/handoffs/legacy/batch-migrate-wily-v2-run.log
+  - .wily/handoffs/legacy/batch-migrate-wily-v2-status.md
+  - .wily/handoffs/legacy/batch-migrate-wily-v2-summary.tsv
+  - .wily/handoffs/legacy/batch-migrate-wily-v2-verification.md
+  - .wily/handoffs/legacy/board-live-local-state-execution-package.md
+  - .wily/handoffs/legacy/board-live-local-state-progress.md
+  - .wily/handoffs/legacy/board-live-local-state-requirements.md
+  - .wily/handoffs/legacy/board-live-local-state-status.md
+  - .wily/handoffs/legacy/board-live-local-state-verification.md
+  - .wily/handoffs/legacy/p6-bridge-durable-sync-handoff.md
+  - .wily/handoffs/legacy/s21-board-ui-redesign-execution-package.md
+  - .wily/handoffs/legacy/s21-board-ui-redesign-progress.md
+  - .wily/handoffs/legacy/s21-board-ui-redesign-status.md
+  - .wily/handoffs/legacy/s21-board-ui-redesign-verification.md
+  - .wily/handoffs/legacy/s21-realtime-board-bridge-requirements.md
+  - .wily/handoffs/legacy/s24-realtime-board-bridge-execution-package.md
+  - .wily/handoffs/legacy/s24-realtime-board-bridge-progress.md
+  - .wily/handoffs/legacy/s24-realtime-board-bridge-status.md
+  - .wily/handoffs/legacy/s24-realtime-board-bridge-verification.md
+  - .wily/handoffs/legacy/s27-refactor-contract-requirements.md
+  - .wily/handoffs/legacy/s27-refactor-execution-package.md
+  - .wily/handoffs/legacy/s27-refactor-progress.md
+  - .wily/handoffs/legacy/s27-refactor-status.md
+  - .wily/handoffs/legacy/s27-refactor-verification.md
+  - .wily/handoffs/legacy/s27-remediation-execution-package.md
+  - .wily/handoffs/legacy/s27-remediation-progress.md
+  - .wily/handoffs/legacy/s27-remediation-status.md
+  - .wily/handoffs/legacy/s27-remediation-verification.md
+  - .wily/handoffs/legacy/stage-30-board-dag-components-mobile-execution-package.md
+  - .wily/handoffs/legacy/stage-30-board-dag-components-mobile-progress.md
+  - .wily/handoffs/legacy/stage-30-board-dag-components-mobile-status.md
+  - .wily/handoffs/legacy/stage-30-board-dag-components-mobile-verification.md
+  - .wily/handoffs/legacy/stage-31-heartbeat-tail-sse-polish-execution-package.md
+  - .wily/handoffs/legacy/stage-31-heartbeat-tail-sse-polish-progress.md
+  - .wily/handoffs/legacy/stage-31-heartbeat-tail-sse-polish-status.md
+  - .wily/handoffs/legacy/stage-31-heartbeat-tail-sse-polish-verification.md
+  - .wily/handoffs/legacy/stage23-live-draft-topology-execution-package.md
+  - .wily/handoffs/legacy/stage23-live-draft-topology-progress.md
+  - .wily/handoffs/legacy/stage23-live-draft-topology-status.md
+  - .wily/handoffs/legacy/stage23-live-draft-topology-verification.md
+  - .wily/handoffs/legacy/wily-agent-board-v3-realignment-execution-package.md
+  - .wily/handoffs/legacy/wily-agent-board-v3-realignment-progress.md
+  - .wily/handoffs/legacy/wily-agent-board-v3-realignment-status.md
+  - .wily/handoffs/legacy/wily-agent-board-v3-realignment-verification.md
+  - .wily/handoffs/legacy/wily-board-1-server-execution-package.md
+  - .wily/handoffs/legacy/wily-board-1-server-progress.md
+  - .wily/handoffs/legacy/wily-board-1-server-status.md
+  - .wily/handoffs/legacy/wily-board-1-server-verification.md
+  - .wily/handoffs/legacy/wily-board-2-agent-execution-package.md
+  - .wily/handoffs/legacy/wily-board-2-agent-progress.md
+  - .wily/handoffs/legacy/wily-board-2-agent-status.md
+  - .wily/handoffs/legacy/wily-board-2-agent-verification.md
+  - .wily/handoffs/legacy/wily-board-3-ui-execution-package.md
+  - .wily/handoffs/legacy/wily-board-3-ui-progress.md
+  - .wily/handoffs/legacy/wily-board-3-ui-status.md
+  - .wily/handoffs/legacy/wily-board-3-ui-verification.md
+  - .wily/handoffs/legacy/wily-board-agent-visibility-design-grill.md
+  - .wily/handoffs/legacy/wily-board-agent-visibility-requirements.md
+  - .wily/handoffs/legacy/wily-board-reflection-fixes-execution-package.md
+  - .wily/handoffs/legacy/wily-board-reflection-fixes-progress.md
+  - .wily/handoffs/legacy/wily-board-reflection-fixes-status.md
+  - .wily/handoffs/legacy/wily-board-reflection-fixes-verification.md
+  - .wily/handoffs/legacy/wily-board-sync-contract-execution-package.md
+  - .wily/handoffs/legacy/wily-board-sync-contract-progress.md
+  - .wily/handoffs/legacy/wily-board-sync-contract-requirements.md
+  - .wily/handoffs/legacy/wily-board-sync-contract-status.md
+  - .wily/handoffs/legacy/wily-board-sync-contract-verification.md
+  - .wily/handoffs/legacy/wily-coordination-project-design-grill.md
+  - .wily/handoffs/legacy/wily-parent-coordination-mode-execution-package.md
+  - .wily/handoffs/legacy/wily-parent-coordination-mode-progress.md
+  - .wily/handoffs/legacy/wily-parent-coordination-mode-requirements.md
+  - .wily/handoffs/legacy/wily-parent-coordination-mode-smoke.py
+  - .wily/handoffs/legacy/wily-parent-coordination-mode-status.md
+  - .wily/handoffs/legacy/wily-parent-coordination-mode-verification.md
+  - .wily/handoffs/legacy/wily-plugin-relocation-execution-package.md
+  - .wily/handoffs/legacy/wily-plugin-relocation-progress.md
+  - .wily/handoffs/legacy/wily-plugin-relocation-status.md
+  - .wily/handoffs/legacy/wily-plugin-relocation-verification.md
+  - .wily/handoffs/legacy/wily-v3-redesign-execution-package.md
+  - .wily/handoffs/legacy/wily-v3-redesign-progress.md
+  - .wily/handoffs/legacy/wily-v3-redesign-status.md
+  - .wily/handoffs/legacy/wily-v3-redesign-verification.md
+  - .wily/handoffs/legacy/wily-workspace-manifest-execution-package.md
+  - .wily/handoffs/legacy/wily-workspace-manifest-progress.md
+  - .wily/handoffs/legacy/wily-workspace-manifest-status.md
+  - .wily/handoffs/legacy/wily-workspace-manifest-verification.md
+  - AGENTS.md
+  - CLAUDE.md
+  - plugins/wily-roadmap/commands/cp.md
+  - plugins/wily-roadmap/scripts/wily/cli/init.py
+  - plugins/wily-roadmap/scripts/wily/paths.py
+  - plugins/wily-roadmap/tests/v3/test_v3_core.py
+  depends_on: []
+  status: in_progress
+  assignee: wily
+  actor: wily
+  claim_sha: 0a7e64f67db615feaf809a80669b34951f91e330
+  claim_at: '2026-05-21T14:27:16Z'
+  done_at: null
+  blocker: null

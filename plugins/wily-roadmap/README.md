@@ -101,6 +101,9 @@ ledger but one or more registered child Git repos contain the work. Add
 ```yaml
 schema: wily-coordination-v1
 title: Parent Project
+visibility:
+  kind: collab
+  owner: R-W-LAB
 parent:
   id: parent
   path: .
@@ -110,6 +113,12 @@ repos:
   - id: board
     path: ./wily-board
 ```
+
+`visibility` controls how Wily Board surfaces the parent workstream for logged-in
+users. Use `kind: collab` for shared workspaces. Use `kind: personal` with a
+GitHub `owner` for a parent coordination workspace that should be default-visible
+only to that user. Existing manifests without `visibility` default to
+`{kind: collab, owner: R-W-LAB}`.
 
 Mode precedence is explicit: `.wily/coordination.yaml takes precedence` as
 parent-owned coordination mode; `wily-workspace.yaml` and
@@ -126,8 +135,9 @@ child repos own work files. Board-facing agent snapshots still use
 coordination is expressed as optional `coordination` fields instead of a new
 payload type. Those optional fields include `task_roadmap`, normalized `scope`,
 `target_repos`, `claim_snapshot_summary`, `changed_file_count`,
-`changed_files_sample`, and display hints such as `child_default_visibility` so
-Board can nest registered child repos under the parent owner.
+`changed_files_sample`, `visibility`, and display hints such as
+`child_default_visibility` so Board can nest registered child repos under the
+parent owner.
 
 `wily claim` in coordination mode records a `claim_snapshot` instead of a fake
 parent `claim_sha`. The snapshot includes each repo's branch, sha, dirty files,
@@ -174,7 +184,8 @@ part of `project_id`, so same-remote checkouts still converge to one Board
 project. Heartbeats repeat the checkout id, branch, and local path so Board can
 show active and stale checkouts using server ingest time. Parent coordination snapshots add optional `coordination`
 fields with `task_roadmap`, `target_repos`, `claim_snapshot_summary`,
-`changed_file_count`, `changed_files_sample`, and `child_default_visibility`.
+`changed_file_count`, `changed_files_sample`, `visibility`, and
+`child_default_visibility`.
 
 Typical onboarding:
 

@@ -169,6 +169,7 @@ def coordination_snapshot(
         "parent": coordination_parent_payload(coordination, project_id=parent_project_id, repo_slug=parent_repo_slug),
         "children": [coordination_child_payload(repo) for repo in coordination.repos],
         "display": {"default_owner": "parent", "child_default_visibility": "nested"},
+        "visibility": {"kind": coordination.visibility.kind, "owner": coordination.visibility.owner},
         "task_roadmap": [
             coordination_task_payload(
                 task,

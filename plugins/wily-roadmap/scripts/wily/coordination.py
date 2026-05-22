@@ -26,11 +26,18 @@ class CoordinationRepo:
 
 
 @dataclass(frozen=True)
+class CoordinationVisibility:
+    kind: str
+    owner: str
+
+
+@dataclass(frozen=True)
 class CoordinationConfig:
     title: str
     parent: CoordinationRepo
     repos: list[CoordinationRepo]
     manifest_path: Path
+    visibility: CoordinationVisibility
 
     @property
     def all_repos(self) -> list[CoordinationRepo]:
@@ -103,6 +110,7 @@ def load_coordination_config(manifest_path: Path) -> CoordinationConfig:
         parent=parent,
         repos=repos,
         manifest_path=manifest_path,
+        visibility=_visibility_from_dict(data.get("visibility")),
     )
 
 
@@ -144,6 +152,20 @@ def _repo_from_dict(item: Any, *, base: Path, label: str) -> CoordinationRepo:
         path=path.resolve(),
         title=str(item["title"]) if item.get("title") else None,
     )
+
+
+def _visibility_from_dict(raw: Any) -> CoordinationVisibility:
+    if raw is None:
+        return CoordinationVisibility(kind="collab", owner="R-W-LAB")
+    if not isinstance(raw, dict):
+        raise CoordinationConfigError("coordination visibility must be a mapping")
+    kind = str(raw.get("kind") or "collab").strip()
+    owner = str(raw.get("owner") or ("R-W-LAB" if kind == "collab" else "")).strip()
+    if kind not in {"collab", "personal"}:
+        raise CoordinationConfigError("coordination visibility kind must be collab or personal")
+    if kind == "personal" and not owner:
+        raise CoordinationConfigError("personal coordination visibility requires owner")
+    return CoordinationVisibility(kind=kind, owner=owner)
 
 
 def _validate_repo_ids(repos: list[CoordinationRepo]) -> None:
