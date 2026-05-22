@@ -112,6 +112,37 @@ class CoreModelTest(unittest.TestCase):
         self.assertIn("--once", command)
         self.assertIn("--offline-ok", command)
 
+    def test_agent_update_rewrites_plist_and_restarts_daemon(self) -> None:
+        from wily.agent.config import default_paths as real_default_paths
+
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = real_default_paths(Path(tmp))
+            actions: list[str] = []
+
+            class _Result:
+                def __init__(self, returncode: int) -> None:
+                    self.returncode = returncode
+                    self.stdout = ""
+                    self.stderr = ""
+
+            def fake_run(cmd: list[str], *_a: object, **_k: object) -> _Result:
+                actions.append(cmd[1] if len(cmd) > 1 else cmd[0])
+                # bootout fails when the daemon is not loaded; update must tolerate it
+                return _Result(1 if cmd[1:2] == ["bootout"] else 0)
+
+            with patch.object(agent_cmd, "default_paths", lambda: paths), patch.object(
+                agent_cmd.subprocess, "run", side_effect=fake_run
+            ), patch.object(agent_cmd.shutil, "which", return_value="/bin/launchctl"):
+                with redirect_stdout(StringIO()):
+                    code = agent_cmd.main(["update"])
+
+            self.assertEqual(code, 0)
+            self.assertTrue(paths.plist_path.exists())
+            # bootout failure is tolerated and bootstrap still runs
+            self.assertIn("bootout", actions)
+            self.assertIn("bootstrap", actions)
+            self.assertLess(actions.index("bootout"), actions.index("bootstrap"))
+
     def test_agent_daemon_reloads_registry_each_tick(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -913,6 +944,57 @@ class CoreModelTest(unittest.TestCase):
                     daemon.run_loop(config, root / "registry.json", once=False, offline_ok=False)
 
             self.assertEqual(snapshot_publish_times, ["initial", 4.5, 16.0])
+
+    def test_agent_daemon_reuses_cached_snapshot_when_wily_tree_unchanged(self) -> None:
+        from wily.agent import daemon
+        from wily.agent.registry import RegisteredRepo
+
+        daemon._SNAPSHOT_CACHE.clear()
+        original_build = daemon.build_snapshot_payload
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                _git_repo(root)
+                paths = WilyPaths(root)
+                paths.wily_dir.mkdir()
+                save_tasks(paths, "demo", [Task(id="T01", title="First", status=TaskStatus.IN_PROGRESS, actor="wily")])
+                repo = RegisteredRepo(path=root, repo="R-W-LAB/demo")
+                config = AgentConfig(board_url="https://board.example", token="token", actor="wily", machine_id="m1")
+                health = root / "sync-health.json"
+
+                with patch.object(daemon, "publish_snapshot", return_value={"sent": True, "status": 202}), patch.object(
+                    daemon, "publish_heartbeat", return_value={"sent": True, "status": 202}
+                ), patch.object(daemon, "build_snapshot_payload", wraps=original_build) as build_spy:
+                    daemon.publish_repo_heartbeat(config, repo, sync_health_path=health, tree_mtime=100.0)
+                    daemon.publish_repo_heartbeat(config, repo, sync_health_path=health, tree_mtime=100.0)
+                    # unchanged tree mtime -> snapshot built once, reused on the second call
+                    self.assertEqual(build_spy.call_count, 1)
+                    daemon.publish_repo_heartbeat(config, repo, sync_health_path=health, tree_mtime=200.0)
+                    # changed tree mtime -> rebuilt
+                    self.assertEqual(build_spy.call_count, 2)
+                    # tree_mtime=None (run_once / direct calls) bypasses the cache entirely
+                    daemon.publish_repo_heartbeat(config, repo, sync_health_path=health)
+                    self.assertEqual(build_spy.call_count, 3)
+        finally:
+            daemon._SNAPSHOT_CACHE.clear()
+
+    def test_wily_tree_mtime_ignores_archive_directory(self) -> None:
+        from wily.agent.daemon import wily_tree_mtime
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            wily = root / ".wily"
+            (wily / "tasks").mkdir(parents=True)
+            (wily / "tasks" / "live.txt").write_text("live", encoding="utf-8")
+            archive = wily / "archive" / "legacy-001"
+            archive.mkdir(parents=True)
+            before = wily_tree_mtime(root)
+            stale = archive / "old.yaml"
+            stale.write_text("old", encoding="utf-8")
+            future = 4_000_000_000.0
+            os.utime(stale, (future, future))
+            # a far-future write deep inside archive/ must not move the scan result
+            self.assertEqual(wily_tree_mtime(root), before)
 
     def test_paths_config_and_progress_round_trip(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

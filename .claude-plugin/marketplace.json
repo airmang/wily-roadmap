@@ -11,7 +11,7 @@
     {
       "name": "wily",
       "description": "Personal agent workflow plugin for Wily roadmap, phase, and session management.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": {
         "name": "Wily Castle"
       },

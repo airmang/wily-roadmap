@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import time
 from pathlib import Path
 from typing import Any
@@ -12,11 +13,20 @@ from .config import AgentConfig, default_paths
 from .recovery import recover_status_boards
 from .registry import RegisteredRepo, load_registry
 from .sync_health import load_sync_health, record_publish_result
-from .snapshot import build_snapshot_payload, heartbeat_payload
+from .snapshot import build_snapshot_payload, heartbeat_payload, utc_now
 
-POLL_SECONDS = 1.0
+POLL_SECONDS = 2.0
 SNAPSHOT_DEBOUNCE_SECONDS = 2.0
 SNAPSHOT_FALLBACK_SECONDS = 60.0
+
+# Subdirectories of .wily that never feed a Board snapshot. The per-poll change
+# scan skips them so CPU stays proportional to live state, not archived history.
+SCAN_SKIP_DIRS = {"archive"}
+
+# Per-repo snapshot cache: resolved repo path -> (tree_mtime, built_at, recovery, payload).
+# The daemon rebuilds a snapshot only when .wily actually changed; unchanged
+# repos reuse the cached payload instead of re-parsing YAML on every heartbeat.
+_SNAPSHOT_CACHE: dict[str, tuple[float, float, dict[str, Any], dict[str, Any]]] = {}
 
 
 def run_once(
@@ -89,6 +99,7 @@ def run_loop(
                 repo,
                 include_snapshot=snapshot_due,
                 sync_health_path=repo_sync_health_path(health_path, repo, multi_repo=multi_repo),
+                tree_mtime=mtime,
             )
             results.append(result)
             if heartbeat_due:
@@ -105,18 +116,13 @@ def publish_repo_heartbeat(
     *,
     include_snapshot: bool = True,
     sync_health_path: Path | None = None,
+    tree_mtime: float | None = None,
 ) -> dict[str, Any]:
+    health_path = sync_health_path or default_paths().sync_health_path
     try:
         board_repo = repo.repo or config.repo
-        health_path = sync_health_path or default_paths().sync_health_path
-        recovery_report = recover_status_boards(repo.path, actor=config.actor, write=False)
-        snapshot_payload = build_snapshot_payload(
-            repo.path,
-            repo=board_repo,
-            actor=config.actor,
-            machine_id=config.machine_id,
-            recovery_report=recovery_report,
-            sync_health=load_sync_health(health_path),
+        recovery_report, snapshot_payload = _build_or_reuse_snapshot(
+            config, repo, board_repo, health_path, tree_mtime
         )
     except Exception as exc:  # best-effort daemon path
         return {"repo": str(repo.path), "sent": False, "reason": str(exc)}
@@ -127,7 +133,6 @@ def publish_repo_heartbeat(
         task_id=task_id,
         note=f"{snapshot_payload['title']} heartbeat",
     )
-    health_path = sync_health_path or default_paths().sync_health_path
     should_publish_snapshot = include_snapshot and config.snapshot_configured
     snapshot_result = publish_snapshot(config, snapshot_payload) if should_publish_snapshot else {"sent": False, "reason": "not configured" if include_snapshot else "not due"}
     if should_publish_snapshot:
@@ -163,6 +168,47 @@ def publish_repo_heartbeat(
     }
 
 
+def _build_or_reuse_snapshot(
+    config: AgentConfig,
+    repo: RegisteredRepo,
+    board_repo: str,
+    health_path: Path,
+    tree_mtime: float | None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return ``(recovery_report, snapshot_payload)``, reusing a cached snapshot
+    when the repo's ``.wily`` tree is unchanged.
+
+    Building a snapshot re-parses ``tasks.yaml``, the checkpoint ledger, and
+    status boards — the daemon's dominant cost. When ``tree_mtime`` matches the
+    cached build and the cache is younger than the fallback window, the cached
+    payload is reused with a refreshed capture timestamp instead of rebuilt.
+    ``tree_mtime is None`` (one-shot ``run_once`` / direct calls) always builds.
+    """
+    key = str(repo.path.resolve())
+    now = time.monotonic()
+    if tree_mtime is not None:
+        cached = _SNAPSHOT_CACHE.get(key)
+        if cached is not None:
+            cached_mtime, built_at, recovery_report, snapshot_payload = cached
+            if cached_mtime == tree_mtime and now - built_at < SNAPSHOT_FALLBACK_SECONDS:
+                stamp = utc_now()
+                snapshot_payload["captured_at"] = stamp
+                snapshot_payload["presence"]["captured_at"] = stamp
+                return recovery_report, snapshot_payload
+    recovery_report = recover_status_boards(repo.path, actor=config.actor, write=False)
+    snapshot_payload = build_snapshot_payload(
+        repo.path,
+        repo=board_repo,
+        actor=config.actor,
+        machine_id=config.machine_id,
+        recovery_report=recovery_report,
+        sync_health=load_sync_health(health_path),
+    )
+    if tree_mtime is not None:
+        _SNAPSHOT_CACHE[key] = (tree_mtime, now, recovery_report, snapshot_payload)
+    return recovery_report, snapshot_payload
+
+
 def repo_sync_health_path(base_path: Path, repo: RegisteredRepo, *, multi_repo: bool) -> Path:
     if not multi_repo:
         return base_path
@@ -172,13 +218,21 @@ def repo_sync_health_path(base_path: Path, repo: RegisteredRepo, *, multi_repo: 
 
 
 def wily_tree_mtime(root: Path) -> float:
+    """Latest mtime of change-relevant files under ``.wily``.
+
+    Prunes ``SCAN_SKIP_DIRS`` (e.g. ``archive/``) because archived history never
+    feeds a Board snapshot; descending into it every poll burns CPU for no
+    signal — wily-roadmap's archive alone holds thousands of immutable files.
+    """
     wily_dir = root / ".wily"
     if not wily_dir.exists():
         return 0.0
     latest = wily_dir.stat().st_mtime
-    for path in wily_dir.rglob("*"):
-        try:
-            latest = max(latest, path.stat().st_mtime)
-        except OSError:
-            continue
+    for dirpath, dirnames, filenames in os.walk(wily_dir):
+        dirnames[:] = [name for name in dirnames if name not in SCAN_SKIP_DIRS]
+        for name in (*dirnames, *filenames):
+            try:
+                latest = max(latest, os.stat(os.path.join(dirpath, name)).st_mtime)
+            except OSError:
+                continue
     return latest

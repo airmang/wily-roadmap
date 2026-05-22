@@ -14,7 +14,7 @@ missing/unreachable Board service is an expected best-effort condition.
 ## Internal Command
 
 ```bash
-python3 <plugin-root>/scripts/wily.py agent <login|install|configure|register|unregister|start|stop|status|check|run|dev>
+python3 <plugin-root>/scripts/wily.py agent <login|install|configure|register|unregister|start|stop|update|status|check|run|dev>
 ```
 
 ## Codex Command Usage
@@ -26,6 +26,7 @@ Users may invoke this skill through Codex plugin commands such as:
 - `$wily-agent register --repo OWNER/REPO`
 - `$wily-agent install`
 - `$wily-agent start`
+- `$wily-agent update`
 - `$wily-agent run --once --json`
 
 When the user asks through `$wily-agent`, run the internal command from this
@@ -41,6 +42,9 @@ perform the local daemon action on the user's behalf.
 - `register` adds the current `.wily` repo to the local registry.
 - `unregister` removes the current `.wily` repo from the local registry.
 - `start` and `stop` manage the launchd daemon.
+- `update` rewrites the launchd plist at the current plugin path and restarts
+  the daemon, so an upgraded plugin's code goes live without a manual
+  stop/start. It is best-effort and stays quiet when `launchctl` is missing.
 - `status` prints install, config, registry, and daemon state.
 - `check` runs a smoke check and stays best-effort when not configured.
 - `run` and `dev` run the foreground daemon path for debugging.
@@ -66,7 +70,7 @@ perform the local daemon action on the user's behalf.
 - During the Board rebuild gap, prefer local/offline checks over login/register
   flows that require a live Board URL.
 - Prefer `wily agent run --once --offline-ok` for smoke checks.
-- For install/start/status requests, execute the command directly and report the result.
+- For install/start/update/status requests, execute the command directly and report the result.
 
 ## Response Style
 

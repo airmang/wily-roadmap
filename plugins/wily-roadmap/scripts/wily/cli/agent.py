@@ -19,7 +19,7 @@ from wily.paths import find_wily_root
 
 
 DESCRIPTION = "install and manage the bundled Board sync daemon"
-USAGE = "usage: wily agent <login|install|configure|register|unregister|start|stop|status|check|run|dev> [args]"
+USAGE = "usage: wily agent <login|install|configure|register|unregister|start|stop|update|status|check|run|dev> [args]"
 HELP = "\n".join(
     [
         "Commands:",
@@ -30,6 +30,7 @@ HELP = "\n".join(
         "  unregister remove this .wily repo from the local registry",
         "  start      launch the launchd daemon",
         "  stop       stop the launchd daemon",
+        "  update     reinstall the launchd plist and restart the daemon",
         "  status     print install/config/daemon status",
         "  check      best-effort smoke check",
         "  run        run foreground daemon loop",
@@ -57,6 +58,8 @@ def main(args: list[str]) -> int:
         return _launchctl("bootstrap", rest)
     if command == "stop":
         return _launchctl("bootout", rest)
+    if command == "update":
+        return _update(rest)
     if command == "status":
         return _status(rest)
     if command == "check":
@@ -186,6 +189,39 @@ def _dev(args: list[str]) -> int:
     registry_path = Path(values.get("--registry", str(paths.registry_path)))
     results = run_loop(load_config(config_path), registry_path, once="--once" in args, offline_ok="--offline-ok" in args, sync_health_path=paths.sync_health_path)
     _common.emit_json({"results": results}) if "--json" in args else _common.emit_text(f"wily-agent dev tick: {len(results)} repo(s)")
+    return _common.EXIT_OK
+
+
+def _update(args: list[str]) -> int:
+    """Reinstall the launchd plist at the current plugin path, then restart.
+
+    After the plugin is upgraded the launchd daemon keeps running the old code
+    until it is rebooted. ``update`` rewrites the plist (so it re-points at the
+    current plugin root, which moves between versioned cache directories) and
+    restarts the daemon so the latest code goes live.
+    """
+    install_code = _install([])
+    if install_code != _common.EXIT_OK:
+        return install_code
+    restart_code = _restart_daemon()
+    payload = status_payload()
+    _common.emit_json(payload) if "--json" in args else _common.emit_text(_status_text(payload))
+    return restart_code
+
+
+def _restart_daemon() -> int:
+    paths = default_paths()
+    if shutil.which("launchctl") is None:
+        _common.emit_text("wily-agent plist rewritten; launchctl unavailable, restart skipped")
+        return _common.EXIT_OK
+    domain = f"gui/{_uid()}"
+    # bootout is best-effort: the daemon may not be loaded yet.
+    subprocess.run(["launchctl", "bootout", f"{domain}/{LABEL}"], capture_output=True, text=True)
+    result = subprocess.run(["launchctl", "bootstrap", domain, str(paths.plist_path)], capture_output=True, text=True)
+    if result.returncode != 0:
+        _common.emit_error(result.stderr.strip() or result.stdout.strip() or "launchctl bootstrap failed")
+        return _common.EXIT_FAILURE
+    _common.emit_text("wily-agent daemon restarted")
     return _common.EXIT_OK
 
 

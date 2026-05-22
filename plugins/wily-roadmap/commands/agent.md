@@ -11,6 +11,7 @@ filesystem path:
 $wily-agent status
 $wily-agent install
 $wily-agent start
+$wily-agent update
 ```
 
 Codex should resolve the plugin root and run the internal helper command.
@@ -25,9 +26,16 @@ wily agent install
 wily agent start
 wily agent status
 wily agent stop
+wily agent update
 wily agent run --once --offline-ok
 wily agent unregister
 ```
+
+Run `wily agent update` after upgrading the plugin: it rewrites the launchd
+plist at the current plugin path and restarts the daemon so the latest code
+goes live. The running daemon otherwise keeps executing the old code until it
+is rebooted. The command is best-effort — it rewrites the plist even when
+`launchctl` is unavailable.
 
 The daemon is local-first and best-effort. It publishes Board v3 snapshots and
 heartbeats when logged in to a rebuilt Board. Missing config, Board downtime,
