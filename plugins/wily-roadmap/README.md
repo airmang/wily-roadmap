@@ -152,11 +152,17 @@ registered child repo with `Wily-Task: <id>`. In coordination mode, `--force` on
 The plugin includes the official bundled `wily-agent` daemon for Wily Board v3.
 It watches registered `.wily` repositories, builds local-first task snapshots,
 and sends best-effort snapshots and heartbeats to Wily Board when local config
-is present. As of 2026-05-20, the local `wily-board` repo is deleted for a
-fresh rebuild, so Board sync is unavailable until a rebuilt Board URL is
-configured.
+is present. In the current coordination workspace, `wily-board` is expected to
+be a separate sibling repository; Board sync is available once an approved Board
+URL and machine registration are configured.
 
 Wily Roadmap's repo-local `.wily/` ledger remains authoritative. Board v3 is a cache/reflection fed by `wily-agent` snapshots and heartbeats; Board state must not replace the Wily task lifecycle source of truth.
+
+See [docs/board-coordination-ops.md](docs/board-coordination-ops.md) for the
+coordination production evidence contract: OAuth is browser-only, machine
+tokens are agent-only, raw secrets never enter evidence, snapshots and
+heartbeats are best-effort local-first signals, and production-affecting actions
+remain approval-first.
 
 Agent snapshots use `board_v3_snapshot_v1`. Each snapshot includes `active_mode`,
 current task, current checkpoint, checkpoint timeline, task list, dependencies,
