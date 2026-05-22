@@ -996,6 +996,39 @@ class CoreModelTest(unittest.TestCase):
             # a far-future write deep inside archive/ must not move the scan result
             self.assertEqual(wily_tree_mtime(root), before)
 
+    def test_land_trims_claim_snapshot_fingerprints_but_keeps_summary(self) -> None:
+        from wily.cli.land import _trim_claim_snapshot
+
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = WilyPaths(Path(tmp))
+            paths.wily_dir.mkdir()
+            task = Task(
+                id="T01",
+                title="demo",
+                status=TaskStatus.DONE,
+                claim_snapshot={
+                    "schema": "wily-claim-snapshot-v1",
+                    "repos": {
+                        "parent": {
+                            "branch": "main",
+                            "sha": "abc123",
+                            "dirty": True,
+                            "changed_files": ["a.py", "b.py"],
+                            "fingerprints": {"a.py": "h1", "b.py": "h2"},
+                        }
+                    },
+                },
+            )
+            save_tasks(paths, "demo", [task])
+
+            _trim_claim_snapshot(paths, "T01")
+
+            _, tasks = load_tasks(paths)
+            repo = tasks[0].claim_snapshot["repos"]["parent"]
+            self.assertEqual(repo["fingerprints"], {})  # heavyweight baseline dropped
+            self.assertEqual(repo["changed_files"], ["a.py", "b.py"])  # Board summary kept
+            self.assertEqual(repo["sha"], "abc123")
+
     def test_paths_config_and_progress_round_trip(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

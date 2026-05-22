@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from ..config import load_tasks
+from ..config import load_tasks, save_tasks
 from ..coordination import ProjectContext, nested_repo_exclusions, resolve_project_context
 from ..models import TaskStatus
 from ..observation import repo_snapshot
@@ -151,8 +151,35 @@ def _coordination_main(
         return _common.EXIT_FAILURE
     for repo_id in committed:
         _common.emit_text(f"committed {repo_id}: {task.id}: {task.title}")
+    _trim_claim_snapshot(context.paths, task_id)
     _common.emit_text("(push skipped: coordination mode is local-only)")
     return _common.EXIT_OK
+
+
+def _trim_claim_snapshot(paths: WilyPaths, task_id: str) -> None:
+    """Drop claim-time fingerprints once a task has landed.
+
+    ``claim_snapshot`` fingerprints are a per-file hash baseline consumed only
+    by ``done`` and ``land`` preflight, both of which run before this point.
+    After a task lands they are dead weight in ``tasks.yaml`` -- on this repo
+    they grew to ~180KB across done tasks -- so they are cleared here.
+    ``branch``/``sha``/``dirty``/``changed_files`` are kept for the Board's
+    claim summary.
+    """
+    project_title, tasks = load_tasks(paths)
+    trimmed = False
+    for task in tasks:
+        if task.id != task_id or not isinstance(task.claim_snapshot, dict):
+            continue
+        repos = task.claim_snapshot.get("repos")
+        if not isinstance(repos, dict):
+            continue
+        for repo_state in repos.values():
+            if isinstance(repo_state, dict) and repo_state.get("fingerprints"):
+                repo_state["fingerprints"] = {}
+                trimmed = True
+    if trimmed:
+        save_tasks(paths, project_title, tasks)
 
 
 def coordination_preflight(
