@@ -18,11 +18,38 @@ Run from this repo:
 
 ## Install
 
+### Codex
+
 ```bash
 codex plugin marketplace add airmang/wily-roadmap
 ```
 
 Then install or enable `wily-roadmap` from the `Wily Castle` marketplace in Codex.
+
+### Pi project-local package
+
+Install the Pi extension only in the current project with `-l`:
+
+```bash
+pi install -l git:github.com/airmang/wily-roadmap@v3.0.3
+```
+
+For local development, point Pi at this checkout instead:
+
+```bash
+pi install -l /path/to/wily-roadmap
+```
+
+This writes `.pi/settings.json` in the current project. When `pi` starts in that
+project it loads the bundled Pi extension and Wily skills, without affecting
+other projects.
+
+The Pi extension provides:
+
+- slash commands: `/wily-status`, `/wily-next`, `/wily-claim <id>`, `/wily-go <id>`, `/wily-done <id>`, `/wily-watch`, `/wily-workspace`, and `/wily <command> ...`
+- `$wily-*` input aliases for compatibility with existing Wily prompts
+- a `wily_cli` tool for agent-driven read-only task context and approval-gated state-changing commands
+- Pi skills from `plugins/wily-roadmap/skills`
 
 ## Update
 

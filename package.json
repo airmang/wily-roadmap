@@ -1,0 +1,36 @@
+{
+  "name": "wily-roadmap",
+  "version": "3.0.3",
+  "description": "Local-first Wily Roadmap workflow package for Pi, Codex, and Claude Code.",
+  "private": true,
+  "license": "UNLICENSED",
+  "homepage": "https://github.com/airmang/wily-roadmap",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/airmang/wily-roadmap.git"
+  },
+  "keywords": [
+    "pi-package",
+    "pi",
+    "codex",
+    "claude-code",
+    "workflow",
+    "tasks",
+    "orchestration",
+    "wily"
+  ],
+  "pi": {
+    "extensions": [
+      "./plugins/wily-roadmap/extensions"
+    ],
+    "skills": [
+      "./plugins/wily-roadmap/skills"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  }
+}

@@ -3,6 +3,24 @@
 Wily Roadmap v3 is a local-first Project + flat goal-sized Task manager for
 agentic coding sessions.
 
+## Pi project-local install
+
+Install the bundled Pi extension and Wily skills only in the current project:
+
+```bash
+pi install -l git:github.com/airmang/wily-roadmap@v3.0.3
+```
+
+For local development, install from a checkout:
+
+```bash
+pi install -l /path/to/wily-roadmap
+```
+
+The Pi extension adds `/wily-*` slash commands, `$wily-*` aliases, and a
+`wily_cli` tool that runs this plugin's bundled `scripts/wily.py` against the
+current project directory.
+
 ## Commands
 
 From the plugin root:
