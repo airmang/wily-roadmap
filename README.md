@@ -54,6 +54,12 @@ From this repository root, run the local roadmap dashboard with:
 The root launcher delegates to the plugin implementation under `plugins/wily-roadmap/`
 and reads the current repository's `.wily/` state.
 
+## Pi Skills
+
+The bundled Pi skills include `wily-hybrid-execute` for running Wily tasks
+through pi `hybrid_run` while keeping Wily's checkpoint ledger synchronized with
+explicit `wily cp` events.
+
 ## v3 Manual Cleanup
 
 After landing v3, remove stale local integration surfaces with explicit approval:

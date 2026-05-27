@@ -43,6 +43,19 @@ Wily v3 stores durable project state under `.wily/`:
 `custom-workflow-skillset:plan-goal-runner`. Wily does not invoke external
 runners directly.
 
+## Hybrid Harness Workflow
+
+Use the bundled `wily-hybrid-execute` Pi skill when a task should run through pi
+`hybrid_run` instead of custom-workflow. The workflow claims the Wily task,
+emits the `wily go` goal block, runs hybrid-harness with Wily acceptance and
+scope as the source of truth, and records checkpoint progress explicitly with
+`wily cp <task-id> start|done <cp-name>`.
+
+If checkpoint calls were missed but a handoff status exists, recover with
+`wily cp <task-id> import-status .wily/handoffs/<task-id>/status.md`. Mark the
+task done only after hybrid-harness and required verification pass; land or push
+only after explicit user approval.
+
 ## Workspace Manifest
 
 Use `wily workspace` from a parent coordination directory when you want one
